@@ -1,8 +1,47 @@
+import { useState, useEffect } from 'react'
+
 function Simulator() {
+  /* general */
+  const [refrigerant, setRefrigerant] = useState("R404A")
+  const [cooling, setCooling] = useState(false)
+
+  /* temperatures */
+  const [temperature, setTemperature] = useState(24)
+  const [SP, setSP] = useState(4)
+
+  /* pressures */ 
+  const [LP, setLP] = useState()
+  const [HP, setHP] = useState()
+  
+  const getPressures = (temperature) => {
+    fetch(`http://localhost:8000/simulator/${refrigerant}/${temperature}/get-pressures`).then(res => res.json()).then(data => {
+      setLP(data.LP / 1e5)
+      setHP(data.HP / 1e5)
+    })
+  }
+
+  useEffect(() => {
+    let interval;
+    if (cooling && temperature > SP) {
+      interval = setInterval(() => {
+        setTemperature(temperature => temperature - 1);
+        getPressures(temperature);
+      }, 2000);
+    }
+
+    return () => clearInterval(interval);
+  }, [temperature, cooling])
 
   return(
     <>
       <h3 className="underline">Simulator</h3>
+      <p>Temperature: {temperature}</p>
+      <p>Set Point: {SP}</p>
+      <p>Refrigerant: {refrigerant}</p>
+      <p>LP: {LP}</p>
+      <p>HP: {HP}</p>
+      
+      <button onClick={() => setCooling(!cooling)}>{cooling ? 'Stop' : 'Start'}</button>
     </>
   )
 }
