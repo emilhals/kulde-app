@@ -33,16 +33,19 @@ function Simulator() {
   }, [temperature, cooling])
 
   return(
-    <>
-      <h3 className="underline">Simulator</h3>
-      <p>Temperature: {temperature}</p>
+    <div className="container mx-auto px-4">
+      <h3 className="font-bold text-4xl fixed top-5"> Simulator.</h3>
+      <div>
+      <h3 className="font-bold text-xl">Information</h3>
+      <p>Room Temperature: {temperature}</p>
       <p>Set Point: {SP}</p>
       <p>Refrigerant: {refrigerant}</p>
       <p>LP: {LP}</p>
       <p>HP: {HP}</p>
-      
+ 
       <button onClick={() => setCooling(!cooling)}>{cooling ? 'Stop' : 'Start'}</button>
-    </>
+      </div>
+    </div>
   )
 }
 
