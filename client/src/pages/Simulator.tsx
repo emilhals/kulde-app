@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Stage, Layer, Circle } from 'react-konva'
 
 function Simulator() {
   /* general */
@@ -44,10 +45,14 @@ function Simulator() {
       <p>HP: {HP}</p>
  
       <button onClick={() => setCooling(!cooling)}>{cooling ? 'Stop' : 'Start'}</button>
+      <Stage width={window.innerWidth} height={window.innerHeight}>
+        <Layer>
+          <Circle x={200} y={100} radius={50} fill="green" />
+        </Layer>
+      </Stage>    
       </div>
     </div>
   )
 }
 
 export default Simulator
-
