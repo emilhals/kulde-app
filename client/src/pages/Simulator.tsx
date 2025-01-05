@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Stage, Layer, Circle } from 'react-konva'
+import { Stage, Layer } from 'react-konva'
+
+import Compressor from "../components/simulator/Compressor.tsx"
 
 function Simulator() {
   /* general */
@@ -47,7 +49,7 @@ function Simulator() {
       <button onClick={() => setCooling(!cooling)}>{cooling ? 'Stop' : 'Start'}</button>
       <Stage width={window.innerWidth} height={window.innerHeight}>
         <Layer>
-          <Circle x={200} y={100} radius={50} fill="green" />
+            <Compressor />
         </Layer>
       </Stage>    
       </div>
