@@ -1,9 +1,11 @@
-function Home() {
+import { Link } from 'react-router'
+
+function HomePage() {
   return (
     <>
-      <h3>Hei</h3>
+      <h3><Link to="/simulator">Simuler kjøleanlegg.</Link></h3>
     </>
   )
 }
 
-export default Home
+export default HomePage

@@ -1,22 +1,28 @@
-import { useState, useEffect } from 'react'
+import { createBrowserRouter, RouterProvider } from 'react-router'
+
+import Layout from './components/Layout'
+import HomePage from './pages/Home'
+import SimulatorPage from './pages/Simulator'
+import DiagramPage from './pages/Diagram'
+import ErrorPage from './pages/Error'
+
 import './App.css'
 
+const router = createBrowserRouter(([
+  {
+    path: '/',
+    errorElement: <ErrorPage />,
+    element: <Layout />,
+    children: [
+      { path: '/', element: <HomePage /> },
+      { path: '/simulator', element: <SimulatorPage /> },
+      { path: '/diagram', element: <DiagramPage /> },
+    ]
+  }
+]));
+
 function App() {
-  const [message, setMessage] = useState()
-
-
-  useEffect(() => {
-    fetch('http://localhost:8000/hello').then(res => res.json()).then(data => {
-      setMessage(data.Hello);
-    })
-  }, [])
-
-  return (
-    <>
-      <h1>Vite + React</h1>
-      {message}
-    </>
-  )
+  return <RouterProvider router={router} />
 }
 
 export default App
