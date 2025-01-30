@@ -3,6 +3,7 @@ import { proxy } from "valtio"
 type Item = {
   id: string,
   type: string,
+  label: string,
   x: number,
   y: number,
 }

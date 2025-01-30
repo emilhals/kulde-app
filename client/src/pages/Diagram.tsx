@@ -1,4 +1,4 @@
-import { Stage, Layer, Rect, Transformer } from "react-konva"
+import { Stage, Layer, Rect, Transformer, Text, Group } from "react-konva"
 import Konva from "konva"
 import React, { useEffect, useRef, useState } from "react"
 import { v4 as uuidv4 } from "uuid"
@@ -52,6 +52,7 @@ import { Input } from "@/components/ui/input"
 function DiagramPage() {
   /* konva related */
   const stageRef = useRef<Konva.Stage>(null)
+  const groupRef = useRef<Konva.Group>(null)
   const transformerRef = useRef<Konva.Transformer>(null)
   const [size, setSize] = useState({ width: window.innerWidth, height: window.innerHeight })
 
@@ -59,7 +60,7 @@ function DiagramPage() {
   const [items, setItem] = useState<any[]>([])
   const isPainting = useRef(false)
   const currentShapeId = useRef<String>("")
-  const [selectedItem, setSelectedItem] = useState<Konva.Node>()
+  const [selectedItem, setSelectedItem] = useState()
 
   const [itemLabel, setItemLabel] = useState('')
 
@@ -77,32 +78,23 @@ function DiagramPage() {
       })
     }
 
-    console.log('changed size: ', size.width)
     window.addEventListener('resize', checkSize)
     return () => window.removeEventListener('resize', checkSize)
-
   }, [])
 
 
   let stageWidth = size.width % 2 !== 0 ? size.width - 1 : size.width
   let stageHeight = size.height % 2 !== 0 ? size.height - 1 : size.height
 
-  /*
-   * TODO: Må være en slags liste, valtio?
-   *
-   * */
-
-  const addItem = () => {
+  const addItem = (type: string, label: string) => {
     const id = uuidv4()
-
     store.items.push({
       id: id,
       x: 20,
       y: 20,
-      type: "test"
+      type: type,
+      label: label
     })
-
-    console.log(store.items)
   }
 
 
@@ -114,16 +106,8 @@ function DiagramPage() {
   const onPointerDown = () => {
     if (action === ACTIONS.SELECT) return;
 
-    const stage = stageRef.current
-    const { x, y } = stage?.getPointerPosition()!
-
+    /* TODO: fix dette */
     isPainting.current = true
-
-    switch (action) {
-      case ACTIONS.MOVE:
-        break
-    }
-
   }
 
   const onPointerMove = () => {
@@ -159,10 +143,14 @@ function DiagramPage() {
     setSelectedItem(target)
   }
 
-  const deleteItem = (e: any) => {
-    selectedItem.destroy()
-
-    console.log(selectedItem)
+  const deleteItem = () => {
+    const index = store.items.findIndex((item) => item.id === selectedItem)
+    if (index >= 0) {
+      store.items.splice(index, 1)
+    }
+    /* 
+    selectedItem?.destroy()
+  */
   }
 
   const exportCanvas = () => {
@@ -179,7 +167,7 @@ function DiagramPage() {
             <NavigationMenuList>
               <NavigationMenuItem>
                 <NavigationMenuTrigger>
-                  <PlusIcon className="justify-center size-5"></PlusIcon>
+                  <Plus className="justify-center size-5"></Plus>
                 </NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
@@ -242,7 +230,7 @@ function DiagramPage() {
                         </Command>
                       </PopoverContent>
                     </Popover>
-                    <Button onClick={() => { addItem() }} variant="outline">
+                    <Button onClick={() => { addItem(value, itemLabel) }} variant="outline">
                       Add component
                     </Button>
                   </ul>
@@ -260,7 +248,7 @@ function DiagramPage() {
           </button>
 
           <button onClick={exportCanvas} className="p-1 rounded hover:bg-violet-100" >
-            <ArrowDownTrayIcon className="size-5"></ArrowDownTrayIcon>
+            <Download className="size-5"></Download>
           </button>
         </div>
       </div>
@@ -272,19 +260,24 @@ function DiagramPage() {
               <Rect onClick={() => { transformerRef.current?.nodes([]) }} x={0} y={0} height={stageHeight} width={stageWidth} fill="white" stroke="black" strokeWidth={4} id="bg" />
 
               {snap.items
-                .map(({ id, x, y }) => {
+                .map(({ id, x, y, label }) => {
                   return (
-                    <Rect onContextMenu={(e) => { setSelectedItem(e.target.id()) }} draggable key={id} x={x} y={y} stroke="black" strokeWidth={2} fill="red" height={100} width={100} onClick={onClick} />
+                    <Group key={id} ref={groupRef} draggable>
+                      <Text fontSize={15} text={label} x={x + 30} y={y - 20}></Text>
+                      <Rect onContextMenu={(e) => { setSelectedItem(id) }} key={id} x={x} y={y} stroke="black" strokeWidth={2} fill="red" height={100} width={100} onClick={onClick} />
+                      <Transformer ref={transformerRef} />
+                    </Group>
                   )
                 })}
-              <Transformer ref={transformerRef} />
             </Layer>
           </Stage>
         </ContextMenuTrigger>
         {selectedItem ? (
           <ContextMenuContent className="w-64">
             <ContextMenuItem inset>
-              <button className="bg-white font-bold hover:border-0" onClick={(e) => { deleteItem(e) }}>Delete</button>
+            </ContextMenuItem>
+            <ContextMenuItem inset>
+              <button className="bg-white font-bold hover:border-0" onClick={() => { deleteItem() }}>Delete</button>
               <ContextMenuShortcut>⌘[d]</ContextMenuShortcut>
             </ContextMenuItem>
           </ContextMenuContent>
