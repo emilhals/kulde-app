@@ -143,14 +143,18 @@ function DiagramPage() {
     setSelectedItem(target)
   }
 
+  const getItem = () => {
+    const item = store.items.find((item) => item.id === selectedItem)
+    if (item) {
+      return item
+    }
+  }
+
   const deleteItem = () => {
     const index = store.items.findIndex((item) => item.id === selectedItem)
     if (index >= 0) {
       store.items.splice(index, 1)
     }
-    /* 
-    selectedItem?.destroy()
-  */
   }
 
   const exportCanvas = () => {
@@ -275,6 +279,7 @@ function DiagramPage() {
         {selectedItem ? (
           <ContextMenuContent className="w-64">
             <ContextMenuItem inset>
+              <p>{getItem()?.label}</p>
             </ContextMenuItem>
             <ContextMenuItem inset>
               <button className="bg-white font-bold hover:border-0" onClick={() => { deleteItem() }}>Delete</button>
