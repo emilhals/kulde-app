@@ -1,27 +1,31 @@
 export const ACTIONS = {
   SELECT: "SELECT",
-  RECTANGLE: "RECTANGLE",
   SCRIBBLE: "SCRIBBLE",
-  ARROW: "ARROW",
   ADD: "ADD",
   MOVE: "MOVE",
+  CONNECTOR: "CONNECTOR",
   DOWNLOAD: "DOWNLOAD"
+}
+
+export const STATE = {
+  MOVING: false,
+  IDLE: false,
 }
 
 export const COMPONENTS = [
   {
     value: "compressor",
     label: "Compressor",
-    img: "./assets/images/components/compressor.png"
+    img: "compressor.png"
   },
   {
     value: "condensator",
     label: "Condensator",
-    img: "./assets/images/components/condevap.png"
+    img: "condevap.png"
   },
   {
     value: "evaporator",
     label: "Evaporator",
-    img: "./assets/images/components/condevap.png"
+    img: "condevap.png"
   },
 ]

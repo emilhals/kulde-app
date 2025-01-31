@@ -6,6 +6,7 @@ type Item = {
   label: string,
   x: number,
   y: number,
+  img: string
 }
 
 export const store = proxy<{ items: Item[] }>({
