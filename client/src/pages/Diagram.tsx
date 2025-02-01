@@ -61,16 +61,20 @@ function DiagramPage() {
   const groupRef = useRef<Konva.Group>(null)
   const transformerRef = useRef<Konva.Transformer>(null)
   const [size, setSize] = useState({ width: window.innerWidth, height: window.innerHeight })
+  const [connectorFrom, setConnectorFrom] = useState<any>()
+  const [connectorTo, setConnectorTo] = useState<any>()
+  const [selectedItemID, setSelectedItemID] = useState<string>("")
+  const [action, setAction] = useState<string>(ACTIONS.SELECT)
 
-  const [action, setAction] = useState(ACTIONS.SELECT)
-  const [selectedItem, setSelectedItem] = useState<string>()
 
-  const [itemLabel, setItemLabel] = useState('')
-
+  /* ui related */
   const [open, setOpen] = React.useState(false)
   const [value, setValue] = React.useState("")
+  const [itemLabel, setItemLabel] = useState('')
 
+  /* valtio */
   const snap = useSnapshot(store)
+
 
   /* konva related functions */
   useEffect(() => {
@@ -85,105 +89,171 @@ function DiagramPage() {
     return () => window.removeEventListener('resize', checkSize)
   }, [])
 
-
   let stageWidth = size.width % 2 !== 0 ? size.width - 1 : size.width
   let stageHeight = size.height % 2 !== 0 ? size.height - 1 : size.height
+
+  useEffect(() => {
+    console.log("changed")
+  }, [selectedItemID])
+  /*
+    useEffect(() => {
+      const line = {
+        from: "",
+        to: ""
+      }
+      if (action === ACTIONS.CONNECTOR) {
+        if (selectedItemID) {
+          if (!connectorFrom) {
+            setConnectorFrom(selectedItemID)
+            console.log("from : " + connectorFrom)
+          } else {
+            if (connectorFrom === connectorTo) setConnectorTo("")
+            setConnectorTo(selectedItemID)
+          }
+  
+          if (connectorFrom && connectorTo) {
+            console.log("from ", connectorFrom)
+            console.log("to ", connectorTo)
+          }
+        }
+      }
+    }, [action, connectorFrom, connectorTo, selectedItemID])
+    */
+  const generateConnectors = () => {
+    if (selectedItemID) {
+
+      let item = getItem()
+      console.log("selected item", item)
+
+      setConnectorFrom((prevFrom) => {
+        if (!prevFrom) {
+          console.log("from: ", item?.id)
+          return item
+        }
+
+        setConnectorTo((prevTo) => {
+          if (prevTo === prevFrom) return ""
+          return item
+        })
+        return prevFrom
+      })
+
+      console.log("ho")
+      /*
+            console.log("trying to connect")
+            if (!connectorFrom) {
+              console.log("from : " + item?.id)
+              setConnectorFrom(item?.id)
+              console.log("connector from " + connectorFrom)
+            } else {
+              if (connectorFrom === connectorTo) setConnectorTo("")
+              let item = getItem()
+              console.log('to : ' + item?.id)
+              setConnectorTo(item)
+              console.log("connector to " + connectorTo)
+              setSelectedItemID(undefined)
+            } */
+    }
+  }
+  useEffect(() => {
+    if (connectorFrom && connectorTo) {
+      console.log("Creating connection between", connectorFrom, "and", connectorTo);
+      let line = new Konva.Line({
+        stroke: 'black',
+        strokeWidth: 4,
+        lineCap: 'round',  /* x1: y3: nedover strek      */
+        points: [connectorFrom.x + (connectorFrom.height / 2), connectorFrom.y, connectorTo.x - (connectorTo.height / 2), connectorTo.y - 50, connectorTo.x + 50, connectorTo.y + 100],
+      });
+
+      groupRef.current?.add(line);
+    }
+  }, [connectorFrom, connectorTo]);
+
 
   const addItem = (type: string, label: string) => {
     const id = uuidv4()
     store.items.push({
       id: id,
-      x: 20,
-      y: 20,
+      x: 50,
+      y: 50,
+      width: 100,
+      height: 100,
       type: type,
       label: label,
       img: type + ".png"
     })
-    setSelectedItem(undefined)
+    setSelectedItemID(undefined)
     setAction(ACTIONS.SELECT)
   }
 
 
-  const onPointerUp = () => {
-    console.log('Pointer Up')
-    switch (action) {
-      case ACTIONS.SELECT:
-    }
+  /* 
+   * TODO: 
+   * ikke call getItem når man trykker på scenen 
+   *
+   * */
+  const onPointerUp = (e: any) => {
   }
 
   const onPointerDown = (e: any) => {
-    console.log('Pointer down on:')
+
     switch (action) {
-      case ACTIONS.CONNECTOR:
+      case ACTIONS.SELECT:
         break
+    }
+
+  }
+
+  const onPointerMove = (e: any) => {
+  }
+
+  const onClick = (e: any) => {
+    switch (action) {
       case ACTIONS.SELECT:
         const target = e.currentTarget
+        console.log(target)
         transformerRef.current?.nodes([target])
         break
-    }
-
-  }
-
-  const onPointerMove = () => {
-    if (action === ACTIONS.SELECT) return;
-    console.log('Pointer move')
-
-
-    switch (action) {
-      case ACTIONS.ADD:
-      /* 
-      setItem((items) =>
-        items.map((item) => {
-          if (item.id === currentShapeId.current) {
-            return {
-              ...item,
-              width: x - item.x,
-              height: y - item.y,
-            }
-          }
-          return item;
-        })
-      )*/
-    }
-  }
-  /*
-   * 
-   * TODO: fjern selectedItem når man klikker scenen
-   *
-   *
-  */
-  const onClick = (e: any) => {
-    console.log('Clicked on: ', e.target)
-    switch (action) {
-      case ACTIONS.SELECT:
-        break
       case ACTIONS.CONNECTOR:
-        let from = getItem()
-        if (from) {
-          console.log("From: " + from.id)
-        } else {
-          console.log("Couldn't get from")
-        }
+        console.log(selectedItemID)
+        generateConnectors()
         break
     }
+  }
 
+  /* when the stage is clicked */
+  const handleOffsetClick = () => {
+    setSelectedItemID("")
+    transformerRef.current?.nodes([])
+  }
+
+  const handleDragEnd = (e: any) => {
+    let current = getItem()
+
+    if (current) {
+      current.x = e.target.x()
+      current.y = e.target.y()
+    }
+    setAction(ACTIONS.SELECT)
   }
 
   const getItem = () => {
-    const item = store.items.find((item) => item.id === selectedItem)
-    if (item) {
-      return item
-    } else {
+    if (!selectedItemID) return undefined
+
+    const item = store.items.find((item) => item.id === selectedItemID)
+    if (!item) {
       console.log("Couldn't get item")
+      return undefined
     }
+    return item
   }
 
   const deleteItem = () => {
-    const index = store.items.findIndex((item) => item.id === selectedItem)
+    const index = store.items.findIndex((item) => item.id === selectedItemID)
     if (index >= 0) {
       store.items.splice(index, 1)
     }
-    setSelectedItem(undefined)
+    setSelectedItemID(undefined)
   }
 
   const exportCanvas = () => {
@@ -206,8 +276,8 @@ function DiagramPage() {
             </Tooltip>
             <NavigationMenu>
               <NavigationMenuList>
-                <NavigationMenuItem>
-                  <NavigationMenuTrigger onPointerMove={(e) => e.preventDefault()} onPointerLeave={(e) => e.preventDefault()}>
+                <NavigationMenuItem className={action === ACTIONS.ADD ? "bg-white p-1 rounded" : "p-1 hover:bg-white rounded"}>
+                  <NavigationMenuTrigger className={action === ACTIONS.ADD ? "bg-white p-1 rounded" : "p-1 hover:bg-white rounded"} onPointerMove={(e) => e.preventDefault()} onPointerLeave={(e) => e.preventDefault()}>
                     <Tooltip>
                       <TooltipTrigger onClick={() => { setAction(ACTIONS.ADD) }} className={action === ACTIONS.ADD ? "bg-violet-300 p-1 rounded" : "p-1 hover:bg-violet-100 rounded"}>
                         <Plus className="justify-center size-5"></Plus>
@@ -318,42 +388,40 @@ function DiagramPage() {
       </div>
 
       <ContextMenu>
-        <ContextMenuTrigger onClick={() => console.log('hei')}>
+        <ContextMenuTrigger>
           <Stage ref={stageRef} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} className="border-blue-50" width={stageWidth} height={stageHeight}>
             <Layer>
-              <Rect onClick={() => { transformerRef.current?.nodes([]) }} x={0} y={0} height={stageHeight} width={stageWidth} fill="white" stroke="black" strokeWidth={4} id="bg" />
+              <Rect onClick={handleOffsetClick} x={0} y={0} height={stageHeight} width={stageWidth} fill="white" stroke="black" strokeWidth={4} id="bg" />
 
               {snap.items
                 .map(({ id, x, y, label }) => {
                   return (
-                    <Group key={id} ref={groupRef} draggable onDragStart={() => { setAction(ACTIONS.SELECT) }} onDragEnd={() => { setAction(ACTIONS.SELECT) }}>
-                      <Text fontSize={15} text={label} x={x + 30} y={y - 20}></Text>
-                      <Rect key={id} x={x} y={y} stroke="black" strokeWidth={2} fill="red" height={100} width={100} onClick={onClick} />
-                      {selectedItem && (
-                        <Transformer ref={transformerRef} />
-                      )}
-                      {action == ACTIONS.CONNECTOR && (
-                        <Group>
-                          <Rect x={x / 2} y={y * 3} stroke="black" strokeWidth={2} fill="white" height={10} width={10}></Rect>
-                          <Rect x={x * 6} y={y * 3} stroke="black" strokeWidth={2} fill="white" height={10} width={10}></Rect>
-                          <Rect x={x * 3} y={y * 6} stroke="black" strokeWidth={2} fill="white" height={10} width={10}></Rect>
-                          <Rect x={x / 2} y={y * 3} stroke="black" strokeWidth={2} fill="white" height={10} width={10}></Rect>
-                        </Group>
-                      )}
-
+                    <Group onClick={() => { setSelectedItemID(id) }} className={"bg-violet-300"} id="fart" key={id} ref={groupRef}>
+                      <Text fontSize={15} text={id} x={x + 30} y={y - 20}></Text>
+                      <Rect id={id} draggable
+                        onDragStart={() => setSelectedItemID(id)}
+                        onDragEnd={handleDragEnd}
+                        onContextMenu={() => { setSelectedItemID(id) }} key={id} x={x} y={y} stroke="black" strokeWidth={2}
+                        fill={selectedItemID == id ? "red" : "blue"} height={100} width={100}
+                        onClick={onClick} />
                     </Group>
                   )
                 })}
+
+              <Transformer ref={transformerRef} keepRatio />
             </Layer>
           </Stage>
         </ContextMenuTrigger>
-        {selectedItem ? (
+        {selectedItemID ? (
           <ContextMenuContent className="w-64">
             <ContextMenuItem>
               <Label>Information</Label>
             </ContextMenuItem>
             <ContextMenuItem inset>
-              <Label>{getItem()?.label}</Label>
+              <Label>{getItem()?.id}</Label>
+            </ContextMenuItem>
+            <ContextMenuItem inset>
+              <Label>x : {getItem()?.x} | y: {getItem()?.y}</Label>
             </ContextMenuItem>
             <ContextMenuItem inset>
               <button className="bg-white font-bold hover:border-0" onClick={() => { deleteItem() }}>Delete</button>

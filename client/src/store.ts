@@ -4,11 +4,19 @@ type Item = {
   id: string,
   type: string,
   label: string,
+  height: number,
+  width: number,
   x: number,
   y: number,
   img: string
 }
 
-export const store = proxy<{ items: Item[] }>({
-  items: []
+type Line = {
+  from: string,
+  to: string
+}
+
+export const store = proxy<{ items: Item[], lines: Line[] }>({
+  items: [],
+  lines: []
 })
