@@ -55,42 +55,16 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 
-interface State {
-  current: string
-  error: string | null
-}
-
-interface Action {
-  type: "change"
-}
-
-function reducer(state: State, action: Action) {
-  const { type } = action
-
-  switch (type) {
-    default:
-      return state
-  }
-}
-
 function DiagramPage() {
   /* konva related */
   const stageRef = useRef<Konva.Stage>(null)
   const groupRef = useRef<Konva.Group>(null)
   const textRef = useRef<Konva.Text>(null)
   const transformerRef = useRef<Konva.Transformer>(null)
-  const [size, setSize] = useState({ width: window.innerWidth, height: window.innerHeight })
+  const [size, setSize] = useState({ width: 1200, height: 900 })
   const [connectorFrom, setConnectorFrom] = useState<any>()
   const [connectorTo, setConnectorTo] = useState<any>()
-  const [connectorPoints, setConnectorPoints] = useState<object>({ from: "", to: "" })
-
-  const [state, dispatch] = useReducer(reducer, {
-    current: "",
-    error: null
-  })
-
   const [selectedItemID, setSelectedItemID] = useState<string>("")
-
 
   const [action, setAction] = useState<string>(ACTIONS.SELECT)
 
@@ -99,6 +73,8 @@ function DiagramPage() {
   const [open, setOpen] = React.useState(false)
   const [value, setValue] = React.useState("")
   const [itemLabel, setItemLabel] = useState('')
+  const containerRef = useRef<HTMLDivElement>()
+
 
   /* valtio */
   const snap = useSnapshot(store)
@@ -106,19 +82,36 @@ function DiagramPage() {
 
   /* konva related functions */
   useEffect(() => {
+
+    let scale = containerRef.current?.offsetWidth / size.width
     const checkSize = () => {
+      let stageWidth = size.width * scale
+      let stageHeight = size.height * scale
+
       setSize({
-        width: window.innerWidth,
-        height: window.innerHeight
+        width: stageWidth,
+        height: stageHeight
       })
+      console.log("aada", size.width)
     }
 
     window.addEventListener('resize', checkSize)
     return () => window.removeEventListener('resize', checkSize)
   }, [])
 
+
+
+
+
+
+
+
   let stageWidth = size.width % 2 !== 0 ? size.width - 1 : size.width
   let stageHeight = size.height % 2 !== 0 ? size.height - 1 : size.height
+
+
+
+
 
   const canSetTo = useRef<boolean>(false)
   const lineID = useRef<string>()
@@ -159,6 +152,7 @@ function DiagramPage() {
     store.lines.push({
       id: id,
       from: from,
+      mid: from,
       to: to,
       complete: false
     })
@@ -168,16 +162,21 @@ function DiagramPage() {
 
   const updateLine = (e: any) => {
     const line = store.lines.find((line) => line.id === lineID.current)
+    console.log("from updateLine")
 
     if (connectorFrom && line) {
       const pointer = stageRef.current?.getPointerPosition()
       line.to = pointer
+      line.mid = pointer
       canSetTo.current = true
     }
   }
 
   const finishLine = (to: object) => {
     const line = store.lines.find((line) => line.id === lineID.current)
+    const fromItem = store.items.find((item) => item.id === connectorFrom.id)
+    const toItem = store.items.find((item) => item.id === connectorTo.id)
+
     console.log("from: ", connectorFrom)
     console.log("to: ", connectorTo)
 
@@ -187,12 +186,26 @@ function DiagramPage() {
         line.complete = true
 
         console.log("finished line: ", line?.complete)
-        setAction(ACTIONS.SELECT)
         setSelectedItemID("")
         transformerRef.current?.nodes([])
+        setAction(ACTIONS.SELECT)
       } else {
         return
       }
+    }
+  }
+
+  const calculateMidpoint = () => {
+    const line = store.lines.find((line) => line.id === lineID.current)
+    console.log("hei")
+
+    const midPoint = {
+      x: (line?.from.x + 50),
+      y: (line?.to.y + 50)
+    }
+
+    if (line?.complete) {
+      line.mid = midPoint
     }
   }
 
@@ -206,7 +219,8 @@ function DiagramPage() {
       height: 100,
       type: type,
       label: label,
-      img: type + ".png"
+      img: type + ".png",
+      lines: []
     })
     setSelectedItemID("")
     setAction(ACTIONS.SELECT)
@@ -245,6 +259,7 @@ function DiagramPage() {
         if (connectorFrom) {
           updateLine(e)
         }
+        calculateMidpoint()
         break
     }
   }
@@ -264,6 +279,8 @@ function DiagramPage() {
 
   const handleDragEnd = (e: any) => {
     let current = getItem()
+
+    calculateMidpoint()
 
     if (current) {
       current.x = e.target.x()
@@ -296,7 +313,7 @@ function DiagramPage() {
   }
 
   return (
-    <div className="relative w-full h-screen overflow-hidden">
+    <div ref={containerRef} className="relative w-full h-screen overflow-hidden">
       <div className="absolute top-0 z-10 w-full py-2">
         <div className="flex justify-center items-center gap-3 py-2 px-3 w-fit mx-auto border shadow-lg rounded-lg">
           <TooltipProvider>
@@ -435,9 +452,10 @@ function DiagramPage() {
                 .map(({ id, x, y, label, height, width }) => {
                   return (
                     <Group key={id} ref={groupRef}>
-                      <Text ref={textRef} fontSize={15} text={id} x={x + label.length} y={y + 110}></Text>
+                      <Text ref={textRef} fontSize={15} text={label} x={x + label.length} y={y + 110}></Text>
                       <Rect id={id} draggable
                         onDragStart={() => setSelectedItemID(id)}
+                        onDragMove={updateLine}
                         onDragEnd={handleDragEnd}
                         onContextMenu={() => { setSelectedItemID(id) }} x={x} y={y} stroke="black" strokeWidth={2}
                         fill={selectedItemID === id ? "red" : "blue"} height={100} width={100}
@@ -448,7 +466,7 @@ function DiagramPage() {
 
 
               {snap.lines
-                .map(({ id, from, to }) => {
+                .map(({ id, from, to, mid }) => {
                   return (
                     <Line
                       key={id}
@@ -457,7 +475,7 @@ function DiagramPage() {
                       stroke="black"
                       strokeWidth={4}
                       lineCap="round"
-                      points={[from.x, from.y, from.x, from.y, to.x, to.y]}
+                      points={[from.x + 50, from.y + 100, mid.x, mid.y, to.x + 100, to.y + 50]}
                     />
                   )
                 })}

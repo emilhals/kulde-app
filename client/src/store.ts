@@ -9,11 +9,13 @@ type Item = {
   x: number,
   y: number,
   img: string
+  lines: []
 }
 
 type Line = {
   id: string,
   from: Object,
+  mid: Object,
   to: Object,
   complete: Boolean
 }
