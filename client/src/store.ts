@@ -12,8 +12,10 @@ type Item = {
 }
 
 type Line = {
-  from: string,
-  to: string
+  id: string,
+  from: Object,
+  to: Object,
+  complete: Boolean
 }
 
 export const store = proxy<{ items: Item[], lines: Line[] }>({

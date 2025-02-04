@@ -1,6 +1,6 @@
 import { Stage, Layer, Rect, Transformer, Text, Group, Line } from "react-konva"
 import Konva from "konva"
-import React, { useEffect, useRef, useState } from "react"
+import React, { useEffect, useRef, useState, useReducer } from "react"
 import { v4 as uuidv4 } from "uuid"
 
 import { useSnapshot } from "valtio"
@@ -55,15 +55,43 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 
+interface State {
+  current: string
+  error: string | null
+}
+
+interface Action {
+  type: "change"
+}
+
+function reducer(state: State, action: Action) {
+  const { type } = action
+
+  switch (type) {
+    default:
+      return state
+  }
+}
+
 function DiagramPage() {
   /* konva related */
   const stageRef = useRef<Konva.Stage>(null)
   const groupRef = useRef<Konva.Group>(null)
+  const textRef = useRef<Konva.Text>(null)
   const transformerRef = useRef<Konva.Transformer>(null)
   const [size, setSize] = useState({ width: window.innerWidth, height: window.innerHeight })
   const [connectorFrom, setConnectorFrom] = useState<any>()
   const [connectorTo, setConnectorTo] = useState<any>()
+  const [connectorPoints, setConnectorPoints] = useState<object>({ from: "", to: "" })
+
+  const [state, dispatch] = useReducer(reducer, {
+    current: "",
+    error: null
+  })
+
   const [selectedItemID, setSelectedItemID] = useState<string>("")
+
+
   const [action, setAction] = useState<string>(ACTIONS.SELECT)
 
 
@@ -92,83 +120,81 @@ function DiagramPage() {
   let stageWidth = size.width % 2 !== 0 ? size.width - 1 : size.width
   let stageHeight = size.height % 2 !== 0 ? size.height - 1 : size.height
 
+  const canSetTo = useRef<boolean>(false)
+  const lineID = useRef<string>()
+
   useEffect(() => {
-    console.log("changed")
-  }, [selectedItemID])
-  /*
-    useEffect(() => {
-      const line = {
-        from: "",
-        to: ""
-      }
-      if (action === ACTIONS.CONNECTOR) {
-        if (selectedItemID) {
-          if (!connectorFrom) {
-            setConnectorFrom(selectedItemID)
-            console.log("from : " + connectorFrom)
-          } else {
-            if (connectorFrom === connectorTo) setConnectorTo("")
-            setConnectorTo(selectedItemID)
-          }
-  
-          if (connectorFrom && connectorTo) {
-            console.log("from ", connectorFrom)
-            console.log("to ", connectorTo)
-          }
-        }
-      }
-    }, [action, connectorFrom, connectorTo, selectedItemID])
-    */
-  const generateConnectors = () => {
-    if (selectedItemID) {
-
+    if (action === ACTIONS.CONNECTOR) {
       let item = getItem()
-      console.log("selected item", item)
 
-      setConnectorFrom((prevFrom) => {
-        if (!prevFrom) {
-          console.log("from: ", item?.id)
-          return item
-        }
+      if (!connectorFrom) {
+        console.log("set connectorfrom", connectorFrom)
+        setConnectorFrom(item)
+      }
+      if (connectorFrom && canSetTo.current) {
+        console.log("2: ", item)
+        setConnectorTo(item)
+        console.log("set connectorTo", connectorTo)
+      }
 
-        setConnectorTo((prevTo) => {
-          if (prevTo === prevFrom) return ""
-          return item
-        })
-        return prevFrom
-      })
+      generateConnectors()
+    }
+  }, [selectedItemID, connectorFrom, connectorTo])
 
-      console.log("ho")
-      /*
-            console.log("trying to connect")
-            if (!connectorFrom) {
-              console.log("from : " + item?.id)
-              setConnectorFrom(item?.id)
-              console.log("connector from " + connectorFrom)
-            } else {
-              if (connectorFrom === connectorTo) setConnectorTo("")
-              let item = getItem()
-              console.log('to : ' + item?.id)
-              setConnectorTo(item)
-              console.log("connector to " + connectorTo)
-              setSelectedItemID(undefined)
-            } */
+  const generateConnectors = () => {
+    if (connectorFrom && !canSetTo.current) {
+      startLine(connectorFrom, connectorFrom)
+    }
+
+    console.log("genCon - to: ", connectorTo)
+    if (connectorTo && canSetTo.current) {
+      finishLine(connectorTo)
     }
   }
-  useEffect(() => {
-    if (connectorFrom && connectorTo) {
-      console.log("Creating connection between", connectorFrom, "and", connectorTo);
-      let line = new Konva.Line({
-        stroke: 'black',
-        strokeWidth: 4,
-        lineCap: 'round',  /* x1: y3: nedover strek      */
-        points: [connectorFrom.x + (connectorFrom.height / 2), connectorFrom.y, connectorTo.x - (connectorTo.height / 2), connectorTo.y - 50, connectorTo.x + 50, connectorTo.y + 100],
-      });
 
-      groupRef.current?.add(line);
+
+  const startLine = (from: object, to: object) => {
+    const id = uuidv4()
+    lineID.current = id
+    store.lines.push({
+      id: id,
+      from: from,
+      to: to,
+      complete: false
+    })
+    console.log("line id", lineID)
+    console.log("startLine - from: ", connectorFrom)
+  }
+
+  const updateLine = (e: any) => {
+    const line = store.lines.find((line) => line.id === lineID.current)
+
+    if (connectorFrom && line) {
+      const pointer = stageRef.current?.getPointerPosition()
+      line.to = pointer
+      canSetTo.current = true
     }
-  }, [connectorFrom, connectorTo]);
+  }
 
+  const finishLine = (to: object) => {
+    const line = store.lines.find((line) => line.id === lineID.current)
+    console.log("from: ", connectorFrom)
+    console.log("to: ", connectorTo)
+
+    if (connectorTo && line) {
+      if (connectorFrom.id !== connectorTo.id) {
+        line.to = to
+        line.complete = true
+
+        console.log("finished line: ", line?.complete)
+        setAction(ACTIONS.SELECT)
+        setSelectedItemID("")
+        transformerRef.current?.nodes([])
+      } else {
+        return
+      }
+    }
+  }
 
   const addItem = (type: string, label: string) => {
     const id = uuidv4()
@@ -182,9 +208,10 @@ function DiagramPage() {
       label: label,
       img: type + ".png"
     })
-    setSelectedItemID(undefined)
+    setSelectedItemID("")
     setAction(ACTIONS.SELECT)
   }
+
 
 
   /* 
@@ -193,38 +220,46 @@ function DiagramPage() {
    *
    * */
   const onPointerUp = (e: any) => {
+    switch (action) {
+      case ACTIONS.CONNECTOR:
+        break
+    }
   }
 
   const onPointerDown = (e: any) => {
-
     switch (action) {
       case ACTIONS.SELECT:
+        setSelectedItemID(e.target.id())
+        break
+      case ACTIONS.CONNECTOR:
+        if (e.target.id() === lineID) return
+        setSelectedItemID(e.target.id())
         break
     }
 
   }
 
   const onPointerMove = (e: any) => {
-  }
-
-  const onClick = (e: any) => {
     switch (action) {
-      case ACTIONS.SELECT:
-        const target = e.currentTarget
-        console.log(target)
-        transformerRef.current?.nodes([target])
-        break
       case ACTIONS.CONNECTOR:
-        console.log(selectedItemID)
-        generateConnectors()
+        if (connectorFrom) {
+          updateLine(e)
+        }
         break
     }
   }
 
+  const onClick = (e: any) => {
+    if (action !== ACTIONS.SELECT) return
+
+    const target = e.currentTarget
+    transformerRef.current?.nodes([target])
+  }
+
   /* when the stage is clicked */
   const handleOffsetClick = () => {
-    setSelectedItemID("")
     transformerRef.current?.nodes([])
+    setSelectedItemID("")
   }
 
   const handleDragEnd = (e: any) => {
@@ -249,11 +284,12 @@ function DiagramPage() {
   }
 
   const deleteItem = () => {
+    console.log("delete", selectedItemID)
     const index = store.items.findIndex((item) => item.id === selectedItemID)
     if (index >= 0) {
       store.items.splice(index, 1)
     }
-    setSelectedItemID(undefined)
+    setSelectedItemID("")
   }
 
   const exportCanvas = () => {
@@ -392,22 +428,39 @@ function DiagramPage() {
           <Stage ref={stageRef} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} className="border-blue-50" width={stageWidth} height={stageHeight}>
             <Layer>
               <Rect onClick={handleOffsetClick} x={0} y={0} height={stageHeight} width={stageWidth} fill="white" stroke="black" strokeWidth={4} id="bg" />
+              <Text fontSize={15} text={selectedItemID} x={10} y={10} />
+
 
               {snap.items
-                .map(({ id, x, y, label }) => {
+                .map(({ id, x, y, label, height, width }) => {
                   return (
-                    <Group onClick={() => { setSelectedItemID(id) }} className={"bg-violet-300"} id="fart" key={id} ref={groupRef}>
-                      <Text fontSize={15} text={id} x={x + 30} y={y - 20}></Text>
+                    <Group key={id} ref={groupRef}>
+                      <Text ref={textRef} fontSize={15} text={id} x={x + label.length} y={y + 110}></Text>
                       <Rect id={id} draggable
                         onDragStart={() => setSelectedItemID(id)}
                         onDragEnd={handleDragEnd}
-                        onContextMenu={() => { setSelectedItemID(id) }} key={id} x={x} y={y} stroke="black" strokeWidth={2}
-                        fill={selectedItemID == id ? "red" : "blue"} height={100} width={100}
+                        onContextMenu={() => { setSelectedItemID(id) }} x={x} y={y} stroke="black" strokeWidth={2}
+                        fill={selectedItemID === id ? "red" : "blue"} height={100} width={100}
                         onClick={onClick} />
                     </Group>
                   )
                 })}
 
+
+              {snap.lines
+                .map(({ id, from, to }) => {
+                  return (
+                    <Line
+                      key={id}
+                      id={id}
+                      listening={false}
+                      stroke="black"
+                      strokeWidth={4}
+                      lineCap="round"
+                      points={[from.x, from.y, from.x, from.y, to.x, to.y]}
+                    />
+                  )
+                })}
               <Transformer ref={transformerRef} keepRatio />
             </Layer>
           </Stage>
