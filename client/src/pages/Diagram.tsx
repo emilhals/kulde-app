@@ -76,6 +76,10 @@ function DiagramPage() {
   const containerRef = useRef<HTMLDivElement>()
 
 
+  const gridLayer = useRef<Konva.Layer>()
+  const blockSnapSize = 30
+
+
   /* valtio */
   const snap = useSnapshot(store)
 
@@ -148,7 +152,7 @@ function DiagramPage() {
     console.log("startLine - from: ", connectorFrom)
   }
 
-  const updateLine = (e: any) => {
+  const updateLine = () => {
     const line = store.lines.find((line) => line.id === lineID.current)
 
     if (connectorFrom && line && !connectorTo) {
@@ -230,10 +234,10 @@ function DiagramPage() {
     const id = uuidv4()
     store.items.push({
       id: id,
-      x: 50,
-      y: 50,
-      width: 100,
-      height: 100,
+      x: blockSnapSize * 3,
+      y: blockSnapSize * 10,
+      width: blockSnapSize * 3,
+      height: blockSnapSize * 3,
       type: type,
       label: label,
       img: type + ".png",
@@ -274,7 +278,7 @@ function DiagramPage() {
     switch (action) {
       case ACTIONS.CONNECTOR:
         if (connectorFrom) {
-          updateLine(e)
+          updateLine()
         }
         calculateMidpoint()
         calculateConnectorPoints()
@@ -289,6 +293,18 @@ function DiagramPage() {
     transformerRef.current?.nodes([target])
   }
 
+  const handleDragMove = (e: any) => {
+    const current = getItem()
+    /*
+        if (current) {
+          current.x = Math.round(e.target.x() / blockSnapSize) * blockSnapSize
+          current.y = Math.round(e.target.y() / blockSnapSize) * blockSnapSize
+        }
+    
+        stageRef.current?.batchDraw()
+    */
+    updateLine()
+  }
 
   const handleDragEnd = (e: any) => {
     let current = getItem()
@@ -297,9 +313,11 @@ function DiagramPage() {
     calculateConnectorPoints()
 
     if (current) {
-      current.x = e.target.x()
-      current.y = e.target.y()
+      current.x = Math.round(e.target.x() / blockSnapSize) * blockSnapSize
+      current.y = Math.round(e.target.y() / blockSnapSize) * blockSnapSize
     }
+    stageRef.current?.batchDraw()
+
     setAction(ACTIONS.SELECT)
   }
 
@@ -331,6 +349,36 @@ function DiagramPage() {
     transformerRef.current?.nodes([])
     setSelectedItemID("")
   }
+
+  /* grid for snapping */
+  useEffect(() => {
+    if (gridLayer.current) {
+      console.log(stageWidth, blockSnapSize, stageWidth / blockSnapSize)
+
+      for (let i = 0; i < stageWidth / blockSnapSize; i++) {
+        gridLayer.current.add(new Konva.Line({
+          points: [Math.round(i * blockSnapSize) + 0.5, 0, Math.round(i * blockSnapSize) + 0.5, stageHeight],
+          stroke: "#ddd",
+          strokeWidth: 1
+        }))
+      }
+
+      gridLayer.current.add(new Konva.Line({ points: [0, 0, 10, 10] }));
+      for (let j = 0; j < stageHeight / blockSnapSize; j++) {
+        gridLayer.current.add(new Konva.Line({
+          points: [0, Math.round(j * blockSnapSize), stageWidth, Math.round(j * blockSnapSize)],
+          stroke: "#ddd",
+          strokeWidth: 0.5
+        }))
+      }
+
+    }
+  }, [gridLayer.current])
+
+  /*
+  */
+
+
 
   return (
     <div ref={containerRef} className="relative w-full h-screen overflow-hidden">
@@ -463,8 +511,11 @@ function DiagramPage() {
       <ContextMenu>
         <ContextMenuTrigger>
           <Stage ref={stageRef} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} className="border-blue-50" width={stageWidth} height={stageHeight}>
+            <Layer ref={gridLayer}>
+            </Layer>
+
             <Layer>
-              <Rect onClick={handleOffsetClick} x={0} y={0} height={stageHeight} width={stageWidth} fill="white" stroke="black" strokeWidth={4} id="bg" />
+              <Rect onClick={handleOffsetClick} x={0} y={0} height={stageHeight} width={stageWidth} stroke="black" strokeWidth={4} id="bg" />
               <Text fontSize={15} text={selectedItemID} x={10} y={10} />
 
 
@@ -475,10 +526,10 @@ function DiagramPage() {
                       <Text ref={textRef} fontSize={15} text={label} x={x + label.length} y={y + 110}></Text>
                       <Rect id={id} key={id} draggable
                         onDragStart={() => setSelectedItemID(id)}
-                        onDragMove={updateLine}
+                        onDragMove={handleDragMove}
                         onDragEnd={handleDragEnd}
                         onContextMenu={() => { setSelectedItemID(id) }} x={x} y={y} stroke="black" strokeWidth={2}
-                        fill={selectedItemID === id ? "red" : "blue"} height={100} width={100}
+                        fill={selectedItemID === id ? "red" : "blue"} height={height} width={width}
                         onClick={onClick} />
                     </Group>
                   )
@@ -527,11 +578,12 @@ function DiagramPage() {
           <ul className="basis-128">
             <li>
               {snap.items
-                .map(({ id, label, lines }) => {
+                .map(({ id, label, x, y, lines }) => {
                   return (
                     <ul className="p-1 border">
                       <li>id: {id}</li>
                       <li>label: {label}</li>
+                      <li>x: {x} | y: {y}</li>
                       {lines.map((line, index) => {
                         <p key={index}>{line.id}</p>
                       })}
