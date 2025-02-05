@@ -1,9 +1,11 @@
-import { Stage, Layer, Rect, Transformer, Text, Group, Line } from "react-konva"
+import { Stage, Layer, Rect, Text, Group, Line } from "react-konva"
 import Konva from "konva"
-import React, { useEffect, useRef, useState, useReducer } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import { v4 as uuidv4 } from "uuid"
 
 import { useSnapshot } from "valtio"
+
+import WebFont from "webfontloader"
 
 import { Check, ChevronsUpDown, Spline, SquareDashedMousePointer, Type, Plus, Download } from "lucide-react"
 
@@ -61,6 +63,8 @@ function DiagramPage() {
   const groupRef = useRef<Konva.Group>(null)
   const textRef = useRef<Konva.Text>(null)
   const transformerRef = useRef<Konva.Transformer>(null)
+  const shadowRef = useRef()
+
   const [size, setSize] = useState({ width: 1200, height: 900 })
   const [connectorFrom, setConnectorFrom] = useState<any>()
   const [connectorTo, setConnectorTo] = useState<any>()
@@ -74,6 +78,8 @@ function DiagramPage() {
   const [value, setValue] = React.useState("")
   const [itemLabel, setItemLabel] = useState('')
   const containerRef = useRef<HTMLDivElement>()
+
+  const [fontLoaded, setFontLoaded] = useState(false)
 
 
   const gridLayer = useRef<Konva.Layer>()
@@ -101,6 +107,20 @@ function DiagramPage() {
     return () => window.removeEventListener('resize', checkSize)
   }, [])
 
+  /* fetch fonts */
+  useEffect(() => {
+    WebFont.load({
+      google: {
+        families: ["Roboto", "Open Sans:400,600,700"]
+      },
+      fontactive: () => {
+        setTimeout(() => {
+          setFontLoaded(true)
+        }, 1000)
+      }
+    })
+  })
+
 
   let stageWidth = size.width % 2 !== 0 ? size.width - 1 : size.width
   let stageHeight = size.height % 2 !== 0 ? size.height - 1 : size.height
@@ -114,12 +134,9 @@ function DiagramPage() {
 
       if (!connectorFrom) {
         setConnectorFrom(item)
-        console.log("set connectorfrom", connectorFrom)
       }
       if (connectorFrom && canSetTo.current) {
-        console.log("2: ", item)
         setConnectorTo(item)
-        console.log("set connectorTo", connectorTo)
       }
 
       generateConnectors()
@@ -131,10 +148,20 @@ function DiagramPage() {
       startLine(connectorFrom, connectorFrom)
     }
 
-    console.log("genCon - to: ", connectorTo)
     if (connectorTo && canSetTo.current) {
       finishLine(connectorTo)
     }
+
+    calculateConnectorPoints()
+  }
+
+  const calculateConnectorPoints = () => {
+    const item = getItem()
+
+    if (!item) return
+
+    const obj = store.items.find((item) => item.id === item.id)
+    const line = store.lines.find((line) => line.from.id === item.id || line.to.id === item.id)
   }
 
 
@@ -160,32 +187,12 @@ function DiagramPage() {
       line.to = pointer
       line.mid = line.to
       canSetTo.current = true
-      console.log("hei")
     }
   }
 
-  const calculateConnectorPoints = () => {
-    const item = getItem()
+  useEffect(() => {
 
-
-    if (item) {
-      const line = store.lines.find((line) => line.from === item || line.to === item)
-
-      if (line) {
-        const from = line.from
-        const to = line.to
-
-        /* check left or right */
-        if (line.to.x < line.from.x) {
-          console.log("ya")
-        }
-
-      }
-    } else {
-      console.log("Could not calculate connector points")
-    }
-
-  }
+  }, [connectorTo, connectorFrom])
 
   const finishLine = (to: object) => {
     const line = store.lines.find((line) => line.id === lineID.current)
@@ -217,8 +224,22 @@ function DiagramPage() {
     }
   }
 
+  /*
+   *
+   *
+   * TODO: 
+   *        Finn en smart løsning til å finne linjen og objekter tilhørende
+   *
+   *
+   *
+   * */
+
   const calculateMidpoint = () => {
-    const line = store.lines.find((line) => line.id === lineID.current)
+    const item = getItem()
+
+    if (!item) return
+
+    const line = store.lines.find((line) => line.from.id === item.id || line.to.id === item.id)
 
     const midPoint = {
       x: (line?.from.x),
@@ -228,6 +249,7 @@ function DiagramPage() {
     if (line?.complete) {
       line.mid = midPoint
     }
+
   }
 
   const addItem = (type: string, label: string) => {
@@ -247,13 +269,42 @@ function DiagramPage() {
     setAction(ACTIONS.SELECT)
   }
 
+  /*
+  useEffect(() => {
+    if (textRef.current) {
+      const parent = store.items.find((item) => item.id === textRef.current.id())
+
+      console.log("ha")
+
+      if (!parent) return
+
+      const labelLength = parent?.label.length
+      textRef.current.position({
+        x: parent.x + labelLength,
+        y: parent.y + 100
+      })
+    }
 
 
-  /* 
-   * TODO: 
-   * ikke call getItem når man trykker på scenen 
-   *
-   * */
+  }, [textRef.current])
+
+*/
+  const handleText = () => {
+    if (textRef.current) {
+      const parent = store.items.find((item) => item.id === textRef.current.id())
+
+      console.log("from handletext", parent.x)
+
+      if (!parent) return
+
+      const labelLength = parent?.label.length
+      textRef.current.position({
+        x: parent.x + labelLength,
+        y: parent.y + 100
+      })
+    }
+  }
+
   const onPointerUp = (e: any) => {
     switch (action) {
       case ACTIONS.CONNECTOR:
@@ -276,6 +327,8 @@ function DiagramPage() {
 
   const onPointerMove = (e: any) => {
     switch (action) {
+      case ACTIONS.SELECT:
+        break
       case ACTIONS.CONNECTOR:
         if (connectorFrom) {
           updateLine()
@@ -290,25 +343,20 @@ function DiagramPage() {
     if (action !== ACTIONS.SELECT) return
 
     const target = e.currentTarget
-    transformerRef.current?.nodes([target])
   }
 
   const handleDragMove = (e: any) => {
-    const current = getItem()
-    /*
-        if (current) {
-          current.x = Math.round(e.target.x() / blockSnapSize) * blockSnapSize
-          current.y = Math.round(e.target.y() / blockSnapSize) * blockSnapSize
-        }
-    
-        stageRef.current?.batchDraw()
-    */
+    gridLayer.current?.show()
+
+    handleText()
     updateLine()
+    calculateConnectorPoints()
   }
 
   const handleDragEnd = (e: any) => {
     let current = getItem()
 
+    handleText()
     calculateMidpoint()
     calculateConnectorPoints()
 
@@ -316,7 +364,9 @@ function DiagramPage() {
       current.x = Math.round(e.target.x() / blockSnapSize) * blockSnapSize
       current.y = Math.round(e.target.y() / blockSnapSize) * blockSnapSize
     }
+
     stageRef.current?.batchDraw()
+    gridLayer.current?.hide()
 
     setAction(ACTIONS.SELECT)
   }
@@ -333,10 +383,12 @@ function DiagramPage() {
   }
 
   const deleteItem = () => {
-    console.log("delete", selectedItemID)
     const index = store.items.findIndex((item) => item.id === selectedItemID)
+    const line = store.lines.findIndex((line) => line.from.id === selectedItemID || line.to.id === selectedItemID)
+
     if (index >= 0) {
       store.items.splice(index, 1)
+      store.lines.splice(line, 1)
     }
     setSelectedItemID("")
   }
@@ -346,15 +398,12 @@ function DiagramPage() {
 
   /* when the stage is clicked */
   const handleOffsetClick = () => {
-    transformerRef.current?.nodes([])
     setSelectedItemID("")
   }
 
   /* grid for snapping */
   useEffect(() => {
     if (gridLayer.current) {
-      console.log(stageWidth, blockSnapSize, stageWidth / blockSnapSize)
-
       for (let i = 0; i < stageWidth / blockSnapSize; i++) {
         gridLayer.current.add(new Konva.Line({
           points: [Math.round(i * blockSnapSize) + 0.5, 0, Math.round(i * blockSnapSize) + 0.5, stageHeight],
@@ -372,16 +421,12 @@ function DiagramPage() {
         }))
       }
 
+      gridLayer.current.hide()
     }
   }, [gridLayer.current])
 
-  /*
-  */
-
-
-
   return (
-    <div ref={containerRef} className="relative w-full h-screen overflow-hidden">
+    <div ref={containerRef} className="relative top-10 w-full overflow-hidden">
       <div className="absolute top-0 z-10 w-full py-2">
         <div className="flex justify-center items-center gap-3 py-2 px-3 w-fit mx-auto border shadow-lg rounded-lg">
           <TooltipProvider>
@@ -516,25 +561,33 @@ function DiagramPage() {
 
             <Layer>
               <Rect onClick={handleOffsetClick} x={0} y={0} height={stageHeight} width={stageWidth} stroke="black" strokeWidth={4} id="bg" />
-              <Text fontSize={15} text={selectedItemID} x={10} y={10} />
-
-
+              <Text fontSize={15} text={selectedItemID} x={10} y={10}></Text>
               {snap.items
                 .map(({ id, x, y, label, height, width }) => {
                   return (
                     <Group key={id} ref={groupRef}>
-                      <Text ref={textRef} fontSize={15} text={label} x={x + label.length} y={y + 110}></Text>
+                      <Text
+                        onDragMove={handleText}
+                        draggable
+                        id={id}
+                        ref={textRef}
+                        fontSize={16}
+                        fontStyle={400}
+                        fontFamily={fontLoaded ? "Open Sans" : "Arial"}
+                        text={label}
+                        x={x + label.length}
+                        y={y * 0.9}
+                      />
                       <Rect id={id} key={id} draggable
                         onDragStart={() => setSelectedItemID(id)}
                         onDragMove={handleDragMove}
                         onDragEnd={handleDragEnd}
                         onContextMenu={() => { setSelectedItemID(id) }} x={x} y={y} stroke="black" strokeWidth={2}
-                        fill={selectedItemID === id ? "red" : "blue"} height={height} width={width}
+                        fill={selectedItemID === id ? "gray" : "white"} height={height} width={width}
                         onClick={onClick} />
                     </Group>
                   )
                 })}
-
 
               {snap.lines
                 .map(({ id, from, to, mid }) => {
@@ -546,11 +599,10 @@ function DiagramPage() {
                       stroke="black"
                       strokeWidth={4}
                       lineCap="round"
-                      points={[from.x, from.y, mid.x, mid.y, to.x, to.y]}
+                      points={[from.x + 45, from.y + 90, mid.x, mid.y, to.x + 90, to.y + 45]}
                     />
                   )
                 })}
-              <Transformer ref={transformerRef} keepRatio />
             </Layer>
           </Stage>
         </ContextMenuTrigger>
