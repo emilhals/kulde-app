@@ -26,7 +26,7 @@ import {
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-
+import { Separator } from "@/components/ui/separator"
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -82,7 +82,6 @@ function DiagramPage() {
 
   /* konva related functions */
   useEffect(() => {
-
     let scale = containerRef.current?.offsetWidth / size.width
     const checkSize = () => {
       let stageWidth = size.width * scale
@@ -92,7 +91,6 @@ function DiagramPage() {
         width: stageWidth,
         height: stageHeight
       })
-      console.log("aada", size.width)
     }
 
     window.addEventListener('resize', checkSize)
@@ -100,18 +98,8 @@ function DiagramPage() {
   }, [])
 
 
-
-
-
-
-
-
   let stageWidth = size.width % 2 !== 0 ? size.width - 1 : size.width
   let stageHeight = size.height % 2 !== 0 ? size.height - 1 : size.height
-
-
-
-
 
   const canSetTo = useRef<boolean>(false)
   const lineID = useRef<string>()
@@ -121,8 +109,8 @@ function DiagramPage() {
       let item = getItem()
 
       if (!connectorFrom) {
-        console.log("set connectorfrom", connectorFrom)
         setConnectorFrom(item)
+        console.log("set connectorfrom", connectorFrom)
       }
       if (connectorFrom && canSetTo.current) {
         console.log("2: ", item)
@@ -162,14 +150,37 @@ function DiagramPage() {
 
   const updateLine = (e: any) => {
     const line = store.lines.find((line) => line.id === lineID.current)
-    console.log("from updateLine")
 
-    if (connectorFrom && line) {
+    if (connectorFrom && line && !connectorTo) {
       const pointer = stageRef.current?.getPointerPosition()
       line.to = pointer
-      line.mid = pointer
+      line.mid = line.to
       canSetTo.current = true
+      console.log("hei")
     }
+  }
+
+  const calculateConnectorPoints = () => {
+    const item = getItem()
+
+
+    if (item) {
+      const line = store.lines.find((line) => line.from === item || line.to === item)
+
+      if (line) {
+        const from = line.from
+        const to = line.to
+
+        /* check left or right */
+        if (line.to.x < line.from.x) {
+          console.log("ya")
+        }
+
+      }
+    } else {
+      console.log("Could not calculate connector points")
+    }
+
   }
 
   const finishLine = (to: object) => {
@@ -185,8 +196,15 @@ function DiagramPage() {
         line.to = to
         line.complete = true
 
+        fromItem?.lines.push(line)
+        toItem?.lines.push(line)
+
         console.log("finished line: ", line?.complete)
         setSelectedItemID("")
+        setConnectorTo("")
+        setConnectorFrom("")
+        canSetTo.current = false
+        lineID.current = ""
         transformerRef.current?.nodes([])
         setAction(ACTIONS.SELECT)
       } else {
@@ -197,11 +215,10 @@ function DiagramPage() {
 
   const calculateMidpoint = () => {
     const line = store.lines.find((line) => line.id === lineID.current)
-    console.log("hei")
 
     const midPoint = {
-      x: (line?.from.x + 50),
-      y: (line?.to.y + 50)
+      x: (line?.from.x),
+      y: (line?.to.y)
     }
 
     if (line?.complete) {
@@ -260,6 +277,7 @@ function DiagramPage() {
           updateLine(e)
         }
         calculateMidpoint()
+        calculateConnectorPoints()
         break
     }
   }
@@ -271,16 +289,12 @@ function DiagramPage() {
     transformerRef.current?.nodes([target])
   }
 
-  /* when the stage is clicked */
-  const handleOffsetClick = () => {
-    transformerRef.current?.nodes([])
-    setSelectedItemID("")
-  }
 
   const handleDragEnd = (e: any) => {
     let current = getItem()
 
     calculateMidpoint()
+    calculateConnectorPoints()
 
     if (current) {
       current.x = e.target.x()
@@ -290,7 +304,7 @@ function DiagramPage() {
   }
 
   const getItem = () => {
-    if (!selectedItemID) return undefined
+    if (!selectedItemID || selectedItemID === "bg") return undefined
 
     const item = store.items.find((item) => item.id === selectedItemID)
     if (!item) {
@@ -310,6 +324,12 @@ function DiagramPage() {
   }
 
   const exportCanvas = () => {
+  }
+
+  /* when the stage is clicked */
+  const handleOffsetClick = () => {
+    transformerRef.current?.nodes([])
+    setSelectedItemID("")
   }
 
   return (
@@ -453,7 +473,7 @@ function DiagramPage() {
                   return (
                     <Group key={id} ref={groupRef}>
                       <Text ref={textRef} fontSize={15} text={label} x={x + label.length} y={y + 110}></Text>
-                      <Rect id={id} draggable
+                      <Rect id={id} key={id} draggable
                         onDragStart={() => setSelectedItemID(id)}
                         onDragMove={updateLine}
                         onDragEnd={handleDragEnd}
@@ -475,7 +495,7 @@ function DiagramPage() {
                       stroke="black"
                       strokeWidth={4}
                       lineCap="round"
-                      points={[from.x + 50, from.y + 100, mid.x, mid.y, to.x + 100, to.y + 50]}
+                      points={[from.x, from.y, mid.x, mid.y, to.x, to.y]}
                     />
                   )
                 })}
@@ -501,6 +521,83 @@ function DiagramPage() {
           </ContextMenuContent>
         ) : null}
       </ContextMenu>
+      <div className="flex flex-row bg-gray-50">
+        <div className="basis-128">
+          <p>Items:</p>
+          <ul className="basis-128">
+            <li>
+              {snap.items
+                .map(({ id, label, lines }) => {
+                  return (
+                    <ul className="p-1 border">
+                      <li>id: {id}</li>
+                      <li>label: {label}</li>
+                      {lines.map((line, index) => {
+                        <p key={index}>{line.id}</p>
+                      })}
+                    </ul>
+                  )
+                })}
+            </li>
+          </ul>
+        </div>
+        <div className="basis-128">
+          <p>Lines:</p>
+          <ul className="basis-128">
+            {snap.lines
+              .map(({ id, from, to, mid }) => {
+                return (
+                  <li key={id} className="p-1 border">
+                    <p>id: {id}</p>
+                    {Array.isArray(from) ? (
+                      from.map((obj, index) => (
+                        <p key={index}>from: {obj.id ?? JSON.stringify(obj)}</p>
+                      ))
+                    ) : (
+
+                      <ul>
+
+                        <Separator />
+                        <li>
+                          from: {from.label}
+                        </li>
+                        <li>
+                          from x: {from.x}
+                        </li>
+                        <li>
+                          from y: {from.y}
+                        </li>
+
+                        <Separator />
+                        <li>
+                          to: {to.label}
+                        </li>
+                        <li>
+                          to x: {to.x}
+                        </li>
+                        <li>
+                          to y: {to.y}
+                        </li>
+
+                        <Separator />
+
+                        <li>
+                          mid id: {mid.id}
+                        </li>
+                        <li>
+                          mid x: {mid.x}
+                        </li>
+                        <li>
+                          mid y: {mid.y}
+                        </li>
+                      </ul>
+                    )}
+                  </li>
+                )
+              })}
+          </ul>
+        </div>
+      </div>
     </div>
   )
 }
