@@ -71,6 +71,7 @@ function DiagramPage() {
   const [selectedItemID, setSelectedItemID] = useState<string>("")
 
   const [action, setAction] = useState<string>(ACTIONS.SELECT)
+  const [showTempLine, setShowTempLine] = useState<boolean>(false)
 
 
   /* ui related */
@@ -164,58 +165,89 @@ function DiagramPage() {
     const line = store.lines.find((line) => line.from.id === item.id || line.to.id === item.id)
   }
 
+  interface LineObject {
+    id: string
+    from: object
+    mid: object
+    to: object
+    complete: false
+  }
 
+  useEffect(() => {
+
+  })
+
+  const [tempLine, setTempLine] = useState<object>()
+
+  /*
+   *
+   *  TODO: Lage en temp line?
+   *
+   * 
+   * */
   const startLine = (from: object, to: object) => {
     const id = uuidv4()
     lineID.current = id
-    store.lines.push({
+
+    let line: LineObject = {
       id: id,
       from: from,
       mid: from,
       to: to,
       complete: false
-    })
-    console.log("line id", lineID)
-    console.log("startLine - from: ", connectorFrom)
+    }
+
+
+    setTempLine(line)
+    /*
+        store.lines.push({
+          id: id,
+          from: from,
+          mid: from,
+          to: to,
+          complete: false
+        })*/
   }
 
   const updateLine = () => {
     const line = store.lines.find((line) => line.id === lineID.current)
 
-    if (connectorFrom && line && !connectorTo) {
+    if (connectorFrom && tempLine && !connectorTo) {
       const pointer = stageRef.current?.getPointerPosition()
-      line.to = pointer
-      line.mid = line.to
       canSetTo.current = true
     }
   }
 
-  useEffect(() => {
-
-  }, [connectorTo, connectorFrom])
-
   const finishLine = (to: object) => {
-    const line = store.lines.find((line) => line.id === lineID.current)
     const fromItem = store.items.find((item) => item.id === connectorFrom.id)
     const toItem = store.items.find((item) => item.id === connectorTo.id)
 
-    console.log("from: ", connectorFrom)
-    console.log("to: ", connectorTo)
 
-    if (connectorTo && line) {
+    if (connectorTo && tempLine) {
       if (connectorFrom.id !== connectorTo.id) {
-        line.to = to
-        line.complete = true
+        setTempLine((prev) =>
+          prev ? { ...prev, to: connectorTo } : null
+        )
+
+        store.lines.push({
+          id: tempLine.id,
+          from: connectorFrom,
+          mid: connectorFrom,
+          to: to,
+          complete: true
+        })
+
+        const line = store.lines.find((line) => line.id === tempLine.id)
+        if (!line) return
 
         fromItem?.lines.push(line)
         toItem?.lines.push(line)
 
-        console.log("finished line: ", line?.complete)
+        setTempLine(undefined)
         setSelectedItemID("")
         setConnectorTo("")
         setConnectorFrom("")
         canSetTo.current = false
-        lineID.current = ""
         transformerRef.current?.nodes([])
         setAction(ACTIONS.SELECT)
       } else {
@@ -296,12 +328,12 @@ function DiagramPage() {
       console.log("from handletext", parent.x)
 
       if (!parent) return
-
-      const labelLength = parent?.label.length
-      textRef.current.position({
-        x: parent.x + labelLength,
-        y: parent.y + 100
-      })
+      /*
+            const labelLength = parent?.label.length
+            textRef.current.position({
+              x: parent.x + labelLength,
+              y: parent.y + 100
+            }) */
     }
   }
 
@@ -331,6 +363,7 @@ function DiagramPage() {
         break
       case ACTIONS.CONNECTOR:
         if (connectorFrom) {
+          handleTempLineMove()
           updateLine()
         }
         calculateMidpoint()
@@ -386,9 +419,15 @@ function DiagramPage() {
     const index = store.items.findIndex((item) => item.id === selectedItemID)
     const line = store.lines.findIndex((line) => line.from.id === selectedItemID || line.to.id === selectedItemID)
 
+    if (line) {
+      console.log(line)
+    } else {
+      console.log("could not find line", line)
+    }
+
     if (index >= 0) {
       store.items.splice(index, 1)
-      store.lines.splice(line, 1)
+      if (line) store.lines.splice(line, 1)
     }
     setSelectedItemID("")
   }
@@ -424,6 +463,21 @@ function DiagramPage() {
       gridLayer.current.hide()
     }
   }, [gridLayer.current])
+
+  const handleTempLineMove = () => {
+    if (!tempLine) return
+
+    const stage = stageRef.current
+    if (!stage) return
+
+    const pointer = stage.getPointerPosition()
+    if (!pointer) return
+
+
+    setTempLine((prev) =>
+      prev ? { ...prev, to: { x: pointer.x, y: pointer.y } } : null
+    )
+  }
 
   return (
     <div ref={containerRef} className="relative top-10 w-full overflow-hidden">
@@ -568,14 +622,15 @@ function DiagramPage() {
                     <Group key={id} ref={groupRef}>
                       <Text
                         onDragMove={handleText}
+                        onClick={() => console.log("click text")}
                         draggable
                         id={id}
                         ref={textRef}
                         fontSize={16}
-                        fontStyle={400}
+                        fontStyle="400"
                         fontFamily={fontLoaded ? "Open Sans" : "Arial"}
                         text={label}
-                        x={x + label.length}
+                        x={x}
                         y={y * 0.9}
                       />
                       <Rect id={id} key={id} draggable
@@ -589,6 +644,18 @@ function DiagramPage() {
                   )
                 })}
 
+              {tempLine && (
+                <Line
+                  key={tempLine.id}
+                  id={tempLine.id}
+                  listening={false}
+                  stroke="black"
+                  strokeWidth={4}
+                  lineCap="round"
+                  points={[tempLine.from.x, tempLine.from.y, tempLine.mid.x, tempLine.mid.y, tempLine.to.x, tempLine.to.y]}
+                />
+
+              )}
               {snap.lines
                 .map(({ id, from, to, mid }) => {
                   return (
@@ -658,10 +725,7 @@ function DiagramPage() {
                         <p key={index}>from: {obj.id ?? JSON.stringify(obj)}</p>
                       ))
                     ) : (
-
                       <ul>
-
-                        <Separator />
                         <li>
                           from: {from.label}
                         </li>
@@ -673,27 +737,30 @@ function DiagramPage() {
                         </li>
 
                         <Separator />
-                        <li>
-                          to: {to.label}
-                        </li>
-                        <li>
-                          to x: {to.x}
-                        </li>
-                        <li>
-                          to y: {to.y}
-                        </li>
-
+                        <ul className="bg-gray-100">
+                          <li>
+                            to: {to.label}
+                          </li>
+                          <li>
+                            to x: {to.x}
+                          </li>
+                          <li>
+                            to y: {to.y}
+                          </li>
+                        </ul>
                         <Separator />
 
-                        <li>
-                          mid id: {mid.id}
-                        </li>
-                        <li>
-                          mid x: {mid.x}
-                        </li>
-                        <li>
-                          mid y: {mid.y}
-                        </li>
+                        <ul className="bg-gray-200">
+                          <li>
+                            mid id: {mid.id}
+                          </li>
+                          <li>
+                            mid x: {mid.x}
+                          </li>
+                          <li>
+                            mid y: {mid.y}
+                          </li>
+                        </ul>
                       </ul>
                     )}
                   </li>
