@@ -1,4 +1,4 @@
-import { Stage, Layer, Rect, Text, Group, Line } from "react-konva"
+import { Stage, Layer, Rect, Text, Group, Line, Transformer } from "react-konva"
 import Konva from "konva"
 import React, { useEffect, useRef, useState } from "react"
 import { v4 as uuidv4 } from "uuid"
@@ -65,6 +65,9 @@ function DiagramPage() {
   const transformerRef = useRef<Konva.Transformer>(null)
   const shadowRef = useRef()
 
+  const textLayer = useRef<Konva.Layer>()
+  const guideLineLayer = useRef<Konva.Layer>()
+
   const [size, setSize] = useState({ width: 1200, height: 900 })
   const [connectorFrom, setConnectorFrom] = useState<any>()
   const [connectorTo, setConnectorTo] = useState<any>()
@@ -91,7 +94,7 @@ function DiagramPage() {
   const snap = useSnapshot(store)
 
 
-  /* konva related functions */
+  /* set stage size and ensure responsiveness  */
   useEffect(() => {
     let scale = containerRef.current?.offsetWidth / size.width
     const checkSize = () => {
@@ -299,7 +302,6 @@ function DiagramPage() {
         setConnectorTo("")
         setConnectorFrom("")
         canSetTo.current = false
-        transformerRef.current?.nodes([])
         setAction(ACTIONS.SELECT)
       } else {
         return
@@ -339,8 +341,10 @@ function DiagramPage() {
     const id = uuidv4()
     store.items.push({
       id: id,
-      x: blockSnapSize * 3,
+      x: blockSnapSize * 1,
       y: blockSnapSize * 10,
+      textX: 0,
+      textY: 0,
       width: blockSnapSize * 3,
       height: blockSnapSize * 3,
       type: type,
@@ -372,17 +376,66 @@ function DiagramPage() {
   }, [textRef.current])
 
 */
-  const handleText = () => {
+  const [showTextHelpers, setShowTextHelpers] = useState(false)
+
+  useEffect(() => {
+    if (textLayer.current) {
+      setShowTextHelpers(true)
+      const item = getItem()
+
+
+      if (!item) return
+
+      let textLength = item.label.length
+
+      console.log(textLength)
+      /*
+            console.log(item)
+            textLayer.current.add(new Konva.Rect({
+              fill: "white",
+              stroke: "black",
+              strokeWidth: 2,
+              x: item.x + 100,
+              y: item.y + 45,
+              width: textLength * 8,
+              height: 20
+            }))
+      */
+      /*
+      for (let i = 0; i < stageWidth / blockSnapSize; i++) {
+        gridLayer.current.add(new Konva.Line({
+          points: [Math.round(i * blockSnapSize) + 0.5, 0, Math.round(i * blockSnapSize) + 0.5, stageHeight],
+          stroke: "#ddd",
+          strokeWidth: 1
+        }))
+      }
+
+      gridLayer.current.add(new Konva.Line({ points: [0, 0, 10, 10] }));
+      for (let j = 0; j < stageHeight / blockSnapSize; j++) {
+        gridLayer.current.add(new Konva.Line({
+          points: [0, Math.round(j * blockSnapSize), stageWidth, Math.round(j * blockSnapSize)],
+          stroke: "#ddd",
+          strokeWidth: 0.5
+        }))
+      }
+
+      gridLayer.current.hide()
+      */
+    }
+  }, [showTextHelpers])
+
+
+
+  const handleText = (e: any) => {
     if (textRef.current) {
       const parent = store.items.find((item) => item.id === textRef.current.id())
 
       if (!parent) return
-      /*
-            const labelLength = parent?.label.length
-            textRef.current.position({
-              x: parent.x + labelLength,
-              y: parent.y + 100
-            }) */
+
+      parent.textX = Math.round(e.target.x() / blockSnapSize) * blockSnapSize
+      parent.textY = Math.round(e.target.y() / blockSnapSize) * blockSnapSize
+
+      console.log(parent.textX)
     }
   }
 
@@ -423,31 +476,65 @@ function DiagramPage() {
   const onClick = (e: any) => {
     if (action !== ACTIONS.SELECT) return
 
-    const target = e.currentTarget
-
     calculateConnectorPoints()
   }
 
   const handleDragMove = (e: any) => {
-    gridLayer.current?.show()
+    // gridLayer.current?.show()
 
-    handleText()
+    // clear previous lines on the screen
+    guideLineLayer.current?.find('.guide-line').forEach((l) => l.destroy())
+
+    // find possible snapping lines
+    let lineGuideStops = getLineGuideStops(e.target)
+
+    // find snapping points of current object
+    let itemBounds = getObjectSnappingEdges(e.target)
+
+    // find where we can snap current object
+    let guides = getGuides(lineGuideStops, itemBounds)
+
+    if (!guides.length) return
+
+    drawGuides(guides)
+
+    var absPos = e.target.absolutePosition()
+
+    // force object position
+    guides.forEach((lg) => {
+      switch (lg.orientation) {
+        case 'V': {
+          absPos.x = lg.lineGuide + lg.offset
+          console.log("v")
+          break
+        }
+        case 'H': {
+          absPos.y = lg.lineGuide + lg.offset
+          console.log("h")
+          break
+        }
+      }
+      e.target.absolutePosition(absPos)
+    })
+
+
+    calculateConnectorPoints()
     updateLine()
   }
 
   const handleDragEnd = (e: any) => {
     let current = getItem()
 
-    handleText()
     calculateMidpoint()
-
-    if (current) {
-      current.x = Math.round(e.target.x() / blockSnapSize) * blockSnapSize
-      current.y = Math.round(e.target.y() / blockSnapSize) * blockSnapSize
-    }
-
-    stageRef.current?.batchDraw()
-    gridLayer.current?.hide()
+    /*
+        if (current) {
+          current.x = Math.round(e.target.x() / blockSnapSize) * blockSnapSize
+          current.y = Math.round(e.target.y() / blockSnapSize) * blockSnapSize
+          current.textX = current.x + 10
+          current.textY = current.y + 100
+        }
+    */
+    guideLineLayer.current?.find('.guide-line').forEach((l) => l.destroy())
 
     setAction(ACTIONS.SELECT)
   }
@@ -486,6 +573,7 @@ function DiagramPage() {
   /* when the stage is clicked */
   const handleOffsetClick = () => {
     setSelectedItemID("")
+    setShowTextHelpers(false)
   }
 
   /* grid for snapping */
@@ -511,6 +599,169 @@ function DiagramPage() {
       gridLayer.current.hide()
     }
   }, [gridLayer.current])
+
+  /* guide lines for snapping */
+
+  //where can we snap our objects?
+  const getLineGuideStops = (skipShape) => {
+    // snap to stage borders and center of the stage
+    let vertical = [0, stageWidth / 2, stageWidth]
+    let horizontal = [0, stageHeight / 2, stageHeight]
+
+    // snap over over edges and center of each object on the canvas
+    stageRef.current?.find(".object").forEach((guideItem) => {
+      if (guideItem === skipShape) return
+
+      let box = guideItem.getClientRect()
+      // snap to edges
+      vertical.push([box.x, box.x + box.width, box.x + box.width / 2])
+      horizontal.push([box.y, box.y + box.height, box.y + box.height / 2])
+    })
+    return {
+      vertical: vertical.flat(),
+      horizontal: horizontal.flat()
+    }
+  }
+
+  const GUIDELINE_OFFSET = 5
+
+  const getObjectSnappingEdges = (node) => {
+    let box = node.getClientRect()
+    let absPos = node.absolutePosition()
+
+    return {
+      vertical: [
+        {
+          guide: Math.round(box.x),
+          offset: Math.round(absPos.x - box.x),
+          snap: 'start',
+        },
+        {
+          guide: Math.round(box.x + box.width / 2),
+          offset: Math.round(absPos.x - box.x - box.width / 2),
+          snap: 'center',
+        },
+        {
+          guide: Math.round(box.x + box.width),
+          offset: Math.round(absPos.x - box.x - box.width),
+          snap: 'end'
+        },
+      ],
+      horizontal: [
+        {
+          guide: Math.round(box.y),
+          offset: Math.round(absPos.y - box.y),
+          snap: 'start',
+        },
+        {
+          guide: Math.round(box.y + box.height / 2),
+          offset: Math.round(absPos.y - box.y - box.height / 2),
+          snap: 'center',
+        },
+        {
+          guide: Math.round(box.y + box.height),
+          offset: Math.round(absPos.y - box.y - box.height),
+          snap: 'end'
+        }
+      ]
+    }
+  }
+
+  // find all snapping possibilites
+  const getGuides = (lineGuideStops, itemBounds) => {
+    let resultVertical = []
+    let resultHorizontal = []
+
+    lineGuideStops.vertical.forEach((lineGuide) => {
+      itemBounds.vertical.forEach((itemBound) => {
+        let diff = Math.abs(lineGuide - itemBound.guide)
+
+        console.log("x")
+        // if the distance between guide line and object snap is sloce we can consider to for snapping
+        if (diff < GUIDELINE_OFFSET) {
+          resultVertical.push({
+            lineGuide: lineGuide,
+            diff: diff,
+            snap: itemBound.snap,
+            offset: itemBound.offset
+          })
+        }
+      })
+    })
+
+    lineGuideStops.horizontal.forEach((lineGuide) => {
+      itemBounds.horizontal.forEach((itemBound) => {
+        let diff = Math.abs(lineGuide - itemBound.guide)
+
+        // if the distance between guide line and object snap is close we can consider this for snapping
+        if (diff < GUIDELINE_OFFSET) {
+          resultHorizontal.push({
+            lineGuide: lineGuide,
+            diff: diff,
+            snap: itemBound.snap,
+            offset: itemBound.offset
+          })
+        }
+      })
+    })
+
+    let guides = []
+
+    // find closest snap
+    var minVertical = resultVertical.sort((a, b) => a.diff - b.diff)[0]
+    var minHorizontal = resultHorizontal.sort((a, b) => a.diff - b.diff)[0]
+
+    if (minVertical) {
+      guides.push({
+        lineGuide: minVertical.lineGuide,
+        offset: minVertical.offset,
+        orientation: 'V',
+        snap: minVertical.snap
+      })
+    }
+
+    if (minHorizontal) {
+      guides.push({
+        lineGuide: minHorizontal.lineGuide,
+        offset: minHorizontal.offset,
+        orientation: 'H',
+        snap: minHorizontal.snap
+      })
+    }
+    return guides
+  }
+
+  const drawGuides = (guides) => {
+    guides.forEach((lg) => {
+      if (lg.orientation === 'H') {
+        let line = new Konva.Line({
+          points: [-3000, 0, 3000, 0],
+          stroke: 'rgb(0,161,255)',
+          strokeWidth: 1,
+          name: 'guide-line',
+          dash: [4, 6],
+        })
+        guideLineLayer.current?.add(line)
+        line.absolutePosition({
+          x: 0,
+          y: lg.lineGuide
+        })
+      } else if (lg.orientation === 'V') {
+        let line = new Konva.Line({
+          points: [0, -3000, 0, 3000],
+          stroke: 'rgb(0,161,255)',
+          strokeWidth: 1,
+          name: 'guide-line',
+          dash: [4, 6]
+        })
+        guideLineLayer.current?.add(line)
+        line.absolutePosition({
+          x: lg.lineGuide,
+          y: 0,
+        })
+      }
+    })
+  }
 
   const handleTempLineMove = () => {
     if (!tempLine) return
@@ -658,28 +909,36 @@ function DiagramPage() {
       <ContextMenu>
         <ContextMenuTrigger>
           <Stage ref={stageRef} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} className="border-blue-50" width={stageWidth} height={stageHeight}>
+
+            <Layer ref={guideLineLayer}>
+            </Layer>
             <Layer ref={gridLayer}>
             </Layer>
+            {showTextHelpers && (
+
+              <Layer ref={textLayer}>
+              </Layer>
+
+            )}
 
             <Layer>
               <Rect onClick={handleOffsetClick} x={0} y={0} height={stageHeight} width={stageWidth} stroke="black" strokeWidth={4} id="bg" />
               <Text fontSize={15} text={selectedItemID} x={10} y={10}></Text>
               {snap.items
-                .map(({ id, x, y, label, height, width }) => {
+                .map(({ id, x, y, textX, textY, label, height, width }) => {
                   return (
                     <Group key={id} ref={groupRef}>
                       <Text
-                        onDragMove={handleText}
-                        onClick={() => console.log("click text")}
-                        draggable
+                        onDragEnd={handleText}
+                        onClick={() => { setShowTextHelpers(true) }}
                         id={id}
                         ref={textRef}
                         fontSize={16}
                         fontStyle="400"
                         fontFamily={fontLoaded ? "Open Sans" : "Arial"}
                         text={label}
-                        x={x}
-                        y={y * 0.9}
+                        x={textX}
+                        y={textY}
                       />
                       <Rect id={id} key={id} draggable
                         onDragStart={() => setSelectedItemID(id)}
@@ -687,7 +946,9 @@ function DiagramPage() {
                         onDragEnd={handleDragEnd}
                         onContextMenu={() => { setSelectedItemID(id) }} x={x} y={y} stroke="black" strokeWidth={2}
                         fill={selectedItemID === id ? "gray" : "white"} height={height} width={width}
-                        onClick={onClick} />
+                        onClick={onClick}
+                        name="object"
+                      />
                     </Group>
                   )
                 })}

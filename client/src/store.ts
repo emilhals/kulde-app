@@ -8,16 +8,28 @@ type Item = {
   width: number,
   x: number,
   y: number,
+  textX: number,
+  textY: number,
   img: string
   lines: []
 }
 
-type Points = { x: 0, y: 0 }
+type Text = {
+  id: string,
+  text: string,
+  width: number,
+  height: number,
+  x: number,
+  y: number,
+  parent: Item
+}
+
+type Points = { x: number, y: number }
 type Line = {
   id: string,
-  fromObject: Object,
+  fromObject: Item,
   mid: Points,
-  toObject: Object,
+  toObject: Item,
   complete: Boolean
   fromPointsOffset: Points,
   toPointsOffset: Points
