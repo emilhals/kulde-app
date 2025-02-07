@@ -12,12 +12,15 @@ type Item = {
   lines: []
 }
 
+type Points = { x: 0, y: 0 }
 type Line = {
   id: string,
-  from: Object,
-  mid: Object,
-  to: Object,
+  fromObject: Object,
+  mid: Points,
+  toObject: Object,
   complete: Boolean
+  fromPointsOffset: Points,
+  toPointsOffset: Points
 }
 
 export const store = proxy<{ items: Item[], lines: Line[] }>({

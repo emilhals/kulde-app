@@ -162,7 +162,80 @@ function DiagramPage() {
     if (!item) return
 
     const obj = store.items.find((item) => item.id === item.id)
-    const line = store.lines.find((line) => line.from.id === item.id || line.to.id === item.id)
+    const line = store.lines.find((line) => line.fromObject.id === item.id || line.toObject.id === item.id)
+
+    if (!line) return
+
+
+    /*
+    for (const x of line.toObject.lines.values()) {
+      console.log("linje to ", x)
+    }
+*/
+    /* printer linesinjer koblet til objektet */
+    /*
+      for (const x of line.fromObject.lines.values()) {
+        console.log("linje from ", x)
+        /**
+         *
+         * TODO: bruk width/heigth istedenfor tall
+         *        fiks offset
+         * */
+
+
+    /* is to the right */
+    if (line.fromObject.x > line.toObject.x) {
+      console.log(line.fromObject.label + " er til høyre for " + line.toObject.label)
+      /* under */
+      if (line.fromObject.y > line.toObject.y) {
+        line.toPointsOffset = { x: 90, y: 45 }
+        line.fromPointsOffset = { x: 45, y: 0 }
+        line.mid = { x: line.fromObject.x + 45, y: line.toObject.y + 45 }
+        console.log("from: " + line.fromObject.label + " | to: " + line.toObject.label)
+
+        console.log(line.fromObject.label + " er under " + line.toObject.label)
+      } else {
+        console.log(line.fromObject.label + " er over " + line.toObject.label)
+
+        line.mid = { x: line.toObject.x + 45, y: line.fromObject.y + 45 }
+        line.fromPointsOffset = { x: 0, y: 45 }
+        line.toPointsOffset = { x: 45, y: 0 }
+        console.log("from: " + line.fromObject.label + " | to: " + line.toObject.label)
+
+      }
+    }
+
+    if (line.fromObject.x < line.toObject.x) {
+      console.log(line.fromObject.label + " er til venstre for " + line.toObject.label)
+
+      /* under */
+      if (line.fromObject.y > line.toObject.y) {
+
+        line.toPointsOffset = { x: 45, y: 90 }
+        line.fromPointsOffset = { x: 90, y: 45 }
+        line.mid = { x: 930 + 45, y: 645 }
+        console.log("from: " + line.fromObject.label + " | to: " + line.toObject.label)
+
+
+        console.log(line.fromObject.label + " er under " + line.toObject.label)
+      } else {
+        console.log(line.fromObject.label + " er over " + line.toObject.label)
+
+        line.mid = { x: line.fromObject.x, y: line.toObject.y }
+        line.fromPointsOffset = { x: 45, y: 90 }
+        line.toPointsOffset = { x: 90, y: 45 }
+        console.log("from: " + line.fromObject.label + " | to: " + line.toObject.label)
+
+      }
+
+    }
+    /* is to the left */
+    /*
+       if (x.fromObject.x < x.toObject.x) {
+           console.log(x.fromObject.label + " er til venstre for " + x.toObject.label)
+         }
+       }
+       */
   }
 
   interface LineObject {
@@ -173,18 +246,8 @@ function DiagramPage() {
     complete: false
   }
 
-  useEffect(() => {
-
-  })
-
   const [tempLine, setTempLine] = useState<object>()
 
-  /*
-   *
-   *  TODO: Lage en temp line?
-   *
-   * 
-   * */
   const startLine = (from: object, to: object) => {
     const id = uuidv4()
     lineID.current = id
@@ -196,24 +259,11 @@ function DiagramPage() {
       to: to,
       complete: false
     }
-
-
     setTempLine(line)
-    /*
-        store.lines.push({
-          id: id,
-          from: from,
-          mid: from,
-          to: to,
-          complete: false
-        })*/
   }
 
   const updateLine = () => {
-    const line = store.lines.find((line) => line.id === lineID.current)
-
     if (connectorFrom && tempLine && !connectorTo) {
-      const pointer = stageRef.current?.getPointerPosition()
       canSetTo.current = true
     }
   }
@@ -221,7 +271,6 @@ function DiagramPage() {
   const finishLine = (to: object) => {
     const fromItem = store.items.find((item) => item.id === connectorFrom.id)
     const toItem = store.items.find((item) => item.id === connectorTo.id)
-
 
     if (connectorTo && tempLine) {
       if (connectorFrom.id !== connectorTo.id) {
@@ -231,9 +280,11 @@ function DiagramPage() {
 
         store.lines.push({
           id: tempLine.id,
-          from: connectorFrom,
-          mid: connectorFrom,
-          to: to,
+          fromObject: connectorFrom,
+          fromPointsOffset: { x: 0, y: 0 },
+          mid: { x: connectorFrom.x, y: connectorFrom.y },
+          toObject: to,
+          toPointsOffset: { x: 0, y: 0 },
           complete: true
         })
 
@@ -270,18 +321,18 @@ function DiagramPage() {
     const item = getItem()
 
     if (!item) return
-
-    const line = store.lines.find((line) => line.from.id === item.id || line.to.id === item.id)
-
-    const midPoint = {
-      x: (line?.from.x),
-      y: (line?.to.y)
-    }
-
-    if (line?.complete) {
-      line.mid = midPoint
-    }
-
+    /*
+        const line = store.lines.find((line) => line.from.id === item.id || line.to.id === item.id)
+    
+        const midPoint = {
+          x: (line?.from.x),
+          y: (line?.to.y)
+        }
+    
+        if (line?.complete) {
+          line.mid = midPoint
+        }
+    */
   }
 
   const addItem = (type: string, label: string) => {
@@ -325,8 +376,6 @@ function DiagramPage() {
     if (textRef.current) {
       const parent = store.items.find((item) => item.id === textRef.current.id())
 
-      console.log("from handletext", parent.x)
-
       if (!parent) return
       /*
             const labelLength = parent?.label.length
@@ -367,7 +416,6 @@ function DiagramPage() {
           updateLine()
         }
         calculateMidpoint()
-        calculateConnectorPoints()
         break
     }
   }
@@ -376,6 +424,8 @@ function DiagramPage() {
     if (action !== ACTIONS.SELECT) return
 
     const target = e.currentTarget
+
+    calculateConnectorPoints()
   }
 
   const handleDragMove = (e: any) => {
@@ -383,7 +433,6 @@ function DiagramPage() {
 
     handleText()
     updateLine()
-    calculateConnectorPoints()
   }
 
   const handleDragEnd = (e: any) => {
@@ -391,7 +440,6 @@ function DiagramPage() {
 
     handleText()
     calculateMidpoint()
-    calculateConnectorPoints()
 
     if (current) {
       current.x = Math.round(e.target.x() / blockSnapSize) * blockSnapSize
@@ -417,7 +465,7 @@ function DiagramPage() {
 
   const deleteItem = () => {
     const index = store.items.findIndex((item) => item.id === selectedItemID)
-    const line = store.lines.findIndex((line) => line.from.id === selectedItemID || line.to.id === selectedItemID)
+    const line = store.lines.findIndex((line) => line.fromObject.id === selectedItemID || line.toObject.id === selectedItemID)
 
     if (line) {
       console.log(line)
@@ -657,7 +705,7 @@ function DiagramPage() {
 
               )}
               {snap.lines
-                .map(({ id, from, to, mid }) => {
+                .map(({ id, fromObject, fromPointsOffset, toObject, toPointsOffset, mid }) => {
                   return (
                     <Line
                       key={id}
@@ -666,7 +714,12 @@ function DiagramPage() {
                       stroke="black"
                       strokeWidth={4}
                       lineCap="round"
-                      points={[from.x + 45, from.y + 90, mid.x, mid.y, to.x + 90, to.y + 45]}
+                      points={[fromObject.x + fromPointsOffset.x,
+                      fromObject.y + fromPointsOffset.y,
+                      mid.x,
+                      mid.y,
+                      toObject.x + toPointsOffset.x,
+                      toObject.y + toPointsOffset.y]}
                     />
                   )
                 })}
@@ -716,44 +769,41 @@ function DiagramPage() {
           <p>Lines:</p>
           <ul className="basis-128">
             {snap.lines
-              .map(({ id, from, to, mid }) => {
+              .map(({ id, fromObject, toObject, mid }) => {
                 return (
                   <li key={id} className="p-1 border">
                     <p>id: {id}</p>
-                    {Array.isArray(from) ? (
-                      from.map((obj, index) => (
+                    {Array.isArray(fromObject) ? (
+                      fromObject.map((obj, index) => (
                         <p key={index}>from: {obj.id ?? JSON.stringify(obj)}</p>
                       ))
                     ) : (
                       <ul>
                         <li>
-                          from: {from.label}
+                          from: {fromObject.label}
                         </li>
                         <li>
-                          from x: {from.x}
+                          from x: {fromObject.x}
                         </li>
                         <li>
-                          from y: {from.y}
+                          from y: {fromObject.y}
                         </li>
 
                         <Separator />
                         <ul className="bg-gray-100">
                           <li>
-                            to: {to.label}
+                            to: {toObject.label}
                           </li>
                           <li>
-                            to x: {to.x}
+                            to x: {toObject.x}
                           </li>
                           <li>
-                            to y: {to.y}
+                            to y: {toObject.y}
                           </li>
                         </ul>
                         <Separator />
 
                         <ul className="bg-gray-200">
-                          <li>
-                            mid id: {mid.id}
-                          </li>
                           <li>
                             mid x: {mid.x}
                           </li>
