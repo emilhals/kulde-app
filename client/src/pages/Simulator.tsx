@@ -1,12 +1,19 @@
 import { useState, useEffect } from 'react'
 import { Stage, Layer } from 'react-konva'
 
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+
+import { SquarePowerIcon } from 'lucide-react'
+
 import Part from '../components/simulator/Part'
 
+import { ACTIONS, COMPONENTS } from "../constants"
 function SimulatorPage() {
   /* general */
   const [refrigerant, setRefrigerant] = useState<string>("R404A")
   const [cooling, setCooling] = useState<Boolean>(false)
+
+  const [powerOn, setPowerOn] = useState<Boolean>(false)
 
   /* regulator */
   const [SP, setSP] = useState<number>(4)
@@ -31,7 +38,7 @@ function SimulatorPage() {
       setHP(data.HP / 1e5)
     })
   }
-
+  const [action, setAction] = useState<string>(ACTIONS.SELECT)
   useEffect(() => {
     let interval: ReturnType<typeof setTimeout>;
     if (cooling && temperature > SP) {
@@ -56,8 +63,29 @@ function SimulatorPage() {
   }, [temperature, cooling])
 
   return (
-    <div className="container relative mx-auto px-4">
-      <h3 className="font-bold text-4xl left-10 fixed top-5"> Simulator.</h3>
+    <div className="relative top-10 w-full mx-auto px-4">
+      <div className="absolute top-0 z-10 w-full py-2">
+        <div className="flex justify-center items-center gap-3 py-2 px-3 w-fit mx-auto border shadow-lg rounded-lg">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <button onClick={() => setPowerOn(!powerOn)} className={powerOn === true ? "bg-red-600 p-1 rounded" : "p-1 hover:bg-red-500 rounded"}>
+                  <SquarePowerIcon className="size-5"></SquarePowerIcon>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {powerOn && (
+                  <p>Power off</p>
+                )}
+                {!powerOn && (
+                  <p>Power on</p>
+                )}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      </div>
+
       <div className="fixed top-5 right-5">
         <h3 className="font-bold text-xl">Information</h3>
         <p>Room Temperature: {temperature}</p>
@@ -70,11 +98,11 @@ function SimulatorPage() {
         <p>Superheat: {SH}</p>
       </div>
 
-      <button className="absolute mt-10 z-10" onClick={() => setCooling(!cooling)}>{cooling ? 'Stop' : 'Start'}</button>
-      <Stage className="fixed left-0 top-0 z-0" width={screenWidth} height={screenHeight}>
+      <button className="absolute top-0 z-10" onClick={() => setCooling(!cooling)}>{cooling ? 'Stop' : 'Start'}</button>
+      <Stage className="border-blue-50" width={screenWidth} height={screenHeight}>
         <Layer>
           <Part type="Compressor" x={screenWidth / 2} y={(3 * screenHeight) / 4}></Part>
-          <Part type="Condensor" x={(3 * screenWidth) / 4} y={screenHeight / 2}></Part>
+          <Part type="Condensor" x={(3 * screenWidth) / 2} y={screenHeight / 4}></Part>
           <Part type="TEV" x={screenWidth / 2} y={screenHeight / 4}></Part>
           <Part type="Evaporator" x={screenWidth / 4} y={screenHeight / 2}></Part>
         </Layer>

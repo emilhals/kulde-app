@@ -22,6 +22,7 @@ app.add_middleware(
 @app.get("/simulator/{refrigerant}/{room_temp}/get-pressures")
 def read_pressures(refrigerant, room_temp: int):
     p_LP = CP.PropsSI("P", "T", room_temp + 273, "Q", 1, refrigerant)
-    T_HP = room_temp + 10
+    T_HP = 50 - room_temp
+    T_HP = max(T_HP, room_temp + 5)
     p_HP = CP.PropsSI("P", "T", T_HP + 273, "Q", 0, refrigerant)
     return {"LP": p_LP, "HP": p_HP}

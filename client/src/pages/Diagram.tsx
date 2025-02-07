@@ -525,17 +525,15 @@ function DiagramPage() {
   const handleDragEnd = (e: any) => {
     let current = getItem()
 
-    calculateMidpoint()
-    /*
-        if (current) {
-          current.x = Math.round(e.target.x() / blockSnapSize) * blockSnapSize
-          current.y = Math.round(e.target.y() / blockSnapSize) * blockSnapSize
-          current.textX = current.x + 10
-          current.textY = current.y + 100
-        }
-    */
-    guideLineLayer.current?.find('.guide-line').forEach((l) => l.destroy())
+    if (current) {
+      current.x = Math.round(e.target.x() / blockSnapSize) * blockSnapSize
+      current.y = Math.round(e.target.y() / blockSnapSize) * blockSnapSize
+      current.textX = 10
+      current.textY = 10
+    }
 
+    guideLineLayer.current?.find('.guide-line').forEach((l) => l.destroy())
+    calculateMidpoint()
     setAction(ACTIONS.SELECT)
   }
 
@@ -937,8 +935,8 @@ function DiagramPage() {
                         fontStyle="400"
                         fontFamily={fontLoaded ? "Open Sans" : "Arial"}
                         text={label}
-                        x={textX}
-                        y={textY}
+                        x={x + textX}
+                        y={y + textY}
                       />
                       <Rect id={id} key={id} draggable
                         onDragStart={() => setSelectedItemID(id)}

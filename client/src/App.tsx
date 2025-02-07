@@ -6,8 +6,6 @@ import SimulatorPage from './pages/Simulator'
 import DiagramPage from './pages/Diagram'
 import ErrorPage from './pages/Error'
 
-import './App.css'
-
 const router = createBrowserRouter(([
   {
     path: '/',
