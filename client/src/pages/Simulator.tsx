@@ -7,7 +7,7 @@ import { SquarePowerIcon } from 'lucide-react'
 
 import Part from '../components/simulator/Part'
 
-import { ACTIONS, COMPONENTS } from "../constants"
+import { ACTIONS } from "../constants"
 function SimulatorPage() {
   /* general */
   const [refrigerant, setRefrigerant] = useState<string>("R404A")
@@ -63,8 +63,8 @@ function SimulatorPage() {
   }, [temperature, cooling])
 
   return (
-    <div className="relative top-10 w-full mx-auto px-4">
-      <div className="absolute top-0 z-10 w-full py-2">
+    <div className="">
+      <div className="">
         <div className="flex justify-center items-center gap-3 py-2 px-3 w-fit mx-auto border shadow-lg rounded-lg">
           <TooltipProvider>
             <Tooltip>
@@ -86,7 +86,7 @@ function SimulatorPage() {
         </div>
       </div>
 
-      <div className="fixed top-5 right-5">
+      <div className="absolute top-5 right-5">
         <h3 className="font-bold text-xl">Information</h3>
         <p>Room Temperature: {temperature}</p>
         <p>Set Point: {SP}</p>
@@ -98,7 +98,6 @@ function SimulatorPage() {
         <p>Superheat: {SH}</p>
       </div>
 
-      <button className="absolute top-0 z-10" onClick={() => setCooling(!cooling)}>{cooling ? 'Stop' : 'Start'}</button>
       <Stage className="border-blue-50" width={screenWidth} height={screenHeight}>
         <Layer>
           <Part type="Compressor" x={screenWidth / 2} y={(3 * screenHeight) / 4}></Part>

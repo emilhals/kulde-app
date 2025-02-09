@@ -4,6 +4,7 @@ import Layout from './components/Layout'
 import HomePage from './pages/Home'
 import SimulatorPage from './pages/Simulator'
 import DiagramPage from './pages/Diagram'
+import ComponentsPage from './pages/Components'
 import ErrorPage from './pages/Error'
 
 const router = createBrowserRouter(([
@@ -15,6 +16,7 @@ const router = createBrowserRouter(([
       { path: '/', element: <HomePage /> },
       { path: '/simulator', element: <SimulatorPage /> },
       { path: '/diagram', element: <DiagramPage /> },
+      { path: '/components', element: <ComponentsPage /> },
     ]
   }
 ]));

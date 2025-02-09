@@ -1,9 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@theme {
-  --color-sexy-black: oklch(24.06% 0.0048 145.42)
+.inter-<uniquifier> {
+  font-family: "Inter", serif;
+  font-optical-sizing: auto;
+  font-weight: <weight>;
+  font-style: normal;
+}
+
+body {
+  font-family: "Inter", serif;
 }
 
 :root {
@@ -23,7 +32,6 @@
     background-color: #ffffff;
   }
   a:hover {
-    color: #747bff;
   }
   button {
     background-color: #ffffff;

@@ -7,7 +7,7 @@ import { useSnapshot } from "valtio"
 
 import WebFont from "webfontloader"
 
-import { Check, ChevronsUpDown, Spline, SquareDashedMousePointer, Type, Plus, Download } from "lucide-react"
+import { Check, ChevronsUpDown, Spline, SquareDashedMousePointer, Type, Plus, Download, ChevronDownIcon, ChevronUpIcon } from "lucide-react"
 
 import { ACTIONS, COMPONENTS } from "../constants"
 import { store } from "../store"
@@ -53,7 +53,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 
-
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 
@@ -85,6 +85,7 @@ function DiagramPage() {
 
   const [fontLoaded, setFontLoaded] = useState(false)
 
+  const [openItemsList, setOpenItemsList] = useState(false)
 
   const gridLayer = useRef<Konva.Layer>()
   const blockSnapSize = 30
@@ -525,13 +526,21 @@ function DiagramPage() {
   const handleDragEnd = (e: any) => {
     let current = getItem()
 
+    if (!current) return
+
+    current.x = e.target.x()
+    current.y = e.target.y()
+    current.textX = 10
+    current.textY = 100
+
+    /*
     if (current) {
       current.x = Math.round(e.target.x() / blockSnapSize) * blockSnapSize
       current.y = Math.round(e.target.y() / blockSnapSize) * blockSnapSize
       current.textX = 10
       current.textY = 10
     }
-
+*/
     guideLineLayer.current?.find('.guide-line').forEach((l) => l.destroy())
     calculateMidpoint()
     setAction(ACTIONS.SELECT)
@@ -777,9 +786,9 @@ function DiagramPage() {
   }
 
   return (
-    <div ref={containerRef} className="relative top-10 w-full overflow-hidden">
-      <div className="absolute top-0 z-10 w-full py-2">
-        <div className="flex justify-center items-center gap-3 py-2 px-3 w-fit mx-auto border shadow-lg rounded-lg">
+    <div ref={containerRef} className="grid grid-flow-col grid-rows-3 gap-4">
+      <div className="col-span-2">
+        <div className="flex justify-center items-center gap-4 px-3 w-fit mx-auto border shadow-lg rounded-lg">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger>
@@ -904,126 +913,143 @@ function DiagramPage() {
         </div>
       </div>
 
-      <ContextMenu>
-        <ContextMenuTrigger>
-          <Stage ref={stageRef} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} className="border-blue-50" width={stageWidth} height={stageHeight}>
+      <div className="col-span-2 row-span-2">
+        <ContextMenu>
+          <ContextMenuTrigger>
+            <Stage ref={stageRef} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} className="border-blue-50" width={stageWidth} height={stageHeight}>
 
-            <Layer ref={guideLineLayer}>
-            </Layer>
-            <Layer ref={gridLayer}>
-            </Layer>
-            {showTextHelpers && (
-
-              <Layer ref={textLayer}>
+              <Layer ref={guideLineLayer}>
               </Layer>
+              <Layer ref={gridLayer}>
+              </Layer>
+              {showTextHelpers && (
 
-            )}
-
-            <Layer>
-              <Rect onClick={handleOffsetClick} x={0} y={0} height={stageHeight} width={stageWidth} stroke="black" strokeWidth={4} id="bg" />
-              <Text fontSize={15} text={selectedItemID} x={10} y={10}></Text>
-              {snap.items
-                .map(({ id, x, y, textX, textY, label, height, width }) => {
-                  return (
-                    <Group key={id} ref={groupRef}>
-                      <Text
-                        onDragEnd={handleText}
-                        onClick={() => { setShowTextHelpers(true) }}
-                        id={id}
-                        ref={textRef}
-                        fontSize={16}
-                        fontStyle="400"
-                        fontFamily={fontLoaded ? "Open Sans" : "Arial"}
-                        text={label}
-                        x={x + textX}
-                        y={y + textY}
-                      />
-                      <Rect id={id} key={id} draggable
-                        onDragStart={() => setSelectedItemID(id)}
-                        onDragMove={handleDragMove}
-                        onDragEnd={handleDragEnd}
-                        onContextMenu={() => { setSelectedItemID(id) }} x={x} y={y} stroke="black" strokeWidth={2}
-                        fill={selectedItemID === id ? "gray" : "white"} height={height} width={width}
-                        onClick={onClick}
-                        name="object"
-                      />
-                    </Group>
-                  )
-                })}
-
-              {tempLine && (
-                <Line
-                  key={tempLine.id}
-                  id={tempLine.id}
-                  listening={false}
-                  stroke="black"
-                  strokeWidth={4}
-                  lineCap="round"
-                  points={[tempLine.from.x, tempLine.from.y, tempLine.mid.x, tempLine.mid.y, tempLine.to.x, tempLine.to.y]}
-                />
+                <Layer ref={textLayer}>
+                </Layer>
 
               )}
-              {snap.lines
-                .map(({ id, fromObject, fromPointsOffset, toObject, toPointsOffset, mid }) => {
-                  return (
-                    <Line
-                      key={id}
-                      id={id}
-                      listening={false}
-                      stroke="black"
-                      strokeWidth={4}
-                      lineCap="round"
-                      points={[fromObject.x + fromPointsOffset.x,
-                      fromObject.y + fromPointsOffset.y,
-                      mid.x,
-                      mid.y,
-                      toObject.x + toPointsOffset.x,
-                      toObject.y + toPointsOffset.y]}
-                    />
-                  )
-                })}
-            </Layer>
-          </Stage>
-        </ContextMenuTrigger>
-        {selectedItemID ? (
-          <ContextMenuContent className="w-64">
-            <ContextMenuItem>
-              <Label>Information</Label>
-            </ContextMenuItem>
-            <ContextMenuItem inset>
-              <Label>{getItem()?.id}</Label>
-            </ContextMenuItem>
-            <ContextMenuItem inset>
-              <Label>x : {getItem()?.x} | y: {getItem()?.y}</Label>
-            </ContextMenuItem>
-            <ContextMenuItem inset>
-              <button className="bg-white font-bold hover:border-0" onClick={() => { deleteItem() }}>Delete</button>
-              <ContextMenuShortcut>⌘[d]</ContextMenuShortcut>
-            </ContextMenuItem>
-          </ContextMenuContent>
-        ) : null}
-      </ContextMenu>
-      <div className="flex flex-row bg-gray-50">
-        <div className="basis-128">
-          <p>Items:</p>
-          <ul className="basis-128">
-            <li>
-              {snap.items
-                .map(({ id, label, x, y, lines }) => {
-                  return (
-                    <ul className="p-1 border">
-                      <li>id: {id}</li>
-                      <li>label: {label}</li>
-                      <li>x: {x} | y: {y}</li>
-                      {lines.map((line, index) => {
-                        <p key={index}>{line.id}</p>
-                      })}
-                    </ul>
-                  )
-                })}
-            </li>
-          </ul>
-        </div>
+
+              <Layer>
+                <Rect onClick={handleOffsetClick} x={0} y={0} height={stageHeight} width={stageWidth} stroke="black" strokeWidth={4} id="bg" />
+                <Text fontSize={15} text={selectedItemID} x={10} y={10}></Text>
+                {snap.items
+                  .map(({ id, x, y, textX, textY, label, height, width }) => {
+                    return (
+                      <Group key={id} ref={groupRef}>
+                        <Text
+                          onDragEnd={handleText}
+                          onClick={() => { setShowTextHelpers(true) }}
+                          id={id}
+                          ref={textRef}
+                          fontSize={16}
+                          fontStyle="400"
+                          fontFamily={fontLoaded ? "Open Sans" : "Arial"}
+                          text={label}
+                          x={x + textX}
+                          y={y + textY}
+                        />
+                        <Rect id={id} key={id} draggable
+                          onDragStart={() => setSelectedItemID(id)}
+                          onDragMove={handleDragMove}
+                          onDragEnd={handleDragEnd}
+                          onContextMenu={() => { setSelectedItemID(id) }} x={x} y={y} stroke="black" strokeWidth={2}
+                          fill={selectedItemID === id ? "gray" : "white"} height={height} width={width}
+                          onClick={onClick}
+                          name="object"
+                        />
+                      </Group>
+                    )
+                  })}
+
+                {tempLine && (
+                  <Line
+                    key={tempLine.id}
+                    id={tempLine.id}
+                    listening={false}
+                    stroke="black"
+                    strokeWidth={4}
+                    lineCap="round"
+                    points={[tempLine.from.x, tempLine.from.y, tempLine.mid.x, tempLine.mid.y, tempLine.to.x, tempLine.to.y]}
+                  />
+
+                )}
+                {snap.lines
+                  .map(({ id, fromObject, fromPointsOffset, toObject, toPointsOffset, mid }) => {
+                    return (
+                      <Line
+                        key={id}
+                        id={id}
+                        listening={false}
+                        stroke="black"
+                        strokeWidth={4}
+                        lineCap="round"
+                        points={[fromObject.x + fromPointsOffset.x,
+                        fromObject.y + fromPointsOffset.y,
+                        mid.x,
+                        mid.y,
+                        toObject.x + toPointsOffset.x,
+                        toObject.y + toPointsOffset.y]}
+                      />
+                    )
+                  })}
+              </Layer>
+            </Stage>
+          </ContextMenuTrigger>
+          {selectedItemID && selectedItemID !== "bg" ? (
+            <ContextMenuContent className="w-64">
+              <ContextMenuItem>
+                <Label>{getItem()?.label}</Label>
+              </ContextMenuItem>
+              <ContextMenuItem inset>
+                <Label>{getItem()?.id}</Label>
+              </ContextMenuItem>
+              <ContextMenuItem inset>
+                <Label>x : {getItem()?.x} | y: {getItem()?.y}</Label>
+              </ContextMenuItem>
+              <ContextMenuItem inset>
+                <button className="bg-white font-bold hover:border-0" onClick={() => { deleteItem() }}>Delete</button>
+                <ContextMenuShortcut>⌘[d]</ContextMenuShortcut>
+              </ContextMenuItem>
+            </ContextMenuContent>
+          ) : null}
+        </ContextMenu>
+      </div>
+
+      {/* sidebar */}
+      <div className="row-span-3">
+        <h4 onClick={() => setOpenItemsList(!openItemsList)} className="mb-4 flex text-m align-middle items-center font-medium leading-none">Items
+          {openItemsList && (
+            <span className="ml-2"><ChevronUpIcon size={16} /></span>
+          )}
+          {!openItemsList && (
+            <span className="ml-2"><ChevronDownIcon size={16} /></span>
+          )}
+        </h4>
+        <Separator />
+        {openItemsList && (
+          <ScrollArea className="basis-128 h-72 w-48 rounded-md border">
+            <div className="p-4">
+              <ul className="basis-128">
+                <li>
+                  {snap.items
+                    .map(({ id, label, x, y, lines }) => {
+                      return (
+                        <ul className="p-1 border">
+                          <li>id: {id}</li>
+                          <li>label: {label}</li>
+                          <li>x: {x} | y: {y}</li>
+                          {lines.map((line, index) => {
+                            <p key={index}>{line.id}</p>
+                          })}
+                        </ul>
+                      )
+                    })}
+                </li>
+              </ul>
+            </div>
+          </ScrollArea>
+
+        )}
         <div className="basis-128">
           <p>Lines:</p>
           <ul className="basis-128">
