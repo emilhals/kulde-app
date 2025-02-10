@@ -4,7 +4,7 @@ import { SnowflakeIcon } from 'lucide-react'
 
 function Navigation() {
   return (
-    <header className="z-50 h-20 bg-white w-full border-b-2 border-gray-300">
+    <header className="z-50 flex h-20 bg-white w-full border-b-2 border-gray-300">
       <nav className="flex items-center text-sm h-full justify-between">
         <div className='md:flex px-8 h-full border-r-2 border-gray-300'>
           <SnowflakeIcon size={32} className='h-full text-gray-600' />

@@ -4,8 +4,10 @@ import Navigation from "./Navigation"
 
 function Layout() {
   return (
-    <div className='min-h-screen flex flex-col'>
-      <Navigation />
+    <div className='h-screen flex flex-col'>
+      <div className='grow-0'>
+        <Navigation />
+      </div>
       <main className='grow'>
         <Outlet />
       </main>

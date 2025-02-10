@@ -1,3 +1,4 @@
+
 export const ACTIONS = {
   SELECT: "SELECT",
   SCRIBBLE: "SCRIBBLE",
@@ -14,18 +15,28 @@ export const STATE = {
 
 export const COMPONENTS = [
   {
-    value: "compressor",
-    label: "Compressor",
-    img: "compressor.png"
+    id: "filter-dryer",
+    name: "Filter dryer",
+    desc: "dasdasd",
+    shader_type: "shiny",
+    color: "black",
+    file_name: "DML 052.obj",
+    web_link: "",
   },
   {
-    value: "condensator",
-    label: "Condensator",
-    img: "condevap.png"
+    id: "sight-glass",
+    name: "Sight glass",
+    desc: "dasdasljkda",
+    shader_type: "shiny",
+    color: "black",
+    file_name: "danfoss_sgn_odf_22s_inch.obj"
   },
   {
-    value: "evaporator",
-    label: "Evaporator",
-    img: "condevap.png"
-  },
+    id: "cond-press-reg",
+    name: "Condensing pressure regulator",
+    desc: "daskjldlkasdjkl",
+    shader_type: "shiny",
+    color: "green",
+    file_name: "ImageToStl.com_kvr 35.obj",
+  }
 ]

@@ -9,7 +9,7 @@ import WebFont from "webfontloader"
 
 import { Check, ChevronsUpDown, Spline, SquareDashedMousePointer, Type, Plus, Download, ChevronDownIcon, ChevronUpIcon } from "lucide-react"
 
-import { ACTIONS, COMPONENTS } from "../constants"
+import { ACTIONS } from "../constants"
 import { store } from "../store"
 import {
   Tooltip,
@@ -57,6 +57,23 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 
+const COMPONENTS = [
+  {
+    value: "compressor",
+    label: "Compressor",
+    img: "compressor.png"
+  },
+  {
+    value: "condensator",
+    label: "Condensator",
+    img: "condevap.png"
+  },
+  {
+    value: "evaporator",
+    label: "Evaporator",
+    img: "condevap.png"
+  },
+]
 function DiagramPage() {
   /* konva related */
   const stageRef = useRef<Konva.Stage>(null)
