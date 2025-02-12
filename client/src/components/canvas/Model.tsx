@@ -22,7 +22,8 @@ const Model = ({ item }) => {
       setObj(object)
 
       let bbox = new Box3().setFromObject(object)
-      console.log(bbox)
+      console.log(camera)
+      camera.lookAt(bbox.max)
 
     })
 

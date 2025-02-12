@@ -79,8 +79,7 @@ function DiagramPage() {
   const stageRef = useRef<Konva.Stage>(null)
   const groupRef = useRef<Konva.Group>(null)
   const textRef = useRef<Konva.Text>(null)
-  const transformerRef = useRef<Konva.Transformer>(null)
-  const shadowRef = useRef()
+  const itemRef = useRef<Konva.Rect>(null)
 
   const textLayer = useRef<Konva.Layer>()
   const guideLineLayer = useRef<Konva.Layer>()
@@ -99,7 +98,6 @@ function DiagramPage() {
   const [value, setValue] = React.useState("")
   const [itemLabel, setItemLabel] = useState('')
   const containerRef = useRef<HTMLDivElement>()
-
   const [fontLoaded, setFontLoaded] = useState(false)
 
   const [openItemsList, setOpenItemsList] = useState(false)
@@ -107,14 +105,14 @@ function DiagramPage() {
   const gridLayer = useRef<Konva.Layer>()
   const blockSnapSize = 30
 
-
   /* valtio */
   const snap = useSnapshot(store)
 
-
   /* set stage size and ensure responsiveness  */
   useEffect(() => {
-    let scale = containerRef.current?.offsetWidth / size.width
+    if (!containerRef.current) return
+
+    let scale = containerRef.current.offsetWidth / size.width
     const checkSize = () => {
       let stageWidth = size.width * scale
       let stageHeight = size.height * scale
@@ -143,27 +141,31 @@ function DiagramPage() {
     })
   })
 
-
   let stageWidth = size.width % 2 !== 0 ? size.width - 1 : size.width
   let stageHeight = size.height % 2 !== 0 ? size.height - 1 : size.height
 
   const canSetTo = useRef<boolean>(false)
   const lineID = useRef<string>()
 
+  /*
+   * TODO: SJEKK, MÅ JEG BRUKE USEEFFECT HER?
+   *
+   * */
+
+  // sets connector points for the line
   useEffect(() => {
-    if (action === ACTIONS.CONNECTOR) {
-      let item = getItem()
+    let item = getItem()
+    if (!item) return
 
-      if (!connectorFrom) {
-        setConnectorFrom(item)
-      }
-      if (connectorFrom && canSetTo.current) {
-        setConnectorTo(item)
-      }
+    if (!connectorFrom)
+      setConnectorFrom(item)
 
-      generateConnectors()
-    }
+    if (connectorFrom && canSetTo.current)
+      setConnectorTo(item)
+
+    generateConnectors()
   }, [selectedItemID, connectorFrom, connectorTo])
+
 
   const generateConnectors = () => {
     if (connectorFrom && !canSetTo.current) {
@@ -173,35 +175,58 @@ function DiagramPage() {
     if (connectorTo && canSetTo.current) {
       finishLine(connectorTo)
     }
-
     calculateConnectorPoints()
   }
 
+  /*
+   *
+   *
+   * TODO: FIND NEAREST CORNER
+   *
+   *
+   * */
+
   const calculateConnectorPoints = () => {
     const item = getItem()
-
     if (!item) return
 
-    const obj = store.items.find((item) => item.id === item.id)
     const line = store.lines.find((line) => line.fromObject.id === item.id || line.toObject.id === item.id)
-
     if (!line) return
 
-
-    /*
-    for (const x of line.toObject.lines.values()) {
-      console.log("linje to ", x)
+    // find nearest corner from mid-point
+    const CORNERS = {
+      topLeft: {
+        x: 0,
+        y: 0
+      },
+      topRight: {
+        x: stageWidth,
+        y: 0
+      },
+      bottomLeft: {
+        x: 0,
+        y: stageHeight
+      },
+      bottomRight: {
+        x: stageWidth,
+        y: stageHeight
+      }
     }
-*/
-    /* printer linesinjer koblet til objektet */
-    /*
-      for (const x of line.fromObject.lines.values()) {
-        console.log("linje from ", x)
-        /**
-         *
-         * TODO: bruk width/heigth istedenfor tall
-         *        fiks offset
-         * */
+
+    let closestCorner
+    let distance
+    Object.entries(CORNERS).forEach((corner) => {
+      d = Math.sqrt((line.mid.x - corner.x) ** 2 + (line.mid.y - corner.y) ** 2)
+      console.log(corner)
+    })
+
+    /**
+     *
+     * TODO: bruk width/heigth istedenfor tall
+     *        fiks offset
+     * */
+
+
 
 
     /* is to the right */
@@ -212,16 +237,16 @@ function DiagramPage() {
         line.toPointsOffset = { x: 90, y: 45 }
         line.fromPointsOffset = { x: 45, y: 0 }
         line.mid = { x: line.fromObject.x + 45, y: line.toObject.y + 45 }
-        console.log("from: " + line.fromObject.label + " | to: " + line.toObject.label)
+        //console.log("from: " + line.fromObject.label + " | to: " + line.toObject.label)
 
-        console.log(line.fromObject.label + " er under " + line.toObject.label)
+        //console.log(line.fromObject.label + " er under " + line.toObject.label)
       } else {
-        console.log(line.fromObject.label + " er over " + line.toObject.label)
+        //console.log(line.fromObject.label + " er over " + line.toObject.label)
 
         line.mid = { x: line.toObject.x + 45, y: line.fromObject.y + 45 }
         line.fromPointsOffset = { x: 0, y: 45 }
         line.toPointsOffset = { x: 45, y: 0 }
-        console.log("from: " + line.fromObject.label + " | to: " + line.toObject.label)
+        //console.log("from: " + line.fromObject.label + " | to: " + line.toObject.label)
 
       }
     }
@@ -374,76 +399,6 @@ function DiagramPage() {
     setAction(ACTIONS.SELECT)
   }
 
-  /*
-  useEffect(() => {
-    if (textRef.current) {
-      const parent = store.items.find((item) => item.id === textRef.current.id())
-
-      console.log("ha")
-
-      if (!parent) return
-
-      const labelLength = parent?.label.length
-      textRef.current.position({
-        x: parent.x + labelLength,
-        y: parent.y + 100
-      })
-    }
-
-
-  }, [textRef.current])
-
-*/
-  const [showTextHelpers, setShowTextHelpers] = useState(false)
-
-  useEffect(() => {
-    if (textLayer.current) {
-      setShowTextHelpers(true)
-      const item = getItem()
-
-
-      if (!item) return
-
-      let textLength = item.label.length
-
-      console.log(textLength)
-      /*
-            console.log(item)
-            textLayer.current.add(new Konva.Rect({
-              fill: "white",
-              stroke: "black",
-              strokeWidth: 2,
-              x: item.x + 100,
-              y: item.y + 45,
-              width: textLength * 8,
-              height: 20
-            }))
-      */
-      /*
-      for (let i = 0; i < stageWidth / blockSnapSize; i++) {
-        gridLayer.current.add(new Konva.Line({
-          points: [Math.round(i * blockSnapSize) + 0.5, 0, Math.round(i * blockSnapSize) + 0.5, stageHeight],
-          stroke: "#ddd",
-          strokeWidth: 1
-        }))
-      }
-
-      gridLayer.current.add(new Konva.Line({ points: [0, 0, 10, 10] }));
-      for (let j = 0; j < stageHeight / blockSnapSize; j++) {
-        gridLayer.current.add(new Konva.Line({
-          points: [0, Math.round(j * blockSnapSize), stageWidth, Math.round(j * blockSnapSize)],
-          stroke: "#ddd",
-          strokeWidth: 0.5
-        }))
-      }
-
-      gridLayer.current.hide()
-      */
-    }
-  }, [showTextHelpers])
-
-
-
   const handleText = (e: any) => {
     if (textRef.current) {
       const parent = store.items.find((item) => item.id === textRef.current.id())
@@ -453,7 +408,7 @@ function DiagramPage() {
       parent.textX = Math.round(e.target.x() / blockSnapSize) * blockSnapSize
       parent.textY = Math.round(e.target.y() / blockSnapSize) * blockSnapSize
 
-      console.log(parent.textX)
+      console.log("eywa")
     }
   }
 
@@ -523,12 +478,10 @@ function DiagramPage() {
       switch (lg.orientation) {
         case 'V': {
           absPos.x = lg.lineGuide + lg.offset
-          console.log("v")
           break
         }
         case 'H': {
           absPos.y = lg.lineGuide + lg.offset
-          console.log("h")
           break
         }
       }
@@ -547,17 +500,9 @@ function DiagramPage() {
 
     current.x = e.target.x()
     current.y = e.target.y()
-    current.textX = 10
+    current.textX = 0
     current.textY = 100
 
-    /*
-    if (current) {
-      current.x = Math.round(e.target.x() / blockSnapSize) * blockSnapSize
-      current.y = Math.round(e.target.y() / blockSnapSize) * blockSnapSize
-      current.textX = 10
-      current.textY = 10
-    }
-*/
     guideLineLayer.current?.find('.guide-line').forEach((l) => l.destroy())
     calculateMidpoint()
     setAction(ACTIONS.SELECT)
@@ -597,7 +542,6 @@ function DiagramPage() {
   /* when the stage is clicked */
   const handleOffsetClick = () => {
     setSelectedItemID("")
-    setShowTextHelpers(false)
   }
 
   /* grid for snapping */
@@ -803,8 +747,8 @@ function DiagramPage() {
   }
 
   return (
-    <div ref={containerRef} className="grid grid-flow-col grid-rows-3 gap-4">
-      <div className="col-span-2">
+    <div ref={containerRef} className="grid grid-flow-col grid-rows-2 gap-4">
+      <div className="bg-gray-50">
         <div className="flex justify-center items-center gap-4 px-3 w-fit mx-auto border shadow-lg rounded-lg">
           <TooltipProvider>
             <Tooltip>
@@ -931,6 +875,8 @@ function DiagramPage() {
       </div>
 
       <div className="col-span-2 row-span-2">
+
+
         <ContextMenu>
           <ContextMenuTrigger>
             <Stage ref={stageRef} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} className="border-blue-50" width={stageWidth} height={stageHeight}>
@@ -939,12 +885,6 @@ function DiagramPage() {
               </Layer>
               <Layer ref={gridLayer}>
               </Layer>
-              {showTextHelpers && (
-
-                <Layer ref={textLayer}>
-                </Layer>
-
-              )}
 
               <Layer>
                 <Rect onClick={handleOffsetClick} x={0} y={0} height={stageHeight} width={stageWidth} stroke="black" strokeWidth={4} id="bg" />
@@ -955,7 +895,6 @@ function DiagramPage() {
                       <Group key={id} ref={groupRef}>
                         <Text
                           onDragEnd={handleText}
-                          onClick={() => { setShowTextHelpers(true) }}
                           id={id}
                           ref={textRef}
                           fontSize={16}
@@ -965,7 +904,8 @@ function DiagramPage() {
                           x={x + textX}
                           y={y + textY}
                         />
-                        <Rect id={id} key={id} draggable
+                        <Rect ref={itemRef}
+                          id={id} key={id} draggable
                           onDragStart={() => setSelectedItemID(id)}
                           onDragMove={handleDragMove}
                           onDragEnd={handleDragEnd}
@@ -1033,7 +973,7 @@ function DiagramPage() {
       </div>
 
       {/* sidebar */}
-      <div className="row-span-3">
+      <div className="row-span-1">
         <h4 onClick={() => setOpenItemsList(!openItemsList)} className="mb-4 flex text-m align-middle items-center font-medium leading-none">Items
           {openItemsList && (
             <span className="ml-2"><ChevronUpIcon size={16} /></span>

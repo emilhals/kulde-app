@@ -63,7 +63,7 @@ function SimulatorPage() {
   }, [temperature, cooling])
 
   return (
-    <div className="">
+    <div className="grid row-span-2 ">
       <div className="">
         <div className="flex justify-center items-center gap-3 py-2 px-3 w-fit mx-auto border shadow-lg rounded-lg">
           <TooltipProvider>
@@ -84,6 +84,15 @@ function SimulatorPage() {
             </Tooltip>
           </TooltipProvider>
         </div>
+
+        <Stage className="border-blue-50" width={screenWidth} height={screenHeight}>
+          <Layer>
+            <Part type="Compressor" x={screenWidth / 2} y={(3 * screenHeight) / 4}></Part>
+            <Part type="Condensor" x={(3 * screenWidth) / 2} y={screenHeight / 4}></Part>
+            <Part type="TEV" x={screenWidth / 2} y={screenHeight / 4}></Part>
+            <Part type="Evaporator" x={screenWidth / 4} y={screenHeight / 2}></Part>
+          </Layer>
+        </Stage>
       </div>
 
       <div className="absolute top-5 right-5">
@@ -98,14 +107,6 @@ function SimulatorPage() {
         <p>Superheat: {SH}</p>
       </div>
 
-      <Stage className="border-blue-50" width={screenWidth} height={screenHeight}>
-        <Layer>
-          <Part type="Compressor" x={screenWidth / 2} y={(3 * screenHeight) / 4}></Part>
-          <Part type="Condensor" x={(3 * screenWidth) / 2} y={screenHeight / 4}></Part>
-          <Part type="TEV" x={screenWidth / 2} y={screenHeight / 4}></Part>
-          <Part type="Evaporator" x={screenWidth / 4} y={screenHeight / 2}></Part>
-        </Layer>
-      </Stage>
     </div>
   )
 }
