@@ -56,6 +56,9 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
+import { text } from "node:stream/consumers"
+
+import { Item } from "@/components/diagram/Item"
 
 const COMPONENTS = [
   {
@@ -84,10 +87,11 @@ function DiagramPage() {
   const textLayer = useRef<Konva.Layer>()
   const guideLineLayer = useRef<Konva.Layer>()
 
-  const [size, setSize] = useState({ width: 1200, height: 900 })
+  const [size, setSize] = useState({ width: 900, height: 900 })
   const [connectorFrom, setConnectorFrom] = useState<any>()
   const [connectorTo, setConnectorTo] = useState<any>()
   const [selectedItemID, setSelectedItemID] = useState<string>("")
+  const [canDrag, setCanDrag] = useState<boolean>(true)
 
   const [action, setAction] = useState<string>(ACTIONS.SELECT)
   const [showTempLine, setShowTempLine] = useState<boolean>(false)
@@ -154,16 +158,18 @@ function DiagramPage() {
 
   // sets connector points for the line
   useEffect(() => {
-    let item = getItem()
-    if (!item) return
+    if (action === ACTIONS.CONNECTOR) {
+      let item = getItem()
+      if (!item) return
 
-    if (!connectorFrom)
-      setConnectorFrom(item)
+      if (!connectorFrom)
+        setConnectorFrom(item)
 
-    if (connectorFrom && canSetTo.current)
-      setConnectorTo(item)
+      if (connectorFrom && canSetTo.current)
+        setConnectorTo(item)
 
-    generateConnectors()
+      generateConnectors()
+    }
   }, [selectedItemID, connectorFrom, connectorTo])
 
 
@@ -186,15 +192,8 @@ function DiagramPage() {
    *
    * */
 
-  const calculateConnectorPoints = () => {
-    const item = getItem()
-    if (!item) return
-
-    const line = store.lines.find((line) => line.fromObject.id === item.id || line.toObject.id === item.id)
-    if (!line) return
-
-    // find nearest corner from mid-point
-    const CORNERS = {
+  const getCorners = () => {
+    return {
       topLeft: {
         x: 0,
         y: 0
@@ -212,13 +211,28 @@ function DiagramPage() {
         y: stageHeight
       }
     }
+  }
+
+  const calculateConnectorPoints = () => {
+    const item = getItem()
+    if (!item) return
+
+    const line = store.lines.find((line) => line.fromObject.id === item.id || line.toObject.id === item.id)
+    if (!line) return
+
+    // find nearest corner from mid-point
 
     let closestCorner
     let distance
+
+    const CORNERS = getCorners()
+    /*
     Object.entries(CORNERS).forEach((corner) => {
-      d = Math.sqrt((line.mid.x - corner.x) ** 2 + (line.mid.y - corner.y) ** 2)
-      console.log(corner)
-    })
+      let crnr = corner
+      console.log(crnr)
+ 
+      //distance = Math.sqrt((line.mid.x - corner.x) ** 2 + (line.mid.y - corner.y) ** 2)
+    })*/
 
     /**
      *
@@ -252,7 +266,7 @@ function DiagramPage() {
     }
 
     if (line.fromObject.x < line.toObject.x) {
-      console.log(line.fromObject.label + " er til venstre for " + line.toObject.label)
+      // console.log(line.fromObject.label + " er til venstre for " + line.toObject.label)
 
       /* under */
       if (line.fromObject.y > line.toObject.y) {
@@ -260,28 +274,21 @@ function DiagramPage() {
         line.toPointsOffset = { x: 45, y: 90 }
         line.fromPointsOffset = { x: 90, y: 45 }
         line.mid = { x: 930 + 45, y: 645 }
-        console.log("from: " + line.fromObject.label + " | to: " + line.toObject.label)
+        //console.log("from: " + line.fromObject.label + " | to: " + line.toObject.label)
 
 
-        console.log(line.fromObject.label + " er under " + line.toObject.label)
+        // console.log(line.fromObject.label + " er under " + line.toObject.label)
       } else {
-        console.log(line.fromObject.label + " er over " + line.toObject.label)
+        //  console.log(line.fromObject.label + " er over " + line.toObject.label)
 
         line.mid = { x: line.fromObject.x, y: line.toObject.y }
         line.fromPointsOffset = { x: 45, y: 90 }
         line.toPointsOffset = { x: 90, y: 45 }
-        console.log("from: " + line.fromObject.label + " | to: " + line.toObject.label)
+        //        console.log("from: " + line.fromObject.label + " | to: " + line.toObject.label)
 
       }
 
     }
-    /* is to the left */
-    /*
-       if (x.fromObject.x < x.toObject.x) {
-           console.log(x.fromObject.label + " er til venstre for " + x.toObject.label)
-         }
-       }
-       */
   }
 
   interface LineObject {
@@ -298,6 +305,7 @@ function DiagramPage() {
     const id = uuidv4()
     lineID.current = id
 
+    setCanDrag(false)
     let line: LineObject = {
       id: id,
       from: from,
@@ -305,6 +313,7 @@ function DiagramPage() {
       to: to,
       complete: false
     }
+
     setTempLine(line)
   }
 
@@ -345,6 +354,7 @@ function DiagramPage() {
         setConnectorTo("")
         setConnectorFrom("")
         canSetTo.current = false
+        setCanDrag(true)
         setAction(ACTIONS.SELECT)
       } else {
         return
@@ -364,20 +374,9 @@ function DiagramPage() {
 
   const calculateMidpoint = () => {
     const item = getItem()
-
     if (!item) return
-    /*
-        const line = store.lines.find((line) => line.from.id === item.id || line.to.id === item.id)
-    
-        const midPoint = {
-          x: (line?.from.x),
-          y: (line?.to.y)
-        }
-    
-        if (line?.complete) {
-          line.mid = midPoint
-        }
-    */
+
+    //console.log(item.lines)
   }
 
   const addItem = (type: string, label: string) => {
@@ -386,8 +385,8 @@ function DiagramPage() {
       id: id,
       x: blockSnapSize * 1,
       y: blockSnapSize * 10,
-      textX: 0,
-      textY: 0,
+      textXOffset: 0,
+      textYOffset: 0,
       width: blockSnapSize * 3,
       height: blockSnapSize * 3,
       type: type,
@@ -399,17 +398,38 @@ function DiagramPage() {
     setAction(ACTIONS.SELECT)
   }
 
-  const handleText = (e: any) => {
+  /*
+   * TODO: SJEKK DENNE, MEST SANNYSNLIG HELT UNØDVENDIG?!
+   *
+   * */
+  useEffect(() => {
     if (textRef.current) {
-      const parent = store.items.find((item) => item.id === textRef.current.id())
+      if (textRef.current.x === 0) {
 
-      if (!parent) return
-
-      parent.textX = Math.round(e.target.x() / blockSnapSize) * blockSnapSize
-      parent.textY = Math.round(e.target.y() / blockSnapSize) * blockSnapSize
-
-      console.log("eywa")
+      }
     }
+  }, [textRef.current])
+
+
+  const handleTextMove = (e: any) => {
+    const item = getItem()
+    if (!item) return
+    console.log("hei")
+
+    item.textXOffset = Math.round(e.target.x() + item.width)
+    item.textYOffset = Math.round(e.target.y() + item.height)
+  }
+
+  const handleText = (e: any) => {
+    const item = getItem()
+    if (!item) return
+
+    item.textXOffset = Math.round(e.target.x() + item.width)
+    item.textYOffset = Math.round(e.target.y() + item.height)
+
+    console.log("x: " + item.textXOffset + "y: " + item.textYOffset)
+
+    //console.log("eywa")
   }
 
   const onPointerUp = (e: any) => {
@@ -422,7 +442,6 @@ function DiagramPage() {
   const onPointerDown = (e: any) => {
     switch (action) {
       case ACTIONS.SELECT:
-        setSelectedItemID(e.target.id())
         break
       case ACTIONS.CONNECTOR:
         if (e.target.id() === lineID) return
@@ -432,7 +451,7 @@ function DiagramPage() {
 
   }
 
-  const onPointerMove = (e: any) => {
+  const onPointerMove = () => {
     switch (action) {
       case ACTIONS.SELECT:
         break
@@ -449,6 +468,7 @@ function DiagramPage() {
   const onClick = (e: any) => {
     if (action !== ACTIONS.SELECT) return
 
+    setSelectedItemID(e.target.id())
     calculateConnectorPoints()
   }
 
@@ -487,21 +507,19 @@ function DiagramPage() {
       }
       e.target.absolutePosition(absPos)
     })
-
-
     calculateConnectorPoints()
     updateLine()
   }
 
   const handleDragEnd = (e: any) => {
     let current = getItem()
-
     if (!current) return
+
+    let text = stageRef.current?.find('.text-' + selectedItemID).pop()
+    if (!text) return
 
     current.x = e.target.x()
     current.y = e.target.y()
-    current.textX = 0
-    current.textY = 100
 
     guideLineLayer.current?.find('.guide-line').forEach((l) => l.destroy())
     calculateMidpoint()
@@ -644,7 +662,6 @@ function DiagramPage() {
       itemBounds.vertical.forEach((itemBound) => {
         let diff = Math.abs(lineGuide - itemBound.guide)
 
-        console.log("x")
         // if the distance between guide line and object snap is sloce we can consider to for snapping
         if (diff < GUIDELINE_OFFSET) {
           resultVertical.push({
@@ -875,12 +892,9 @@ function DiagramPage() {
       </div>
 
       <div className="col-span-2 row-span-2">
-
-
         <ContextMenu>
           <ContextMenuTrigger>
             <Stage ref={stageRef} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} className="border-blue-50" width={stageWidth} height={stageHeight}>
-
               <Layer ref={guideLineLayer}>
               </Layer>
               <Layer ref={gridLayer}>
@@ -889,34 +903,31 @@ function DiagramPage() {
               <Layer>
                 <Rect onClick={handleOffsetClick} x={0} y={0} height={stageHeight} width={stageWidth} stroke="black" strokeWidth={4} id="bg" />
                 <Text fontSize={15} text={selectedItemID} x={10} y={10}></Text>
+
                 {snap.items
-                  .map(({ id, x, y, textX, textY, label, height, width }) => {
+                  .map((item, index) => {
                     return (
-                      <Group key={id} ref={groupRef}>
+                      <>
+                        <Item key={index} item={item} />
+                      </>
+                    )
+                    {/* 
                         <Text
                           onDragEnd={handleText}
-                          id={id}
-                          ref={textRef}
+                          onDragMove={handleTextMove}
+                          draggable
+                          ref={selectedItemID === id ? textRef : null}
                           fontSize={16}
                           fontStyle="400"
                           fontFamily={fontLoaded ? "Open Sans" : "Arial"}
                           text={label}
-                          x={x + textX}
-                          y={y + textY}
+                          name={'text-' + id}
+                          x={x + textXOffset}
+                          y={y + textYOffset}
                         />
-                        <Rect ref={itemRef}
-                          id={id} key={id} draggable
-                          onDragStart={() => setSelectedItemID(id)}
-                          onDragMove={handleDragMove}
-                          onDragEnd={handleDragEnd}
-                          onContextMenu={() => { setSelectedItemID(id) }} x={x} y={y} stroke="black" strokeWidth={2}
-                          fill={selectedItemID === id ? "gray" : "white"} height={height} width={width}
-                          onClick={onClick}
-                          name="object"
-                        />
-                      </Group>
-                    )
-                  })}
+                        */}
+                  }
+                  )}
 
                 {tempLine && (
                   <Line
@@ -954,18 +965,15 @@ function DiagramPage() {
           </ContextMenuTrigger>
           {selectedItemID && selectedItemID !== "bg" ? (
             <ContextMenuContent className="w-64">
-              <ContextMenuItem>
+              <ContextMenuItem inset disabled>
                 <Label>{getItem()?.label}</Label>
               </ContextMenuItem>
+              <Separator />
               <ContextMenuItem inset>
-                <Label>{getItem()?.id}</Label>
+                <Label>Lock</Label>
               </ContextMenuItem>
               <ContextMenuItem inset>
-                <Label>x : {getItem()?.x} | y: {getItem()?.y}</Label>
-              </ContextMenuItem>
-              <ContextMenuItem inset>
-                <button className="bg-white font-bold hover:border-0" onClick={() => { deleteItem() }}>Delete</button>
-                <ContextMenuShortcut>⌘[d]</ContextMenuShortcut>
+                <button className="font-bold hover:border-0" onClick={() => { deleteItem() }}>Delete</button>
               </ContextMenuItem>
             </ContextMenuContent>
           ) : null}
