@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react'
 import WebFont from 'webfontloader'
 
 export const useCustomFont = (fonts: string) => {
