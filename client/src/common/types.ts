@@ -1,16 +1,16 @@
-export type Point = {
+export type PointType = {
   x: number;
   y: number;
 };
 
-export type Line = {
+export type LineType = {
   id: string;
   fromObject: ItemType;
-  mid: Point;
+  mid: PointType;
   toObject: ItemType;
   complete: Boolean;
-  fromPointsOffset: Point;
-  toPointsOffset: Point;
+  fromPointsOffset: PointType;
+  toPointsOffset: PointType;
 };
 
 export type ItemType = {
@@ -24,6 +24,6 @@ export type ItemType = {
   textXOffset: number;
   textYOffset: number;
   img: string;
-  lines: Line[];
+  lines: LineType[];
 }
 
