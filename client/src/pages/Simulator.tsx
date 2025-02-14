@@ -7,7 +7,7 @@ import { SquarePowerIcon } from 'lucide-react'
 
 import Part from '../components/simulator/Part'
 
-import { ACTIONS } from "../constants"
+import { ACTIONS } from "@/common/constants"
 function SimulatorPage() {
   /* general */
   const [refrigerant, setRefrigerant] = useState<string>("R404A")

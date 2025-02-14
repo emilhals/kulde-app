@@ -15,7 +15,7 @@ import {
 
 import Model from '@/components/canvas/Model';
 
-import { COMPONENTS } from '@/constants';
+import { COMPONENTS } from '@/common/constants';
 
 const ComponentsPage = () => {
 

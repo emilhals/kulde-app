@@ -5,12 +5,12 @@ import { v4 as uuidv4 } from "uuid"
 
 import { useSnapshot } from "valtio"
 
-import WebFont from "webfontloader"
-
 import { Check, ChevronsUpDown, Spline, SquareDashedMousePointer, Type, Plus, Download, ChevronDownIcon, ChevronUpIcon } from "lucide-react"
 
-import { ACTIONS } from "../constants"
-import { store } from "../store"
+import { ACTIONS } from "@/common/constants"
+import { store } from "@/store"
+
+
 import {
   Tooltip,
   TooltipContent,
@@ -56,7 +56,6 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-import { text } from "node:stream/consumers"
 
 import { Item } from "@/components/diagram/Item"
 
@@ -82,9 +81,7 @@ function DiagramPage() {
   const stageRef = useRef<Konva.Stage>(null)
   const groupRef = useRef<Konva.Group>(null)
   const textRef = useRef<Konva.Text>(null)
-  const itemRef = useRef<Konva.Rect>(null)
 
-  const textLayer = useRef<Konva.Layer>()
   const guideLineLayer = useRef<Konva.Layer>()
 
   const [size, setSize] = useState({ width: 900, height: 900 })
@@ -102,7 +99,6 @@ function DiagramPage() {
   const [value, setValue] = React.useState("")
   const [itemLabel, setItemLabel] = useState('')
   const containerRef = useRef<HTMLDivElement>()
-  const [fontLoaded, setFontLoaded] = useState(false)
 
   const [openItemsList, setOpenItemsList] = useState(false)
 
@@ -130,20 +126,6 @@ function DiagramPage() {
     window.addEventListener('resize', checkSize)
     return () => window.removeEventListener('resize', checkSize)
   }, [])
-
-  /* fetch fonts */
-  useEffect(() => {
-    WebFont.load({
-      google: {
-        families: ["Roboto", "Open Sans:400,600,700"]
-      },
-      fontactive: () => {
-        setTimeout(() => {
-          setFontLoaded(true)
-        }, 1000)
-      }
-    })
-  })
 
   let stageWidth = size.width % 2 !== 0 ? size.width - 1 : size.width
   let stageHeight = size.height % 2 !== 0 ? size.height - 1 : size.height
@@ -372,13 +354,6 @@ function DiagramPage() {
    *
    * */
 
-  const calculateMidpoint = () => {
-    const item = getItem()
-    if (!item) return
-
-    //console.log(item.lines)
-  }
-
   const addItem = (type: string, label: string) => {
     const id = uuidv4()
     store.items.push({
@@ -398,27 +373,6 @@ function DiagramPage() {
     setAction(ACTIONS.SELECT)
   }
 
-  /*
-   * TODO: SJEKK DENNE, MEST SANNYSNLIG HELT UNØDVENDIG?!
-   *
-   * */
-  useEffect(() => {
-    if (textRef.current) {
-      if (textRef.current.x === 0) {
-
-      }
-    }
-  }, [textRef.current])
-
-
-  const handleTextMove = (e: any) => {
-    const item = getItem()
-    if (!item) return
-    console.log("hei")
-
-    item.textXOffset = Math.round(e.target.x() + item.width)
-    item.textYOffset = Math.round(e.target.y() + item.height)
-  }
 
   const handleText = (e: any) => {
     const item = getItem()
@@ -444,7 +398,6 @@ function DiagramPage() {
       case ACTIONS.SELECT:
         break
       case ACTIONS.CONNECTOR:
-        if (e.target.id() === lineID) return
         setSelectedItemID(e.target.id())
         break
     }
@@ -460,7 +413,6 @@ function DiagramPage() {
           handleTempLineMove()
           updateLine()
         }
-        calculateMidpoint()
         break
     }
   }
@@ -555,11 +507,6 @@ function DiagramPage() {
   }
 
   const exportCanvas = () => {
-  }
-
-  /* when the stage is clicked */
-  const handleOffsetClick = () => {
-    setSelectedItemID("")
   }
 
   /* grid for snapping */
@@ -901,7 +848,7 @@ function DiagramPage() {
               </Layer>
 
               <Layer>
-                <Rect onClick={handleOffsetClick} x={0} y={0} height={stageHeight} width={stageWidth} stroke="black" strokeWidth={4} id="bg" />
+                <Rect x={0} y={0} height={stageHeight} width={stageWidth} stroke="black" strokeWidth={4} id="bg" />
                 <Text fontSize={15} text={selectedItemID} x={10} y={10}></Text>
 
                 {snap.items
@@ -911,21 +858,6 @@ function DiagramPage() {
                         <Item key={index} item={item} />
                       </>
                     )
-                    {/* 
-                        <Text
-                          onDragEnd={handleText}
-                          onDragMove={handleTextMove}
-                          draggable
-                          ref={selectedItemID === id ? textRef : null}
-                          fontSize={16}
-                          fontStyle="400"
-                          fontFamily={fontLoaded ? "Open Sans" : "Arial"}
-                          text={label}
-                          name={'text-' + id}
-                          x={x + textXOffset}
-                          y={y + textYOffset}
-                        />
-                        */}
                   }
                   )}
 
