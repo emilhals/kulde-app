@@ -46,8 +46,9 @@ export const Item = ({ item }: { item: ItemType }) => {
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
     if (!itemState) return
 
-    itemState.x = e.target.x()
-    itemState.y = e.target.y()
+    /* snap to dot-grid */
+    itemState.x = Math.round(e.target.x() / 16) * 16
+    itemState.y = Math.round(e.target.y() / 16) * 16
   }
 
   return (
