@@ -7,17 +7,9 @@ import { useSnapshot } from "valtio"
 
 import { Check, ChevronsUpDown, Spline, SquareDashedMousePointer, Type, Plus, Download, ChevronDownIcon, ChevronUpIcon } from "lucide-react"
 
-import { ACTIONS } from "@/common/constants"
 import { store } from "@/store"
 
-
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
-
+import { ACTIONS } from '@/common/constants'
 import {
   ContextMenu,
   ContextMenuContent,
@@ -27,60 +19,20 @@ import {
 } from "@/components/ui/context-menu"
 
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-} from "@/components/ui/navigation-menu"
-import { Link } from "react-router";
 
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
 
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 
 import { Item } from "@/components/diagram/Item"
+import { Actionbar } from '@/components/diagram/Actionbar'
 
-const COMPONENTS = [
-  {
-    value: "compressor",
-    label: "Compressor",
-    img: "compressor.png"
-  },
-  {
-    value: "condensator",
-    label: "Condensator",
-    img: "condevap.png"
-  },
-  {
-    value: "evaporator",
-    label: "Evaporator",
-    img: "condevap.png"
-  },
-]
 function DiagramPage() {
   /* konva related */
   const stageRef = useRef<Konva.Stage>(null)
-  const groupRef = useRef<Konva.Group>(null)
-  const textRef = useRef<Konva.Text>(null)
 
   const guideLineLayer = useRef<Konva.Layer>()
 
@@ -90,14 +42,11 @@ function DiagramPage() {
   const [selectedItemID, setSelectedItemID] = useState<string>("")
   const [canDrag, setCanDrag] = useState<boolean>(true)
 
-  const [action, setAction] = useState<string>(ACTIONS.SELECT)
   const [showTempLine, setShowTempLine] = useState<boolean>(false)
 
 
+  const [action, setAction] = useState<string>(ACTIONS.SELECT)
   /* ui related */
-  const [open, setOpen] = React.useState(false)
-  const [value, setValue] = React.useState("")
-  const [itemLabel, setItemLabel] = useState('')
   const containerRef = useRef<HTMLDivElement>()
 
   const [openItemsList, setOpenItemsList] = useState(false)
@@ -132,11 +81,6 @@ function DiagramPage() {
 
   const canSetTo = useRef<boolean>(false)
   const lineID = useRef<string>()
-
-  /*
-   * TODO: SJEKK, MÅ JEG BRUKE USEEFFECT HER?
-   *
-   * */
 
   // sets connector points for the line
   useEffect(() => {
@@ -354,37 +298,6 @@ function DiagramPage() {
    *
    * */
 
-  const addItem = (type: string, label: string) => {
-    const id = uuidv4()
-    store.items.push({
-      id: id,
-      x: blockSnapSize * 1,
-      y: blockSnapSize * 10,
-      textXOffset: 0,
-      textYOffset: 0,
-      width: blockSnapSize * 3,
-      height: blockSnapSize * 3,
-      type: type,
-      label: label,
-      img: type + ".png",
-      lines: []
-    })
-    setSelectedItemID("")
-    setAction(ACTIONS.SELECT)
-  }
-
-
-  const handleText = (e: any) => {
-    const item = getItem()
-    if (!item) return
-
-    item.textXOffset = Math.round(e.target.x() + item.width)
-    item.textYOffset = Math.round(e.target.y() + item.height)
-
-    console.log("x: " + item.textXOffset + "y: " + item.textYOffset)
-
-    //console.log("eywa")
-  }
 
   const onPointerUp = (e: any) => {
     switch (action) {
@@ -415,13 +328,6 @@ function DiagramPage() {
         }
         break
     }
-  }
-
-  const onClick = (e: any) => {
-    if (action !== ACTIONS.SELECT) return
-
-    setSelectedItemID(e.target.id())
-    calculateConnectorPoints()
   }
 
   const handleDragMove = (e: any) => {
@@ -478,16 +384,6 @@ function DiagramPage() {
     setAction(ACTIONS.SELECT)
   }
 
-  const getItem = () => {
-    if (!selectedItemID || selectedItemID === "bg") return undefined
-
-    const item = store.items.find((item) => item.id === selectedItemID)
-    if (!item) {
-      console.log("Couldn't get item")
-      return undefined
-    }
-    return item
-  }
 
   const deleteItem = () => {
     const index = store.items.findIndex((item) => item.id === selectedItemID)
@@ -504,9 +400,6 @@ function DiagramPage() {
       if (line) store.lines.splice(line, 1)
     }
     setSelectedItemID("")
-  }
-
-  const exportCanvas = () => {
   }
 
   /* grid for snapping */
@@ -710,147 +603,23 @@ function DiagramPage() {
     )
   }
 
-  return (
-    <div ref={containerRef} className="grid grid-flow-col grid-rows-2 gap-4">
-      <div className="bg-gray-50">
-        <div className="flex justify-center items-center gap-4 px-3 w-fit mx-auto border shadow-lg rounded-lg">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger>
-                <button onClick={() => setAction(ACTIONS.SELECT)} className={action === ACTIONS.SELECT ? "bg-violet-300 p-1 rounded" : "p-1 hover:bg-violet-100 rounded"}>
-                  <SquareDashedMousePointer className="size-5"></SquareDashedMousePointer>
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Select</p>
-              </TooltipContent>
-            </Tooltip>
-            <NavigationMenu>
-              <NavigationMenuList>
-                <NavigationMenuItem className={action === ACTIONS.ADD ? "bg-white p-1 rounded" : "p-1 hover:bg-white rounded"}>
-                  <NavigationMenuTrigger className={action === ACTIONS.ADD ? "bg-white p-1 rounded" : "p-1 hover:bg-white rounded"} onPointerMove={(e) => e.preventDefault()} onPointerLeave={(e) => e.preventDefault()}>
-                    <Tooltip>
-                      <TooltipTrigger onClick={() => { setAction(ACTIONS.ADD) }} className={action === ACTIONS.ADD ? "bg-violet-300 p-1 rounded" : "p-1 hover:bg-violet-100 rounded"}>
-                        <Plus className="justify-center size-5"></Plus>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Add item</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </NavigationMenuTrigger>
-                  <NavigationMenuContent onPointerEnter={(e) => e.preventDefault()} onPointerMove={(e) => e.preventDefault()} onPointerLeave={(e) => e.preventDefault()}>
-                    <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
-                      <li className="row-span-3">
-                        <NavigationMenuLink asChild>
-                          <a
-                            className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md"
-                            href="/"
-                          >
-                            <img className="" src="compressor.png" />
-                          </a>
-                        </NavigationMenuLink>
-                      </li>
-                      <Link to="#" title="Label">
-                        <Input type="text" id="item-label" value={itemLabel} onChange={e => setItemLabel((e.target.value))} placeholder="Label" />
-                      </Link>
-                      <Popover open={open} onOpenChange={setOpen}>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            aria-expanded={open}
-                            className="w-[200px] justify-between"
-                          >
-                            {value
-                              ? COMPONENTS.find((component) => component.value === value)?.label
-                              : "Select component..."}
-                            <ChevronsUpDown className="opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[200px] p-0">
-                          <Command>
-                            <CommandInput placeholder="Search component..." className="h-9" />
-                            <CommandList>
-                              <CommandEmpty>No component found.</CommandEmpty>
-                              <CommandGroup>
-                                {COMPONENTS.map((component) => (
-                                  <CommandItem
-                                    key={component.value}
-                                    value={component.value}
-                                    onSelect={(currentValue) => {
-                                      setValue(currentValue === value ? "" : currentValue)
-                                      setOpen(false)
-                                    }}
-                                  >
-                                    {component.label}
-                                    <Check
-                                      className={cn(
-                                        "ml-auto",
-                                        value === component.value ? "opacity-100" : "opacity-0"
-                                      )}
-                                    />
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
-                      <Button onClick={() => { addItem(value, itemLabel) }} variant="outline">
-                        Add component
-                      </Button>
-                    </ul>
-                  </NavigationMenuContent>
-                </NavigationMenuItem>
-              </NavigationMenuList>
-            </NavigationMenu>
-            <Tooltip>
-              <TooltipTrigger>
-                <button onClick={() => setAction(ACTIONS.SCRIBBLE)} className={action === ACTIONS.SCRIBBLE ? "bg-violet-300 p-1 rounded" : "p-1 hover:bg-violet-100 rounded"}>
-                  <Type className="size-5"></Type>
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Add text</p>
-              </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger>
-                <button onClick={() => setAction(ACTIONS.CONNECTOR)} className={action === ACTIONS.CONNECTOR ? "bg-violet-300 p-1 rounded" : "p-1 hover:bg-violet-100 rounded"} >
-                  <Spline className="size-5"></Spline>
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Connect items</p>
-              </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger>
-                <button onClick={exportCanvas} className="p-1 rounded hover:bg-violet-100" >
-                  <Download className="size-5"></Download>
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Download</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-      </div>
+  const bgRef = useRef(null)
 
-      <div className="col-span-2 row-span-2">
+  return (
+    <div ref={containerRef} className="flex">
+      <div className="flex-1">
+        <Actionbar />
+
         <ContextMenu>
           <ContextMenuTrigger>
-            <Stage ref={stageRef} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} className="border-blue-50" width={stageWidth} height={stageHeight}>
+            <Stage style={{ width: '100%', position: 'absolute', backgroundImage: 'radial-gradient(#e5e7eb 1px, transparent 1px)', backgroundSize: '16px 16px' }} ref={stageRef} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} width={stageWidth} height={stageHeight}>
+
               <Layer ref={guideLineLayer}>
               </Layer>
               <Layer ref={gridLayer}>
               </Layer>
 
               <Layer>
-                <Rect x={0} y={0} height={stageHeight} width={stageWidth} stroke="black" strokeWidth={4} id="bg" />
-                <Text fontSize={15} text={selectedItemID} x={10} y={10}></Text>
-
                 {snap.items
                   .map((item, index) => {
                     return (
@@ -910,96 +679,6 @@ function DiagramPage() {
             </ContextMenuContent>
           ) : null}
         </ContextMenu>
-      </div>
-
-      {/* sidebar */}
-      <div className="row-span-1">
-        <h4 onClick={() => setOpenItemsList(!openItemsList)} className="mb-4 flex text-m align-middle items-center font-medium leading-none">Items
-          {openItemsList && (
-            <span className="ml-2"><ChevronUpIcon size={16} /></span>
-          )}
-          {!openItemsList && (
-            <span className="ml-2"><ChevronDownIcon size={16} /></span>
-          )}
-        </h4>
-        <Separator />
-        {openItemsList && (
-          <ScrollArea className="basis-128 h-72 w-48 rounded-md border">
-            <div className="p-4">
-              <ul className="basis-128">
-                <li>
-                  {snap.items
-                    .map(({ id, label, x, y, lines }) => {
-                      return (
-                        <ul className="p-1 border">
-                          <li>id: {id}</li>
-                          <li>label: {label}</li>
-                          <li>x: {x} | y: {y}</li>
-                          {lines.map((line, index) => {
-                            <p key={index}>{line.id}</p>
-                          })}
-                        </ul>
-                      )
-                    })}
-                </li>
-              </ul>
-            </div>
-          </ScrollArea>
-
-        )}
-        <div className="basis-128">
-          <p>Lines:</p>
-          <ul className="basis-128">
-            {snap.lines
-              .map(({ id, fromObject, toObject, mid }) => {
-                return (
-                  <li key={id} className="p-1 border">
-                    <p>id: {id}</p>
-                    {Array.isArray(fromObject) ? (
-                      fromObject.map((obj, index) => (
-                        <p key={index}>from: {obj.id ?? JSON.stringify(obj)}</p>
-                      ))
-                    ) : (
-                      <ul>
-                        <li>
-                          from: {fromObject.label}
-                        </li>
-                        <li>
-                          from x: {fromObject.x}
-                        </li>
-                        <li>
-                          from y: {fromObject.y}
-                        </li>
-
-                        <Separator />
-                        <ul className="bg-gray-100">
-                          <li>
-                            to: {toObject.label}
-                          </li>
-                          <li>
-                            to x: {toObject.x}
-                          </li>
-                          <li>
-                            to y: {toObject.y}
-                          </li>
-                        </ul>
-                        <Separator />
-
-                        <ul className="bg-gray-200">
-                          <li>
-                            mid x: {mid.x}
-                          </li>
-                          <li>
-                            mid y: {mid.y}
-                          </li>
-                        </ul>
-                      </ul>
-                    )}
-                  </li>
-                )
-              })}
-          </ul>
-        </div>
       </div>
     </div>
   )
