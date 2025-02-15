@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { Group, Rect } from 'react-konva'
 import Konva from 'konva'
@@ -9,27 +9,26 @@ import { Text } from '@/components/diagram/Text'
 
 import { store } from '@/store'
 
+import { useDeleteFromStore } from '@/hooks/useDeleteFromStore'
+
 export const Item = ({ item }: { item: ItemType }) => {
-  const groupRef = useRef<typeof Group>(null)
-  const itemRef = useRef<HTMLDivElement>(null)
+  const groupRef = useRef<Konva.Group>(null)
+  const itemRef = useRef<Konva.Rect>(null)
 
   const [itemState, setItemState] = useState<ItemType>()
 
   /*
-   * component mounted 
+   * item loaded
    */
   useEffect(() => {
     /* get current item from valtio store on mount*/
     if (!itemRef.current) return
 
-    const item = store.items.find((item) => item.id === itemRef.current.id())
+    const item = store.items.find((item) => item.id === itemRef.current?.id())
     if (!item) return
     setItemState(item)
 
   }, [itemRef])
-
-  const handleClick = (e: any) => {
-  }
 
   const handleOnPointerDown = (e: Konva.KonvaEventObject<PointerEvent>) => {
     const item = store.items.find((item) => item.id === e.target.id())
@@ -40,7 +39,13 @@ export const Item = ({ item }: { item: ItemType }) => {
   const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
     if (!itemState) return
 
-    console.log(itemState.label)
+    itemState.x = e.target.x()
+    itemState.y = e.target.y()
+  }
+
+  const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
+    if (!itemState) return
+
     itemState.x = e.target.x()
     itemState.y = e.target.y()
   }
@@ -53,11 +58,12 @@ export const Item = ({ item }: { item: ItemType }) => {
           id={item.id}
           key={item.id}
           fill="black"
-          x={50}
-          y={50}
+          x={item.x}
+          y={item.y}
           draggable
-          onClick={handleClick}
+          onDblClick={() => { useDeleteFromStore(item.id) }}
           onDragMove={handleDragMove}
+          onDragEnd={handleDragEnd}
           height={item.height}
           width={item.width}
           name="object"
