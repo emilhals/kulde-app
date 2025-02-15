@@ -12,7 +12,7 @@ export const useCustomFont = (fonts: string) => {
       fontactive: () => {
         setTimeout(() => {
           setFontLoaded(true)
-        }, 10)
+        }, 1000)
       }
     })
   })
