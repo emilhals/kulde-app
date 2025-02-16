@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 
 import {
   Command,
@@ -78,10 +78,9 @@ export const Actionbar = () => {
   const [value, setValue] = useState("")
   const [itemLabel, setItemLabel] = useState('')
 
-  useEffect(() => {
-    item.label = itemLabel
-    item.type = value
-  }, [itemLabel, value])
+  /* from navigation menu. used for item creation */
+  item.label = itemLabel
+  item.type = value
 
   return (
     <div className="flex justify-center items-center gap-4 px-3 w-fit mx-auto border shadow-lg rounded-lg">
