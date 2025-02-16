@@ -13,6 +13,16 @@ export type LineType = {
   toPointsOffset: PointType;
 };
 
+export type SelectionType = {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  width: number;
+  height: number;
+  show: boolean;
+}
+
 export type ItemType = {
   id: string;
   type: string;

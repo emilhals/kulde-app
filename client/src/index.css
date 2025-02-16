@@ -4,6 +4,10 @@
 @tailwind components;
 @tailwind utilities;
 
+#bg {
+  background-color: red;
+}
+
 .inter-<uniquifier> {
   font-family: "Inter", serif;
   font-optical-sizing: auto;

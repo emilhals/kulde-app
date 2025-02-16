@@ -56,8 +56,11 @@ export const Text = ({ parent }: { parent: ItemType }) => {
 
 
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
+    let OFFSET = (parent.width / 2) - (textObject?.textWidth / 2)
+    console.log(parent.x)
+
     setPosition({
-      x: Math.round(e.target.x() / 16) * 16 - parent.x,
+      x: Math.round(e.target.x() / 16) * 16 - (parent.x - OFFSET),
       y: Math.round(e.target.y() / 16) * 16 - parent.y
     })
 
@@ -73,7 +76,7 @@ export const Text = ({ parent }: { parent: ItemType }) => {
         x={shadowPosition.x}
         y={shadowPosition.y}
         height={textObject?.textHeight}
-        width={textObject?.textWidth}
+        width={parent.width}
         name="shadow"
       />
       <KonvaText

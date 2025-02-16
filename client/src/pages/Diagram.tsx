@@ -9,8 +9,12 @@ import { store } from "@/store"
 
 import { ACTIONS } from '@/common/constants'
 
+import { SelectionType } from "@/common/types"
+
 import { Item } from "@/components/diagram/Item"
 import { Actionbar } from '@/components/diagram/Actionbar'
+import { Selection } from "@/components/diagram/Selection"
+import { KonvaEventObject } from "konva/lib/Node"
 
 function DiagramPage() {
   /* konva related */
@@ -82,35 +86,6 @@ function DiagramPage() {
     calculateConnectorPoints()
   }
 
-  /*
-   *
-   *
-   * TODO: FIND NEAREST CORNER
-   *
-   *
-   * */
-
-  const getCorners = () => {
-    return {
-      topLeft: {
-        x: 0,
-        y: 0
-      },
-      topRight: {
-        x: stageWidth,
-        y: 0
-      },
-      bottomLeft: {
-        x: 0,
-        y: stageHeight
-      },
-      bottomRight: {
-        x: stageWidth,
-        y: stageHeight
-      }
-    }
-  }
-
   const calculateConnectorPoints = () => {
     const item = getItem()
     if (!item) return
@@ -123,7 +98,6 @@ function DiagramPage() {
     let closestCorner
     let distance
 
-    const CORNERS = getCorners()
     /*
     Object.entries(CORNERS).forEach((corner) => {
       let crnr = corner
@@ -270,12 +244,57 @@ function DiagramPage() {
    *
    * */
 
+  const [selecting, setSelecting] = useState<boolean>(false)
+  const [selection, setSelection] = useState<SelectionType>({
+    x1: 0,
+    y1: 0,
+    x2: 0,
+    y2: 0,
+    width: 1,
+    height: 1,
+    show: false
+  })
+
+  const handlePointerDown = (e: KonvaEventObject<PointerEvent>) => {
+    if (e.target !== stageRef.current) return
+
+    console.log("started selecting")
+
+    e.evt.preventDefault()
+    setSelection({
+      x1: e.target.x(),
+      y1: e.target.y(),
+      x2: e.target.x(),
+      y2: e.target.y(),
+      width: 1,
+      height: 1,
+      show: true
+    })
+    setSelecting(true)
+  }
+
+  const handlePointerMove = (e: KonvaEventObject<PointerEvent>) => {
+    if (!selecting) return
+
+    console.log("move")
+
+    console.log(selection)
+
+    e.evt.preventDefault()
+    setSelection({
+      ...selection,
+      x2: e.target.x(),
+      y2: e.target.y()
+    })
+  }
 
   return (
     <div ref={containerRef} className="grid">
       <div className="grow">
         <Actionbar />
         <Stage
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
           style={{ width: '100%', border: '1px solid black', position: 'absolute', backgroundImage: 'radial-gradient(#e5e7eb 1px, transparent 1px)', backgroundSize: '16px 16px' }} ref={stageRef} width={stageWidth} height={stageHeight}>
           <Layer>
             {snap.items
@@ -286,6 +305,7 @@ function DiagramPage() {
               }
               )}
 
+            <Selection selection={selection} />
             {tempLine && (
               <Line
                 key={tempLine.id}

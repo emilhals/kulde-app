@@ -37,6 +37,7 @@ import { ACTIONS } from '@/common/constants'
 import { ItemType } from '@/common/types'
 
 import { useAddToStore } from '@/hooks/useAddToStore'
+import { useAction } from '@/hooks/useAction'
 
 const COMPONENTS = [
   {
@@ -56,23 +57,26 @@ const COMPONENTS = [
   },
 ]
 
+/* placeholder for item creation */
+let item: ItemType = {
+  id: '', /* set in useAddToStore */
+  img: '',
+  textXOffset: 0,
+  textYOffset: 0,
+  height: 112,
+  width: 112,
+  x: 64,
+  y: 64,
+  lines: [],
+  label: '',
+  type: ''
+}
+
 export const Actionbar = () => {
   const [action, setAction] = useState<string>(ACTIONS.SELECT)
   const [open, setOpen] = useState(false)
   const [value, setValue] = useState("")
   const [itemLabel, setItemLabel] = useState('')
-
-  let item: ItemType = {
-    textXOffset: 0,
-    textYOffset: 0,
-    height: 90,
-    width: 90,
-    x: 50,
-    y: 50,
-    lines: [],
-    label: '',
-    type: ''
-  }
 
   useEffect(() => {
     item.label = itemLabel
