@@ -1,26 +1,12 @@
-import React, { useEffect, useState } from 'react'
-
-import WebFont from "webfontloader"
+import React from 'react'
 
 import { Rect, Text } from 'react-konva'
+import { useCustomFont } from '@/hooks/useCustomFont'
 
 
 const Part: React.FC<{ type: string, x: number, y: number }> = (props) => {
-  const [fontLoaded, setFontLoaded] = useState<Boolean>(false)
-  
-  useEffect(() => {
-    WebFont.load({
-      google: {
-        families: ["Roboto", "Open Sans:400,600,700"]
-      },
-      fontactive: () => {
-        setTimeout(() => {
-          setFontLoaded(true)
-        }, 1000)
-      }
-    })
-  })
-  
+  const fontLoaded = useCustomFont('Open Sans')
+
   return (
     <>
       <Text fontFamily={fontLoaded ? "Open Sans" : "Arial"} fontSize={30} x={props.x - 350} y={props.y - 85} text={props.type} align="center" wrap="char" width={700} />
