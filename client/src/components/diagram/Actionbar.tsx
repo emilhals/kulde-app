@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useContext } from 'react'
 
 import {
   Command,
@@ -35,9 +35,9 @@ import { Check, ChevronsUpDown, Spline, SquareDashedMousePointer, Type, Plus, Do
 
 import { ACTIONS } from '@/common/constants'
 import { ItemType } from '@/common/types'
+import { ActionContext } from '@/common/ActionContext'
 
 import { useAddToStore } from '@/hooks/useAddToStore'
-import { useAction } from '@/hooks/useAction'
 
 const COMPONENTS = [
   {
@@ -73,11 +73,12 @@ let item: ItemType = {
 }
 
 export const Actionbar = () => {
-  const [action, setAction] = useState<string>(ACTIONS.SELECT)
   const [open, setOpen] = useState(false)
   const [value, setValue] = useState("")
   const [itemLabel, setItemLabel] = useState('')
 
+
+  const actionContext = useContext(ActionContext)
   /* from navigation menu. used for item creation */
   item.label = itemLabel
   item.type = value
@@ -87,7 +88,7 @@ export const Actionbar = () => {
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger>
-            <button onClick={() => setAction(ACTIONS.SELECT)} className={action === ACTIONS.SELECT ? "bg-violet-300 p-1 rounded" : "p-1 hover:bg-violet-100 rounded"}>
+            <button onClick={() => { actionContext?.updateAction(ACTIONS.SELECT) }} className={actionContext?.action === 'SELECT' ? "bg-violet-300 p-1 rounded" : "p-1 hover:bg-violet-100 rounded"}>
               <SquareDashedMousePointer className="size-5"></SquareDashedMousePointer>
             </button>
           </TooltipTrigger>
@@ -97,10 +98,10 @@ export const Actionbar = () => {
         </Tooltip>
         <NavigationMenu>
           <NavigationMenuList>
-            <NavigationMenuItem className={action === ACTIONS.ADD ? "bg-white p-1 rounded" : "p-1 hover:bg-white rounded"}>
-              <NavigationMenuTrigger className={action === ACTIONS.ADD ? "bg-white p-1 rounded" : "p-1 hover:bg-white rounded"} onPointerMove={(e) => e.preventDefault()} onPointerLeave={(e) => e.preventDefault()}>
+            <NavigationMenuItem className={actionContext?.action === ACTIONS.ADD ? "bg-white p-1 rounded" : "p-1 hover:bg-white rounded"}>
+              <NavigationMenuTrigger className={actionContext?.action === ACTIONS.ADD ? "bg-white p-1 rounded" : "p-1 hover:bg-white rounded"} onPointerMove={(e) => e.preventDefault()} onPointerLeave={(e) => e.preventDefault()}>
                 <Tooltip>
-                  <TooltipTrigger onClick={() => { setAction(ACTIONS.ADD) }} className={action === ACTIONS.ADD ? "bg-violet-300 p-1 rounded" : "p-1 hover:bg-violet-100 rounded"}>
+                  <TooltipTrigger onClick={() => { actionContext?.updateAction(ACTIONS.ADD) }} className={actionContext?.action === ACTIONS.ADD ? "bg-violet-300 p-1 rounded" : "p-1 hover:bg-violet-100 rounded"}>
                     <Plus className="justify-center size-5"></Plus>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -174,7 +175,7 @@ export const Actionbar = () => {
         </NavigationMenu>
         <Tooltip>
           <TooltipTrigger>
-            <button onClick={() => setAction(ACTIONS.SCRIBBLE)} className={action === ACTIONS.SCRIBBLE ? "bg-violet-300 p-1 rounded" : "p-1 hover:bg-violet-100 rounded"}>
+            <button onClick={() => actionContext.updateAction(ACTIONS.SCRIBBLE)} className={actionContext.action === ACTIONS.SCRIBBLE ? "bg-violet-300 p-1 rounded" : "p-1 hover:bg-violet-100 rounded"}>
               <Type className="size-5"></Type>
             </button>
           </TooltipTrigger>
@@ -184,7 +185,7 @@ export const Actionbar = () => {
         </Tooltip>
         <Tooltip>
           <TooltipTrigger>
-            <button onClick={() => setAction(ACTIONS.CONNECTOR)} className={action === ACTIONS.CONNECTOR ? "bg-violet-300 p-1 rounded" : "p-1 hover:bg-violet-100 rounded"} >
+            <button onClick={() => actionContext.updateAction(ACTIONS.CONNECTOR)} className={actionContext.action === ACTIONS.CONNECTOR ? "bg-violet-300 p-1 rounded" : "p-1 hover:bg-violet-100 rounded"} >
               <Spline className="size-5"></Spline>
             </button>
           </TooltipTrigger>

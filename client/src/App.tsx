@@ -7,6 +7,8 @@ import DiagramPage from './pages/Diagram'
 import ComponentsPage from './pages/Components'
 import ErrorPage from './pages/Error'
 
+import { ActionContextProvider } from './common/ActionContext'
+
 const router = createBrowserRouter(([
   {
     path: '/',
@@ -22,7 +24,11 @@ const router = createBrowserRouter(([
 ]));
 
 function App() {
-  return <RouterProvider router={router} />
+  return (
+    <ActionContextProvider>
+      <RouterProvider router={router} />
+    </ActionContextProvider>
+  )
 }
 
 export default App
