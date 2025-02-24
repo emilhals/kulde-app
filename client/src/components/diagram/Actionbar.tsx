@@ -43,17 +43,30 @@ const COMPONENTS = [
   {
     value: "compressor",
     label: "Compressor",
-    img: "compressor.png"
+    img: "compressor.png",
+    width: 112,
+    height: 112,
   },
   {
     value: "condensator",
     label: "Condensator",
-    img: "condevap.png"
+    img: "condensor.png",
+    width: 112,
+    height: 112,
   },
   {
     value: "evaporator",
     label: "Evaporator",
-    img: "condevap.png"
+    img: "evaporator.png",
+    width: 112,
+    height: 112,
+  },
+  {
+    value: "pressureswitch",
+    label: "Pressure Switch",
+    img: "condevap.png",
+    width: 64,
+    height: 64,
   },
 ]
 
@@ -63,8 +76,8 @@ let item: ItemType = {
   img: '',
   textXOffset: 0,
   textYOffset: 0,
-  height: 112,
-  width: 112,
+  height: 0,
+  width: 0,
   x: 64,
   y: 64,
   lines: [],
@@ -77,11 +90,14 @@ export const Actionbar = () => {
   const [value, setValue] = useState("")
   const [itemLabel, setItemLabel] = useState('')
 
+  const [component, setComponent] = useState('')
 
   const actionContext = useContext(ActionContext)
   /* from navigation menu. used for item creation */
   item.label = itemLabel
-  item.type = value
+  item.type = component.type
+  item.width = component.width
+  item.height = component.height
 
   return (
     <div className="flex justify-center items-center gap-4 px-3 w-fit mx-auto border shadow-lg rounded-lg">
@@ -117,7 +133,7 @@ export const Actionbar = () => {
                         className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md"
                         href="/"
                       >
-                        <img className="" src="compressor.png" />
+                        <img className="" src={component ? component.img : 'compressor.img'} />
                       </a>
                     </NavigationMenuLink>
                   </li>
@@ -148,6 +164,7 @@ export const Actionbar = () => {
                                 value={component.value}
                                 onSelect={(currentValue) => {
                                   setValue(currentValue === value ? "" : currentValue)
+                                  setComponent(component)
                                   setOpen(false)
                                 }}
                               >
