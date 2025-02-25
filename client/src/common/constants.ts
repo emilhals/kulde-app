@@ -1,9 +1,7 @@
-
 export const ACTIONS = {
   SELECT: "SELECT",
-  SCRIBBLE: "SCRIBBLE",
+  WRITE: "WRITE",
   ADD: "ADD",
-  MOVE: "MOVE",
   CONNECTOR: "CONNECTOR",
   DOWNLOAD: "DOWNLOAD"
 }
