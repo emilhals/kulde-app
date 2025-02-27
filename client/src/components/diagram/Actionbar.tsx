@@ -1,4 +1,4 @@
-import { useState, useContext } from 'react'
+import { useState, useContext, useEffect } from 'react'
 
 import {
   Command,
@@ -30,11 +30,12 @@ import {
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 
-import { Check, ChevronsUpDown, Spline, SquareDashedMousePointer, Type, Plus, Download } from 'lucide-react'
 
+import { Check, ChevronsUpDown, Spline, SquareDashedMousePointer, Type, Plus, Download, Bold, Italic, Underline } from 'lucide-react'
 import { ACTIONS } from '@/common/constants'
-import { ItemType } from '@/common/types'
+import { ItemType, TextType } from '@/common/types'
 import { ActionContext } from '@/common/ActionContext'
 
 import { useAddToStore } from '@/hooks/useAddToStore'
@@ -85,10 +86,24 @@ let item: ItemType = {
   type: ''
 }
 
+/* placeholders for text creation */
+let text: TextType = {
+  id: '', /* set in useAddToStore */
+  text: '',
+  size: 16,
+  bold: false,
+  italic: false,
+  underline: false
+}
+
 export const Actionbar = () => {
   const [open, setOpen] = useState(false)
   const [value, setValue] = useState("")
+
   const [itemLabel, setItemLabel] = useState('')
+
+  const [textPlaceholder, setTextPlaceholder] = useState('')
+  const [textAttributes, setTextAttributes] = useState({ isBold: false, isItalic: false, isUnderlined: false })
 
   const [component, setComponent] = useState('')
 
@@ -98,6 +113,20 @@ export const Actionbar = () => {
   item.type = component.type
   item.width = component.width
   item.height = component.height
+
+  text.bold = textAttributes.isBold
+  text.italic = textAttributes.isItalic
+  text.underline = textAttributes.isUnderlined
+  text.text = textPlaceholder
+  text.x = 50
+  text.y = 50
+  text.independent = true
+
+  useEffect(() => {
+    console.log(textAttributes.isBold)
+  }, [textAttributes.isBold])
+
+  text.text = textPlaceholder
 
   return (
     <div className="flex justify-center items-center gap-4 px-3 w-fit mx-auto border shadow-lg rounded-lg">
@@ -190,16 +219,54 @@ export const Actionbar = () => {
             </NavigationMenuItem>
           </NavigationMenuList>
         </NavigationMenu>
-        <Tooltip>
-          <TooltipTrigger>
-            <button onClick={() => actionContext.updateAction(ACTIONS.SCRIBBLE)} className={actionContext.action === ACTIONS.SCRIBBLE ? "bg-violet-300 p-1 rounded" : "p-1 hover:bg-violet-100 rounded"}>
-              <Type className="size-5"></Type>
-            </button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Add text</p>
-          </TooltipContent>
-        </Tooltip>
+
+        <NavigationMenu>
+          <NavigationMenuList>
+            <NavigationMenuItem className={actionContext?.action === ACTIONS.WRITE ? "bg-white p-1 rounded" : "p-1 hover:bg-white rounded"}>
+              <NavigationMenuTrigger className={actionContext?.action === ACTIONS.WRITE ? "bg-white p-1 rounded" : "p-1 hover:bg-white rounded"} onPointerMove={(e) => e.preventDefault()} onPointerLeave={(e) => e.preventDefault()}>
+                <Tooltip>
+                  <TooltipTrigger onClick={() => { actionContext?.updateAction(ACTIONS.WRITE) }} className={actionContext?.action === ACTIONS.WRITE ? "bg-violet-300 p-1 rounded" : "p-1 hover:bg-violet-100 rounded"}>
+                    <Type className="justify-center size-5"></Type>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Add text</p>
+                  </TooltipContent>
+                </Tooltip>
+              </NavigationMenuTrigger>
+              <NavigationMenuContent onPointerEnter={(e) => e.preventDefault()} onPointerMove={(e) => e.preventDefault()} onPointerLeave={(e) => e.preventDefault()}>
+                <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
+                  <li className="row-span-3">
+                    <NavigationMenuLink asChild>
+                      <a
+                        className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md"
+                        href="/"
+                      >
+                        <h3 className={`mt-2 ${textAttributes.isUnderlined ? 'underline' : textAttributes.isBold ? 'font-bold' : textAttributes.isItalic ? 'italic' : ''}`}>{textPlaceholder}</h3>
+                      </a>
+                    </NavigationMenuLink>
+                  </li>
+                  <Input type="text" value={textPlaceholder} onChange={(e) => setTextPlaceholder(e.target.value)} placeholder="Text" />
+                  <ToggleGroup type="multiple">
+                    <ToggleGroupItem onClick={() => setTextAttributes({ ...textAttributes, isBold: !textAttributes.isBold })} value="bold" aria-label="Toggle bold">
+                      <Bold className="h-4 w-4" />
+                    </ToggleGroupItem>
+                    <ToggleGroupItem onClick={() => setTextAttributes({ ...textAttributes, isItalic: !textAttributes.isItalic })} value="italic" aria-label="Toggle italic">
+                      <Italic className="h-4 w-4" />
+                    </ToggleGroupItem>
+                    <ToggleGroupItem onClick={() => setTextAttributes({ ...textAttributes, isUnderlined: !textAttributes.isUnderlined })} aria-label="Toggle strikethrough">
+                      <Underline className="h-4 w-4" />
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                  <Button onClick={() => { useAddToStore('text', text) }} variant="outline">
+                    Add text
+                  </Button>
+                </ul>
+              </NavigationMenuContent>
+            </NavigationMenuItem>
+          </NavigationMenuList>
+        </NavigationMenu>
+
+
         <Tooltip>
           <TooltipTrigger>
             <button onClick={() => actionContext.updateAction(ACTIONS.CONNECTOR)} className={actionContext.action === ACTIONS.CONNECTOR ? "bg-violet-300 p-1 rounded" : "p-1 hover:bg-violet-100 rounded"} >

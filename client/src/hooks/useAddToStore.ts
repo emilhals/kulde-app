@@ -1,9 +1,9 @@
 import { v4 as uuidv4 } from 'uuid'
 
-import { ItemType } from '@/common/types'
+import { ItemType, TextType } from '@/common/types'
 import { store } from '@/store'
 
-export const useAddToStore = (model: string, data: ItemType) => {
+export const useAddToStore = (model: string, data: ItemType | TextType) => {
   const id = uuidv4()
 
   if (!data) {
@@ -17,6 +17,17 @@ export const useAddToStore = (model: string, data: ItemType) => {
           ...data,
           id: id
         })
+      } catch (error) {
+        console.error(error)
+      }
+      break
+    case 'text':
+      try {
+        store.texts.push({
+          ...data,
+          id: id
+        })
+        console.log('hei')
       } catch (error) {
         console.error(error)
       }

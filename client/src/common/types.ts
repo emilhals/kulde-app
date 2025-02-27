@@ -1,3 +1,7 @@
+import { ACTIONS } from "./constants";
+
+export type ActionType = keyof typeof ACTIONS
+
 export type PointType = {
   x: number;
   y: number;
@@ -5,12 +9,9 @@ export type PointType = {
 
 export type LineType = {
   id: string;
-  fromObject: ItemType;
+  from: ItemType;
   mid: PointType;
-  toObject: ItemType;
-  complete: Boolean;
-  fromPointsOffset: PointType;
-  toPointsOffset: PointType;
+  to: ItemType;
 };
 
 export type SelectionType = {
@@ -21,6 +22,7 @@ export type SelectionType = {
   width: number;
   height: number;
   show: boolean;
+  moving: boolean;
 }
 
 export type ItemType = {
@@ -37,3 +39,14 @@ export type ItemType = {
   lines: LineType[];
 }
 
+export type TextType = {
+  id: string;
+  x: number;
+  y: number;
+  text: string;
+  size: number;
+  bold: boolean;
+  italic: boolean;
+  underline: boolean;
+  independent: boolean;
+}

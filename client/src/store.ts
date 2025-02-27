@@ -1,8 +1,9 @@
 import { proxy } from "valtio"
 
-import { ItemType, Line } from "./common/types"
+import { ItemType, LineType, TextType } from "./common/types"
 
-export const store = proxy<{ items: ItemType[], lines: Line[] }>({
+export const store = proxy<{ items: ItemType[], lines: LineType[], texts: TextType[] }>({
   items: [],
-  lines: []
+  lines: [],
+  texts: []
 })

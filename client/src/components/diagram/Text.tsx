@@ -3,11 +3,11 @@ import { useEffect, useRef, useState } from 'react'
 import Konva from 'konva'
 import { Transformer, Rect, Text as KonvaText } from 'react-konva'
 
-import { ItemType, PointType } from '@/common/types'
+import { ItemType, PointType, TextType } from '@/common/types'
 import { useCustomFont } from '@/hooks/useCustomFont'
 
-export const Text = ({ parent }: { parent: ItemType }) => {
-  const [fontLoaded] = useCustomFont('Open Sans:300,500')
+export const Text = ({ parent }: { parent: ItemType | TextType }) => {
+  const [fontLoaded] = useCustomFont('Open Sans:300,500,800')
   const textRef = useRef<Konva.Text>(null)
   const shadowRef = useRef<Konva.Rect>(null)
   const trRef = useRef<Konva.Transformer>(null)
@@ -25,6 +25,8 @@ export const Text = ({ parent }: { parent: ItemType }) => {
   })
 
   useEffect(() => {
+    console.log("bold?", parent.isBold)
+
     if (textRef.current)
       shadowRef.current?.hide()
   }, [textRef])
@@ -35,6 +37,7 @@ export const Text = ({ parent }: { parent: ItemType }) => {
   useEffect(() => {
     /* center text */
     if (!textObject) return
+    if (parent.independent) return
 
     setPosition({
       x: (parent.width / 2) - (textObject.textWidth / 2),
@@ -56,8 +59,13 @@ export const Text = ({ parent }: { parent: ItemType }) => {
 
 
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
-    let OFFSET = (parent.width / 2) - (textObject?.textWidth / 2)
-    console.log(parent.x)
+    let OFFSET
+    if (parent.independent) {
+      OFFSET = 0
+    } else {
+
+      OFFSET = (parent.width / 2) - (textObject?.textWidth / 2)
+    }
 
     setPosition({
       x: Math.round(e.target.x() / 16) * 16 - (parent.x - OFFSET),
@@ -76,7 +84,7 @@ export const Text = ({ parent }: { parent: ItemType }) => {
         x={shadowPosition.x}
         y={shadowPosition.y}
         height={textObject?.textHeight}
-        width={parent.width}
+        width={parent.width ? parent.width : textObject?.textWidth}
         name="shadow"
       />
       <KonvaText
@@ -86,9 +94,10 @@ export const Text = ({ parent }: { parent: ItemType }) => {
         onDragEnd={handleDragEnd}
         onDblClick={handleDoubleClick}
         fontSize={16}
-        fontStyle="600"
-        fontFamily={fontLoaded ? 'Open Sans' : ''}
-        text={parent.label}
+        textDecoration={parent.underline ? 'underline' : ''}
+        fontStyle={parent.bold ? 'bold' : parent.italic ? 'italic' : ''}
+        fontFamily={'Open Sans'}
+        text={parent.label ? parent.label : parent.text}
         x={parent.x + position.x}
         y={parent.y + position.y}
         name="text"

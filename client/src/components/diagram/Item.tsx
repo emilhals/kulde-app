@@ -3,15 +3,6 @@ import { useEffect, useRef, useState } from 'react'
 import { Group, Rect } from 'react-konva'
 import Konva from 'konva'
 
-import {
-  ContextMenu,
-  ContextMenuTrigger,
-  ContextMenuContent,
-  ContextMenuItem,
-} from "@/components/ui/context-menu"
-
-import { Html } from 'react-konva-utils'
-
 import { ItemType, PointType } from '@/common/types'
 import { Text } from '@/components/diagram/Text'
 
