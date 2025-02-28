@@ -1,4 +1,4 @@
-import { Stage, Layer, Rect } from "react-konva"
+import { Stage, Layer, Rect, Transformer } from "react-konva"
 import Konva from "konva"
 import { useEffect, useRef, useState, useContext } from 'react'
 
@@ -10,7 +10,7 @@ import { v4 } from "uuid"
 import { store } from "@/store"
 
 import { ACTIONS } from '@/common/constants'
-import { ItemType, LineType, SelectionType } from "@/common/types"
+import { ItemType, LineType } from "@/common/types"
 
 import { Text } from '@/components/diagram/Text'
 import { Item } from "@/components/diagram/Item"
@@ -30,6 +30,7 @@ const DiagramPage = () => {
   const [size, setSize] = useState({ width: window.innerWidth, height: 900 })
 
   const selectRef = useRef<Konva.Rect>(null)
+  const transformerRef = useRef<Konva.Transformer>(null)
 
   /* ui related */
   const containerRef = useRef<HTMLDivElement>(null)
@@ -62,18 +63,6 @@ const DiagramPage = () => {
   let stageWidth = size.width % 2 !== 0 ? size.width - 1 : size.width
   let stageHeight = size.height % 2 !== 0 ? size.height - 1 : size.height
 
-  const [selecting, setSelecting] = useState<boolean>(false)
-  const selection = useRef<SelectionType>({
-    x1: 0,
-    y1: 0,
-    x2: 0,
-    y2: 0,
-    width: 0,
-    height: 0,
-    show: false,
-    moving: false
-  })
-
   const [connecting, setConnecting] = useState<boolean>(false)
   const [from, setFrom] = useState<ItemType>(null)
   const [mid, setMid] = useState<ItemType>(null)
@@ -89,15 +78,6 @@ const DiagramPage = () => {
     if (!pointer || !actionContext) return
 
     switch (actionContext.action) {
-      case ACTIONS.SELECT:
-        if (e.target !== stageRef.current || actionContext?.action !== ACTIONS.SELECT) return
-        selection.current.x1 = pointer.x
-        selection.current.y1 = pointer.y
-        selection.current.x2 = pointer.x
-        selection.current.y2 = pointer.y
-        selection.current.show = true
-        setSelecting(true)
-        break
       case ACTIONS.CONNECTOR:
         if (e.target === stageRef.current) return
         const clickedNode = snap.items.find((item) => item.id === e.target.id())
@@ -108,10 +88,12 @@ const DiagramPage = () => {
           setTo(pointer)
           setMid(pointer)
 
+          console.log("clicked on ", clickedNode.label)
         } else {
           setTo(clickedNode)
           setMid(clickedNode)
 
+          console.log("clicked on ", clickedNode.label)
           const id = v4()
 
           store.lines.push({
@@ -121,6 +103,7 @@ const DiagramPage = () => {
             to: to,
           })
           setConnecting(false)
+          actionContext.updateAction(ACTIONS.SELECT)
         }
 
         break
@@ -136,26 +119,6 @@ const DiagramPage = () => {
 
     if (!pointer) return
     switch (actionContext?.action) {
-      case ACTIONS.SELECT:
-        if (!selecting) return
-
-
-        selection.current.x2 = pointer.x
-        selection.current.y2 = pointer.y
-        selection.current.moving = true
-
-
-        const node = selectRef.current
-        if (!node) return
-
-        node.setAttrs({
-          visible: true,
-          x: Math.min(selection.current.x1, selection.current.x2),
-          y: Math.min(selection.current.y1, selection.current.y2),
-          width: Math.abs(selection.current.x1 - selection.current.x2),
-          height: Math.abs(selection.current.y1 - selection.current.y2),
-        })
-        break
       case ACTIONS.CONNECTOR:
         if (!connecting) return
         setMid(pointer)
@@ -165,27 +128,36 @@ const DiagramPage = () => {
 
   }
 
-  const handleMouseUp = () => {
+
+  const handleClick = (e: KonvaEventObject<MouseEvent>) => {
     switch (actionContext?.action) {
       case ACTIONS.SELECT:
-        setSelecting(false)
-
-        const node = selectRef.current
-        if (!node) return
-        node.setAttrs({ visible: false })
+        if (e.target === stageRef.current) {
+          transformerRef.current?.nodes([])
+          return
+        }
         break
     }
   }
+
   return (
-    <div ref={containerRef} className="grid">
+    <div ref={containerRef} className="flex flex-col">
       <div className="grow">
         <Actionbar />
         <Stage
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          style={{ width: '100%', border: '1px solid black', position: 'absolute', backgroundImage: 'radial-gradient(#e5e7eb 1px, transparent 1px)', backgroundSize: '16px 16px' }}
+          onClick={handleClick}
+          style={{
+            width: '100%', border: '1px solid black',
+            backgroundImage: 'radial-gradient(#e5e7eb 1px, transparent 1px)', backgroundSize: '16px 16px'
+          }}
           ref={stageRef} width={stageWidth} height={stageHeight}>
+
+          <Layer>
+
+            <Selection stageRef={stageRef} transformerRef={transformerRef} />
+          </Layer>
 
           <Layer>
             {snap.items
@@ -197,7 +169,9 @@ const DiagramPage = () => {
               )}
 
 
-            <Line from={from} mid={mid} to={to} />
+            {connecting && (
+              <Line from={from} mid={mid} to={to} />
+            )}
             {snap.lines
               .map((line, index) => {
                 return (
@@ -213,18 +187,42 @@ const DiagramPage = () => {
                 )
               })}
 
-
-            <Rect
-              ref={selectRef}
-              listening={false}
-              fill="blue"
-              opacity={0.4}
-              name="select"
-            />
           </Layer>
+          <Transformer ref={transformerRef} />
 
         </Stage>
       </div>
+
+      <div className="h-32 grow-0 bg-gray-50">
+        <h3>Components:</h3>
+        <div className="flex-col">
+          <div className="basis-1/4">
+            {snap.items
+              .map((item, index) => {
+                return (
+                  <ul key={index}>
+                    <li>{item.id} - {item.label}</li>
+                    <li>x: {item.x} | y: {item.y}</li>
+                  </ul>
+                )
+              }
+              )}
+          </div>
+          <div className="basis-1/4">
+            {snap.lines
+              .map((line, index) => {
+                return (
+                  <ul key={index}>
+                    <li>{line.id}</li>
+                    <li>from: {line.from.x} | to: {line.to.x}</li>
+                  </ul>
+                )
+              }
+              )}
+          </div>
+        </div>
+      </div>
+
     </div>
   )
 }
