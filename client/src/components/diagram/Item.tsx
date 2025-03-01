@@ -12,37 +12,24 @@ import { store } from '@/store'
 
 export const Item = ({ item }: { item: ItemType }) => {
   const groupRef = useRef<Konva.Group>(null)
-  const itemRef = useRef<Konva.Rect>(null)
+  const itemRef = useRef<Konva.Image>(null)
   const shadowRef = useRef<Konva.Rect>(null)
 
   const [itemState, setItemState] = useState<ItemType>()
-  const [shadowPosition, setShadowPosition] = useState<PointType>({ x: 0, y: 0 })
+  const [shadowPosition, setShadowPosition] = useState<PointType>({ x: item.x, y: item.y })
 
   const [image] = useImage(item.img)
-
-  console.log(item.img)
-  /*
-   * item loaded
-   */
-  useEffect(() => {
-    /* get current item from valtio store on mount*/
-    if (!itemRef.current) return
-
-    const item = store.items.find((item) => item.id === itemRef.current?.id())
-    if (!item) return
-    setItemState(item)
-
-    shadowRef.current?.hide()
-    setShadowPosition({
-      x: item.x,
-      y: item.y
-    })
-  }, [itemRef])
 
   const handleOnPointerDown = (e: Konva.KonvaEventObject<PointerEvent>) => {
     const item = store.items.find((item) => item.id === e.target.id())
     if (!item) return
     setItemState(item)
+
+    shadowRef.current?.show()
+    setShadowPosition({
+      x: Math.round(e.target.x() / 16) * 16,
+      y: Math.round(e.target.y() / 16) * 16
+    })
   }
 
   const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
@@ -66,6 +53,11 @@ export const Item = ({ item }: { item: ItemType }) => {
     /* snap to dot-grid */
     itemState.x = Math.round(e.target.x() / 16) * 16
     itemState.y = Math.round(e.target.y() / 16) * 16
+
+    setShadowPosition({
+      x: Math.round(e.target.x() / 16) * 16,
+      y: Math.round(e.target.y() / 16) * 16
+    })
   }
 
   return (
@@ -73,6 +65,7 @@ export const Item = ({ item }: { item: ItemType }) => {
       <Rect
         ref={shadowRef}
         fill="blue"
+        visible={false}
         opacity={0.4}
         x={shadowPosition.x}
         y={shadowPosition.y}
@@ -82,10 +75,10 @@ export const Item = ({ item }: { item: ItemType }) => {
         cornerRadius={8}
       />
       <Image
-        image={image}
         ref={itemRef}
         id={item.id}
         key={item.id}
+        image={image}
         x={item.x}
         y={item.y}
         draggable
