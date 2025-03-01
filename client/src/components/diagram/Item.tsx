@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 
-import { Group, Rect } from 'react-konva'
+import useImage from 'use-image'
+
+import { Group, Rect, Image } from 'react-konva'
 import Konva from 'konva'
 
 import { ItemType, PointType } from '@/common/types'
@@ -16,6 +18,9 @@ export const Item = ({ item }: { item: ItemType }) => {
   const [itemState, setItemState] = useState<ItemType>()
   const [shadowPosition, setShadowPosition] = useState<PointType>({ x: 0, y: 0 })
 
+  const [image] = useImage(item.img)
+
+  console.log(item.img)
   /*
    * item loaded
    */
@@ -76,11 +81,11 @@ export const Item = ({ item }: { item: ItemType }) => {
         name="shadow"
         cornerRadius={8}
       />
-      <Rect
+      <Image
+        image={image}
         ref={itemRef}
         id={item.id}
         key={item.id}
-        fill="black"
         x={item.x}
         y={item.y}
         draggable
