@@ -7,11 +7,14 @@ export type PointType = {
   y: number;
 };
 
-export type LineType = {
+export type ConnectionType = {
   id: string;
   from: ItemType;
-  mid: PointType;
   to: ItemType;
+  offsets: {
+    from: PointType;
+    to: PointType;
+  }
 };
 
 export type SelectionType = {
@@ -44,6 +47,7 @@ export type TextType = {
   x: number;
   y: number;
   text: string;
+  color: string;
   size: number;
   bold: boolean;
   italic: boolean;
