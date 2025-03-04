@@ -1,18 +1,20 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 
 import Konva from 'konva'
-import { Transformer, Rect, Text as KonvaText } from 'react-konva'
+import { Rect, Group, Text as KonvaText } from 'react-konva'
+import { Html } from 'react-konva-utils'
 
-import { ItemType, PointType, TextType } from '@/common/types'
-import { useCustomFont } from '@/hooks/useCustomFont'
+import { store } from '@/store'
 
-export const Text = ({ parent }: { parent: ItemType | TextType }) => {
-  const [fontLoaded] = useCustomFont('Open Sans:300,500,800')
+import { PointType, TextType } from '@/common/types'
+
+export const Text = ({ parent }: { parent: TextType }) => {
   const textRef = useRef<Konva.Text>(null)
   const shadowRef = useRef<Konva.Rect>(null)
-  const trRef = useRef<Konva.Transformer>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
-  const textObject = textRef.current
+  const [canEdit, setCanEdit] = useState<boolean>(false)
+  const [editedText, setEditedText] = useState<string>('')
 
   const [position, setPosition] = useState<PointType>({
     x: 0,
@@ -23,30 +25,6 @@ export const Text = ({ parent }: { parent: ItemType | TextType }) => {
     x: 0,
     y: 0
   })
-
-  useEffect(() => {
-    console.log("bold?", parent.isBold)
-
-    if (textRef.current)
-      shadowRef.current?.hide()
-  }, [textRef])
-
-  /*
-  * font loaded
-  */
-  useEffect(() => {
-    /* center text */
-    if (!textObject) return
-    if (parent.independent) return
-
-    setPosition({
-      x: (parent.width / 2) - (textObject.textWidth / 2),
-      y: (parent.height / 2) - (textObject.textHeight / 2) + parent.height * 0.7
-    })
-  }, [fontLoaded])
-
-  const handleDoubleClick = () => {
-  }
 
   const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
     shadowRef.current?.show()
@@ -63,8 +41,7 @@ export const Text = ({ parent }: { parent: ItemType | TextType }) => {
     if (parent.independent) {
       OFFSET = 0
     } else {
-
-      OFFSET = (parent.width / 2) - (textObject?.textWidth / 2)
+      OFFSET = (parent.width / 2) - (textRef.current?.textWidth / 2)
     }
 
     setPosition({
@@ -75,20 +52,45 @@ export const Text = ({ parent }: { parent: ItemType | TextType }) => {
     shadowRef.current?.hide()
   }
 
+  const handleDoubleClick = () => {
+    setCanEdit(!canEdit)
+    textRef.current?.visible(false)
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    let key = e.key
+
+    let textState = store.texts.find((text) => text.id === parent.id)
+    if (!textState) return
+
+    if (key === 'Enter') {
+      setCanEdit(false)
+      textRef.current?.visible(true)
+      textState.text = editedText
+    }
+
+    if (key === 'Escape') {
+      setCanEdit(false)
+      textRef.current?.visible(true)
+    }
+  }
+
   return (
-    <>
+    <Group>
       <Rect
         ref={shadowRef}
         fill="blue"
+        visible={false}
         opacity={0.4}
         x={shadowPosition.x}
         y={shadowPosition.y}
-        height={textObject?.textHeight}
-        width={parent.width ? parent.width : textObject?.textWidth}
+        height={textRef.current?.textHeight}
+        width={textRef.current?.textWidth}
         name="shadow"
       />
       <KonvaText
         ref={textRef}
+        id={parent.id}
         draggable
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
@@ -100,12 +102,32 @@ export const Text = ({ parent }: { parent: ItemType | TextType }) => {
         text={parent.label ? parent.label : parent.text}
         x={parent.x + position.x}
         y={parent.y + position.y}
-        name="text"
+        name="object"
       />
-      <Transformer
-        ref={trRef}
-        enabledAnchors={['middle-left', 'middle-right']}
-      />
-    </>
+
+      {canEdit && (
+        <Html>
+          <input
+            ref={inputRef}
+            defaultValue={parent.text}
+            onChange={(e) => { setEditedText(e.target.value) }}
+            onKeyDown={handleKeyDown}
+            className='absolute border-0'
+            style={{
+              border: 'none',
+              background: 'none',
+              padding: '0px',
+              margin: '0px',
+              outline: 'none',
+              resize: 'none',
+              transform: 'translateY(-5px)',
+              top: `${textRef.current?.y()}px`,
+              left: `${textRef.current?.x()}px`,
+              color: 'color'
+            }}
+          />
+        </Html>
+      )}
+    </Group>
   )
 }
