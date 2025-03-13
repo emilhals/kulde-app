@@ -1,10 +1,21 @@
-import { useState, useRef } from 'react'
-import { Rect } from 'react-konva'
+import { useState, useRef, useContext } from 'react'
+import { Rect, Layer } from 'react-konva'
 import Konva from 'konva'
 
+import { ActionContext } from '@/common/Providers'
+
 import { SelectionType } from '@/common/types'
+import { ACTIONS } from '@/common/constants'
 
 export const Selection = ({ stageRef, transformerRef }: { stageRef: React.RefObject<Konva.Stage>, transformerRef: React.RefObject<Konva.Transformer> }) => {
+
+  /*
+   * TODO: sjekk om dette er beste løsning
+   *
+  /* don't do anything from this component if action is not set to select */
+  const actionContext = useContext(ActionContext)
+  if (actionContext?.action !== ACTIONS.SELECT) return
+
   const selectRef = useRef<Konva.Rect>(null)
 
   const [selecting, setSelecting] = useState<boolean>(false)
@@ -20,16 +31,14 @@ export const Selection = ({ stageRef, transformerRef }: { stageRef: React.RefObj
   })
 
   const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    if (e.target !== stageRef.current) return
-    console.log("hello")
-
     const pointer = stageRef.current?.getPointerPosition()
     if (!pointer) return
+
     selection.current.x1 = pointer.x
     selection.current.y1 = pointer.y
     selection.current.x2 = pointer.x
     selection.current.y2 = pointer.y
-    selection.current.show = true
+
     setSelecting(true)
   }
 
@@ -58,28 +67,40 @@ export const Selection = ({ stageRef, transformerRef }: { stageRef: React.RefObj
     })
   }
 
-
   const handleMouseUp = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    e.evt.preventDefault()
     setSelecting(false)
+    e.evt.preventDefault()
 
-    const node = selectRef.current
-    if (!node) return
-    node.setAttrs({ visible: false })
+    selectRef.current?.setAttrs({ visible: false })
 
     let shapes = stageRef.current?.find('.object')
-    let box = node.getClientRect()
+    let box = selectRef.current?.getClientRect()
     let selected = shapes?.filter((shape) =>
       Konva.Util.haveIntersection(box, shape.getClientRect())
     )
+
     if (!selected) return
     transformerRef.current?.nodes(selected)
   }
+
+  const handleClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    if (selectRef.current?.visible()) return
+
+
+    if (e.target === stageRef.current) {
+      transformerRef.current?.nodes([])
+      return
+    }
+
+    if (!e.target.hasName('.object')) return
+  }
+
   return (
-    <>
+    <Layer>
       <Rect
         ref={selectRef}
         listening={false}
+        visible={false}
         fill="blue"
         opacity={0.4}
         name="select"
@@ -91,7 +112,8 @@ export const Selection = ({ stageRef, transformerRef }: { stageRef: React.RefObj
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
+        onClick={handleClick}
       />
-    </>
+    </Layer>
   )
 }

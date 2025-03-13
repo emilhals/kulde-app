@@ -1,40 +1,35 @@
-import { Stage, Layer, Rect, Transformer } from "react-konva"
+import { Stage, Layer, Transformer } from "react-konva"
 import Konva from "konva"
 import { useEffect, useRef, useState, useContext } from 'react'
 
 import { useSnapshot } from "valtio"
 
-/* temp */
-import { v4 } from "uuid"
-
 import { store } from "@/store"
 
 import { ACTIONS } from '@/common/constants'
-import { ItemType, LineType } from "@/common/types"
 
 import { Text } from '@/components/diagram/Text'
-import { Item } from "@/components/diagram/Item"
-import { Line } from "@/components/diagram/Line"
+import { Item } from '@/components/diagram/Item'
+import { Connector } from '@/components/diagram/Connector'
 import { Actionbar } from '@/components/diagram/Actionbar'
 import { Selection } from "@/components/diagram/Selection"
-import { KonvaEventObject } from "konva/lib/Node"
 
 import { useCustomFont } from "@/hooks/useCustomFont"
 
-import { ActionContext } from '@/common/ActionContext'
+import { ActionContext } from '@/common/Providers'
 
 const DiagramPage = () => {
-
   /* konva related */
   const stageRef = useRef<Konva.Stage>(null)
   const [size, setSize] = useState({ width: window.innerWidth, height: 900 })
 
-  const selectRef = useRef<Konva.Rect>(null)
   const transformerRef = useRef<Konva.Transformer>(null)
 
   /* ui related */
   const containerRef = useRef<HTMLDivElement>(null)
   const [fontLoaded] = useCustomFont('Open Sans:300,500')
+  const itemLayer = useRef<Konva.Layer>(null)
+
 
   /* valtio */
   const snap = useSnapshot(store)
@@ -63,103 +58,23 @@ const DiagramPage = () => {
   let stageWidth = size.width % 2 !== 0 ? size.width - 1 : size.width
   let stageHeight = size.height % 2 !== 0 ? size.height - 1 : size.height
 
-  const [connecting, setConnecting] = useState<boolean>(false)
-  const [from, setFrom] = useState<ItemType>(null)
-  const [mid, setMid] = useState<ItemType>(null)
-  const [to, setTo] = useState<ItemType>(null)
-
-  const handleMouseDown = (e: KonvaEventObject<MouseEvent>) => {
-    e.evt.preventDefault()
-
-    const stage = e.target.getStage()
-    const pointer = stage?.getPointerPosition()
-
-
-    if (!pointer || !actionContext) return
-
-    switch (actionContext.action) {
-      case ACTIONS.CONNECTOR:
-        if (e.target === stageRef.current) return
-        const clickedNode = snap.items.find((item) => item.id === e.target.id())
-
-        if (!from) {
-          setConnecting(true)
-          setFrom(clickedNode)
-          setTo(pointer)
-          setMid(pointer)
-
-          console.log("clicked on ", clickedNode.label)
-        } else {
-          setTo(clickedNode)
-          setMid(clickedNode)
-
-          console.log("clicked on ", clickedNode.label)
-          const id = v4()
-
-          store.lines.push({
-            id: id,
-            from: from,
-            mid: mid,
-            to: to,
-          })
-          setConnecting(false)
-          actionContext.updateAction(ACTIONS.SELECT)
-        }
-
-        break
-    }
-
-  }
-
-  const handleMouseMove = (e: KonvaEventObject<MouseEvent>) => {
-    e.evt.preventDefault()
-
-    const stage = e.target.getStage()
-    const pointer = stage?.getPointerPosition()
-
-    if (!pointer) return
-    switch (actionContext?.action) {
-      case ACTIONS.CONNECTOR:
-        if (!connecting) return
-        setMid(pointer)
-        setTo(pointer)
-        break
-    }
-
-  }
-
-
-  const handleClick = (e: KonvaEventObject<MouseEvent>) => {
-    switch (actionContext?.action) {
-      case ACTIONS.SELECT:
-        if (e.target === stageRef.current) {
-          transformerRef.current?.nodes([])
-          return
-        }
-        break
-    }
-  }
-
   return (
     <div ref={containerRef} className="flex flex-col">
       <div className="grow">
         <Actionbar />
         <Stage
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onClick={handleClick}
           style={{
             width: '100%', border: '1px solid black',
             backgroundImage: 'radial-gradient(#e5e7eb 1px, transparent 1px)', backgroundSize: '16px 16px'
           }}
           ref={stageRef} width={stageWidth} height={stageHeight}>
 
-          <Layer>
-
+          {actionContext?.action === ACTIONS.SELECT && (
             <Selection stageRef={stageRef} transformerRef={transformerRef} />
-          </Layer>
+          )}
 
-          <Layer>
+
+          <Layer ref={itemLayer}>
             {snap.items
               .map((item, index) => {
                 return (
@@ -169,13 +84,10 @@ const DiagramPage = () => {
               )}
 
 
-            {connecting && (
-              <Line from={from} mid={mid} to={to} />
-            )}
             {snap.lines
               .map((line, index) => {
                 return (
-                  <Line key={index} from={line.from} mid={line.mid} to={line.to} />
+                  <Line stageRef={stageRef} layerRef={itemLayer} />
                 )
               })}
 
@@ -187,8 +99,12 @@ const DiagramPage = () => {
                 )
               })}
 
+            <Transformer ref={transformerRef} />
           </Layer>
-          <Transformer ref={transformerRef} />
+
+          {actionContext?.action === ACTIONS.CONNECTOR && (
+            <Connector stageRef={stageRef} layerRef={itemLayer} />
+          )}
 
         </Stage>
       </div>
@@ -222,7 +138,6 @@ const DiagramPage = () => {
           </div>
         </div>
       </div>
-
     </div>
   )
 }

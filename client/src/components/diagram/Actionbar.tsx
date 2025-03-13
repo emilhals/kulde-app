@@ -36,7 +36,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { Check, ChevronsUpDown, Spline, SquareDashedMousePointer, Type, Plus, Download, Bold, Italic, Underline } from 'lucide-react'
 import { ACTIONS } from '@/common/constants'
 import { ItemType, TextType } from '@/common/types'
-import { ActionContext } from '@/common/ActionContext'
+import { ActionContext } from '@/common/Providers'
 
 import { useAddToStore } from '@/hooks/useAddToStore'
 
@@ -45,22 +45,22 @@ const COMPONENTS = [
     value: "compressor",
     label: "Compressor",
     img: "compressor.png",
-    width: 112,
-    height: 112,
+    width: 124,
+    height: 124,
   },
   {
     value: "condensator",
     label: "Condensator",
     img: "condensor.png",
-    width: 112,
-    height: 112,
+    width: 124,
+    height: 124,
   },
   {
     value: "evaporator",
     label: "Evaporator",
     img: "evaporator.png",
-    width: 112,
-    height: 112,
+    width: 124,
+    height: 124,
   },
   {
     value: "pressureswitch",
@@ -70,6 +70,22 @@ const COMPONENTS = [
     height: 64,
   },
 ]
+
+/* placeholders for text creation */
+let text: TextType = {
+  id: '', /* set in useAddToStore */
+  text: '',
+  size: 16,
+  color: 'black',
+  x: 0,
+  y: 0,
+  parentId: '',
+  attributes: {
+    bold: false,
+    italic: false,
+    underline: false
+  }
+}
 
 /* placeholder for item creation */
 let item: ItemType = {
@@ -82,19 +98,16 @@ let item: ItemType = {
   x: 64,
   y: 64,
   lines: [],
-  label: '',
   type: ''
 }
 
-/* placeholders for text creation */
-let text: TextType = {
-  id: '', /* set in useAddToStore */
-  text: '',
-  size: 16,
-  bold: false,
-  italic: false,
-  underline: false
-}
+
+/*
+ *
+ * TODO: fiks typescript greiene
+ *
+ * */
+
 
 export const Actionbar = () => {
   const [open, setOpen] = useState(false)
@@ -109,10 +122,11 @@ export const Actionbar = () => {
 
   const actionContext = useContext(ActionContext)
   /* from navigation menu. used for item creation */
-  item.label = itemLabel
+  item.text = text
   item.type = component.type
   item.width = component.width
   item.height = component.height
+  item.img = component.img
 
   text.bold = textAttributes.isBold
   text.italic = textAttributes.isItalic
@@ -121,11 +135,6 @@ export const Actionbar = () => {
   text.x = 50
   text.y = 50
   text.independent = true
-
-  useEffect(() => {
-    console.log(textAttributes.isBold)
-  }, [textAttributes.isBold])
-
   text.text = textPlaceholder
 
   return (

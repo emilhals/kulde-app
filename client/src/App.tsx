@@ -7,7 +7,7 @@ import DiagramPage from './pages/Diagram'
 import ComponentsPage from './pages/Components'
 import ErrorPage from './pages/Error'
 
-import { ActionContextProvider } from './common/ActionContext'
+import { ActionContextProvider } from './common/Providers'
 
 const router = createBrowserRouter(([
   {
