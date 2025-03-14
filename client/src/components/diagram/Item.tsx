@@ -1,9 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
-
-import useImage from 'use-image'
+import { useRef, useState } from 'react'
 
 import { Group, Rect, Image } from 'react-konva'
 import Konva from 'konva'
+import useImage from 'use-image'
 
 import { ItemType, PointType } from '@/common/types'
 import { Text } from '@/components/diagram/Text'
@@ -25,7 +24,7 @@ export const Item = ({ item }: { item: ItemType }) => {
     if (!item) return
     setItemState(item)
 
-    shadowRef.current?.show()
+    shadowRef.current?.hide()
     setShadowPosition({
       x: Math.round(e.target.x() / 16) * 16,
       y: Math.round(e.target.y() / 16) * 16
@@ -43,6 +42,15 @@ export const Item = ({ item }: { item: ItemType }) => {
 
     itemState.x = e.target.x()
     itemState.y = e.target.y()
+
+    store.connections.forEach((conn) => {
+      if (conn?.from.id === itemState.id) {
+        conn.from = itemState
+      }
+      if (conn?.to.id === itemState.id) {
+        conn.to = itemState
+      }
+    })
   }
 
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
@@ -58,10 +66,19 @@ export const Item = ({ item }: { item: ItemType }) => {
       x: Math.round(e.target.x() / 16) * 16,
       y: Math.round(e.target.y() / 16) * 16
     })
+
+    store.connections.forEach((conn) => {
+      if (conn?.from.id === itemState.id) {
+        conn.from = itemState
+      }
+      if (conn?.to.id === itemState.id) {
+        conn.to = itemState
+      }
+    })
   }
 
   return (
-    <Group ref={groupRef} onPointerDown={handleOnPointerDown}>
+    <Group ref={groupRef}>
       <Rect
         ref={shadowRef}
         fill="blue"
@@ -82,6 +99,7 @@ export const Item = ({ item }: { item: ItemType }) => {
         x={item.x}
         y={item.y}
         draggable
+        onPointerDown={handleOnPointerDown}
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
         height={item.height}
@@ -89,7 +107,7 @@ export const Item = ({ item }: { item: ItemType }) => {
         cornerRadius={8}
         name="object"
       />
-      <Text parent={item} />
+      <Text parent={item.text} standalone={false} />
     </Group>
 
   )
