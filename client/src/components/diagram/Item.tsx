@@ -43,6 +43,10 @@ export const Item = ({ item }: { item: ItemType }) => {
     itemState.x = e.target.x()
     itemState.y = e.target.y()
 
+    /*
+     * TODO: finn ut hvorfor jeg må gi hele objektet og ikke bare kan gi posisjonene.
+    */
+    /* update connection position */
     store.connections.forEach((conn) => {
       if (conn?.from.id === itemState.id) {
         conn.from = itemState

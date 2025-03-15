@@ -8,7 +8,11 @@ import { store } from '@/store'
 
 import { PointType, TextType } from '@/common/types'
 
-export const Text = ({ parent }: { parent: TextType }) => {
+/*
+ * TODO: lag snap til object for non-standalone text
+ * 
+ */
+export const Text = ({ parent, standalone }: { parent: TextType, standalone: Boolean }) => {
   const textRef = useRef<Konva.Text>(null)
   const shadowRef = useRef<Konva.Rect>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -37,18 +41,10 @@ export const Text = ({ parent }: { parent: TextType }) => {
 
 
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
-    let OFFSET
-    if (parent.independent) {
-      OFFSET = 0
-    } else {
-      OFFSET = (parent.width / 2) - (textRef.current?.textWidth / 2)
-    }
-
     setPosition({
-      x: Math.round(e.target.x() / 16) * 16 - (parent.x - OFFSET),
+      x: Math.round(e.target.x() / 16) * 16 - (parent.x),
       y: Math.round(e.target.y() / 16) * 16 - parent.y
     })
-
     shadowRef.current?.hide()
   }
 
@@ -68,7 +64,6 @@ export const Text = ({ parent }: { parent: TextType }) => {
       textRef.current?.visible(true)
       textState.text = editedText
     }
-
     if (key === 'Escape') {
       setCanEdit(false)
       textRef.current?.visible(true)
@@ -88,22 +83,44 @@ export const Text = ({ parent }: { parent: TextType }) => {
         width={textRef.current?.textWidth}
         name="shadow"
       />
-      <KonvaText
-        ref={textRef}
-        id={parent.id}
-        draggable
-        onDragMove={handleDragMove}
-        onDragEnd={handleDragEnd}
-        onDblClick={handleDoubleClick}
-        fontSize={16}
-        textDecoration={parent.underline ? 'underline' : ''}
-        fontStyle={parent.bold ? 'bold' : parent.italic ? 'italic' : ''}
-        fontFamily={'Open Sans'}
-        text={parent.label ? parent.label : parent.text}
-        x={parent.x + position.x}
-        y={parent.y + position.y}
-        name="object"
-      />
+      {standalone && (
+        <KonvaText
+          ref={textRef}
+          id={parent.id}
+          draggable
+          onDragMove={handleDragMove}
+          onDragEnd={handleDragEnd}
+          onDblClick={handleDoubleClick}
+          fontSize={16}
+          textDecoration={parent.underline ? 'underline' : ''}
+          fontStyle={parent.bold ? 'bold' : parent.italic ? 'italic' : ''}
+          fontFamily={'Open Sans'}
+          text={parent.text}
+          x={parent.x + position.x}
+          y={parent.y + position.y}
+          name="object"
+        />
+      )}
+
+      {!standalone && (
+        <KonvaText
+          ref={textRef}
+          id={parent.id}
+          draggable
+          onDragMove={handleDragMove}
+          onDragEnd={handleDragEnd}
+          onDblClick={handleDoubleClick}
+          fontSize={16}
+          textDecoration={parent.underline ? 'underline' : ''}
+          fontStyle={parent.bold ? 'bold' : parent.italic ? 'italic' : ''}
+          fontFamily={'Open Sans'}
+          text={parent.label}
+          x={parent.x + position.x}
+          y={parent.y + position.y}
+          name="object"
+        />
+      )}
+
 
       {canEdit && (
         <Html>

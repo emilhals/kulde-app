@@ -27,13 +27,17 @@ const getAnchorPoints = (x: number, y: number, height: number, width: number) =>
   ]
 }
 
-export const Border = ({ item, onAnchorDragStart, onAnchorDragMove, onAnchorDragEnd }) => {
+export const Border = ({ item, color, onAnchorDragStart, onAnchorDragMove, onAnchorDragEnd }) => {
   if (!item) return
 
   const anchorPoints = getAnchorPoints(item.x, item.y, item.height, item.width)
 
   const SIZE = 128
   const points = [0, 0, SIZE, 0, SIZE, SIZE, 0, SIZE, 0, 0]
+
+  const handleClick = () => {
+    console.log('hei')
+  }
 
   const anchors = anchorPoints.map(({ x, y, name }) => (
     <Anchor
@@ -44,6 +48,7 @@ export const Border = ({ item, onAnchorDragStart, onAnchorDragMove, onAnchorDrag
       onDragStart={onAnchorDragStart}
       onDragMove={onAnchorDragMove}
       onDragEnd={onAnchorDragEnd}
+      onClick={handleClick}
     />
   ))
 
@@ -53,7 +58,7 @@ export const Border = ({ item, onAnchorDragStart, onAnchorDragMove, onAnchorDrag
         x={item.x}
         y={item.y}
         points={points}
-        stroke="green"
+        stroke={color}
         strokeWidth={2}
         perfectDrawEnabled={false}
       />

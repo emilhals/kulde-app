@@ -31,7 +31,6 @@ export type SelectionType = {
 export type ItemType = {
   id: string;
   type: string;
-  label: string;
   height: number;
   width: number;
   x: number;
@@ -39,18 +38,20 @@ export type ItemType = {
   textXOffset: number;
   textYOffset: number;
   img: string;
-  lines: LineType[];
+  text: TextType;
 }
 
 export type TextType = {
   id: string;
+  parentId: string;
+  text: string;
   x: number;
   y: number;
-  text: string;
   color: string;
   size: number;
-  bold: boolean;
-  italic: boolean;
-  underline: boolean;
-  independent: boolean;
+  attributes: {
+    bold: boolean;
+    italic: boolean;
+    underline: boolean;
+  }
 }

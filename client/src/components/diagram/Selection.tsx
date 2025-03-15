@@ -3,7 +3,6 @@ import { Rect, Layer } from 'react-konva'
 import Konva from 'konva'
 
 import { ActionContext } from '@/common/Providers'
-
 import { SelectionType } from '@/common/types'
 import { ACTIONS } from '@/common/constants'
 
@@ -85,7 +84,6 @@ export const Selection = ({ stageRef, transformerRef }: { stageRef: React.RefObj
 
   const handleClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
     if (selectRef.current?.visible()) return
-
 
     if (e.target === stageRef.current) {
       transformerRef.current?.nodes([])

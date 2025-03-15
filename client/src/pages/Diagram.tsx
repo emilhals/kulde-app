@@ -1,10 +1,9 @@
-import { Stage, Layer, Transformer } from "react-konva"
-import Konva from "konva"
+import { Stage, Layer, Transformer, Line } from 'react-konva'
+import Konva from 'konva'
 import { useEffect, useRef, useState, useContext } from 'react'
 
-import { useSnapshot } from "valtio"
-
-import { store } from "@/store"
+import { useSnapshot } from 'valtio'
+import { store } from '@/store'
 
 import { ACTIONS } from '@/common/constants'
 
@@ -14,26 +13,22 @@ import { Connector } from '@/components/diagram/Connector'
 import { Actionbar } from '@/components/diagram/Actionbar'
 import { Selection } from "@/components/diagram/Selection"
 
-import { useCustomFont } from "@/hooks/useCustomFont"
-
 import { ActionContext } from '@/common/Providers'
+import { useCustomFont } from '@/hooks/useCustomFont'
+import { connect } from 'http2'
 
 const DiagramPage = () => {
-  /* konva related */
   const stageRef = useRef<Konva.Stage>(null)
-  const [size, setSize] = useState({ width: window.innerWidth, height: 900 })
-
+  const containerRef = useRef<HTMLDivElement>(null)
+  const itemLayer = useRef<Konva.Layer>(null)
   const transformerRef = useRef<Konva.Transformer>(null)
 
-  /* ui related */
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [fontLoaded] = useCustomFont('Open Sans:300,500')
-  const itemLayer = useRef<Konva.Layer>(null)
+  /* loading the custom font */
+  const [,] = useCustomFont('Open Sans')
 
+  const [size, setSize] = useState({ width: window.innerWidth, height: 900 })
 
-  /* valtio */
   const snap = useSnapshot(store)
-
   const actionContext = useContext(ActionContext)
 
   /* set stage size and ensure responsiveness  */
@@ -65,7 +60,7 @@ const DiagramPage = () => {
         <Stage
           style={{
             width: '100%', border: '1px solid black',
-            backgroundImage: 'radial-gradient(#e5e7eb 1px, transparent 1px)', backgroundSize: '16px 16px'
+            backgroundImage: 'radial-gradient(#D9D9D9 1px, transparent 1px)', backgroundSize: '16px 16px'
           }}
           ref={stageRef} width={stageWidth} height={stageHeight}>
 
@@ -83,19 +78,22 @@ const DiagramPage = () => {
               }
               )}
 
-
-            {snap.lines
-              .map((line, index) => {
+            {snap.connections
+              .map(({ id, from, to }) => {
                 return (
-                  <Line stageRef={stageRef} layerRef={itemLayer} />
+                  <Line
+                    key={id}
+                    points={[from.x, from.y, to.x, to.y]}
+                    stroke="black"
+                    strokeWidth={2}
+                  />
                 )
               })}
-
 
             {snap.texts
               .map((text, index) => {
                 return (
-                  <Text key={index} parent={text} />
+                  <Text key={index} parent={text} standalone={true} />
                 )
               })}
 
@@ -117,20 +115,21 @@ const DiagramPage = () => {
               .map((item, index) => {
                 return (
                   <ul key={index}>
-                    <li>{item.id} - {item.label}</li>
+                    <li>{item.id} - {item.text.text}</li>
                     <li>x: {item.x} | y: {item.y}</li>
                   </ul>
                 )
               }
               )}
           </div>
+
           <div className="basis-1/4">
-            {snap.lines
-              .map((line, index) => {
+            {snap.connections
+              .map((connection, index) => {
                 return (
                   <ul key={index}>
-                    <li>{line.id}</li>
-                    <li>from: {line.from.x} | to: {line.to.x}</li>
+                    <li>{connection.id}</li>
+                    <li>from: {connection.from.x} | to: {connection.to.x}</li>
                   </ul>
                 )
               }

@@ -38,6 +38,8 @@ import { ACTIONS } from '@/common/constants'
 import { ItemType, TextType } from '@/common/types'
 import { ActionContext } from '@/common/Providers'
 
+import { proxy } from 'valtio'
+
 import { useAddToStore } from '@/hooks/useAddToStore'
 
 const COMPONENTS = [
@@ -88,7 +90,7 @@ let text: TextType = {
 }
 
 /* placeholder for item creation */
-let item: ItemType = {
+let item = proxy<ItemType>({
   id: '', /* set in useAddToStore */
   img: '',
   textXOffset: 0,
@@ -97,9 +99,9 @@ let item: ItemType = {
   width: 0,
   x: 64,
   y: 64,
-  lines: [],
+  text: text,
   type: ''
-}
+})
 
 
 /*
@@ -123,6 +125,7 @@ export const Actionbar = () => {
   const actionContext = useContext(ActionContext)
   /* from navigation menu. used for item creation */
   item.text = text
+  item.text.text = itemLabel
   item.type = component.type
   item.width = component.width
   item.height = component.height
@@ -220,7 +223,7 @@ export const Actionbar = () => {
                       </Command>
                     </PopoverContent>
                   </Popover>
-                  <Button onClick={() => { useAddToStore('item', item) }} variant="outline">
+                  <Button onClick={() => { useAddToStore(item) }} variant="outline">
                     Add component
                   </Button>
                 </ul>
@@ -266,7 +269,7 @@ export const Actionbar = () => {
                       <Underline className="h-4 w-4" />
                     </ToggleGroupItem>
                   </ToggleGroup>
-                  <Button onClick={() => { useAddToStore('text', text) }} variant="outline">
+                  <Button onClick={() => { useAddToStore(text) }} variant="outline">
                     Add text
                   </Button>
                 </ul>
