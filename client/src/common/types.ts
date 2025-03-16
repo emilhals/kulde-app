@@ -11,6 +11,7 @@ export type ConnectionType = {
   id: string;
   from: ItemType;
   to: ItemType;
+  points: [];
   offsets: {
     from: PointType;
     to: PointType;
@@ -24,8 +25,6 @@ export type SelectionType = {
   y2: number;
   width: number;
   height: number;
-  show: boolean;
-  moving: boolean;
 }
 
 export type ItemType = {
