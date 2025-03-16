@@ -1,6 +1,9 @@
 import { Line } from 'react-konva'
+import { KonvaEventObject } from 'konva/lib/Node'
 
 import { Anchor } from './Anchor'
+
+import { ItemType } from '@/common/types'
 
 const getAnchorPoints = (x: number, y: number, height: number, width: number) => {
   return [
@@ -27,7 +30,15 @@ const getAnchorPoints = (x: number, y: number, height: number, width: number) =>
   ]
 }
 
-export const Border = ({ item, color, onAnchorDragStart, onAnchorDragMove, onAnchorDragEnd }) => {
+type PropsType = {
+  item: ItemType
+  hovered: string
+  onAnchorDragStart: (e: KonvaEventObject<DragEvent>, id: string | number) => void
+  onAnchorDragMove: (e: KonvaEventObject<DragEvent>, id: string | number) => void
+  onAnchorDragEnd: (e: KonvaEventObject<DragEvent>, id: string | number) => void
+}
+
+export const Border = ({ item, hovered, onAnchorDragStart, onAnchorDragMove, onAnchorDragEnd }: PropsType) => {
   if (!item) return
 
   const anchorPoints = getAnchorPoints(item.x, item.y, item.height, item.width)
@@ -35,20 +46,16 @@ export const Border = ({ item, color, onAnchorDragStart, onAnchorDragMove, onAnc
   const SIZE = 128
   const points = [0, 0, SIZE, 0, SIZE, SIZE, 0, SIZE, 0, 0]
 
-  const handleClick = () => {
-    console.log('hei')
-  }
-
   const anchors = anchorPoints.map(({ x, y, name }) => (
     <Anchor
       key={`anchor-${name}`}
       id={name}
       x={x}
       y={y}
+      hovered={hovered}
       onDragStart={onAnchorDragStart}
       onDragMove={onAnchorDragMove}
       onDragEnd={onAnchorDragEnd}
-      onClick={handleClick}
     />
   ))
 
@@ -58,8 +65,9 @@ export const Border = ({ item, color, onAnchorDragStart, onAnchorDragMove, onAnc
         x={item.x}
         y={item.y}
         points={points}
-        stroke={color}
+        stroke='#E83F6F'
         strokeWidth={2}
+        listening={false}
         perfectDrawEnabled={false}
       />
       {anchors}
