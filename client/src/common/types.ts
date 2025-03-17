@@ -42,12 +42,11 @@ export type ItemType = {
 
 export type TextType = {
   id: string;
-  parentId: string;
   text: string;
   x: number;
   y: number;
-  color: string;
   size: number;
+  standalone: boolean;
   attributes: {
     bold: boolean;
     italic: boolean;
