@@ -9,7 +9,7 @@ export type PointType = {
 
 export type ConnectionType = {
   id: string;
-  type: string;
+  type: "connections";
   from: ItemType;
   to: ItemType;
   points: [];
@@ -30,7 +30,7 @@ export type SelectionType = {
 
 export type ItemType = {
   id: string;
-  type: string;
+  type: "items";
   component: string;
   height: number;
   width: number;
@@ -44,7 +44,7 @@ export type ItemType = {
 
 export type TextType = {
   id: string;
-  type: string;
+  type: "texts";
   text: string;
   x: number;
   y: number;
