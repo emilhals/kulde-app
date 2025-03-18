@@ -1,18 +1,19 @@
 import { useRef, useState } from 'react'
 
-import { Group, Rect, Image } from 'react-konva'
+import { Group, Image } from 'react-konva'
 import Konva from 'konva'
 import useImage from 'use-image'
 
 import { ItemType, PointType } from '@/common/types'
 import { Text } from '@/components/diagram/Text'
+import { ContextMenu } from './ContextMenu'
 
 import { store } from '@/store'
 
 export const Item = ({ item }: { item: ItemType }) => {
   const groupRef = useRef<Konva.Group>(null)
   const itemRef = useRef<Konva.Image>(null)
-  const shadowRef = useRef<Konva.Rect>(null)
+  const shadowRef = useRef<Konva.Image>(null)
 
   const [itemState, setItemState] = useState<ItemType>()
   const [shadowPosition, setShadowPosition] = useState<PointType>({ x: item.x, y: item.y })
@@ -83,36 +84,45 @@ export const Item = ({ item }: { item: ItemType }) => {
 
   return (
     <Group ref={groupRef}>
-      <Rect
+      <Image
         ref={shadowRef}
-        fill="blue"
-        visible={false}
+        image={image}
+        stroke='#E83F6F'
+        strokeWidth={4}
         opacity={0.4}
         x={shadowPosition.x}
         y={shadowPosition.y}
-        height={item.height}
-        width={item.width}
-        name="shadow"
-        cornerRadius={8}
-      />
-      <Image
-        ref={itemRef}
-        id={item.id}
-        key={item.id}
-        image={image}
-        x={item.x}
-        y={item.y}
-        draggable
+        draggable={!item.locked}
         onPointerDown={handleOnPointerDown}
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
         height={item.height}
         width={item.width}
         cornerRadius={8}
-        name="object"
+        name="shadow"
       />
-      <Text parent={item.text} standalone={false} />
-    </Group>
 
+      <ContextMenu>
+        <Image
+          ref={itemRef}
+          id={item.id}
+          key={item.id}
+          image={image}
+          x={item.x}
+          y={item.y}
+          draggable={!item.locked}
+          onContextMenu={(e) => { e.evt.preventDefault() }}
+          onPointerDown={handleOnPointerDown}
+          onDragMove={handleDragMove}
+          onDragEnd={handleDragEnd}
+          height={item.height}
+          width={item.width}
+          cornerRadius={8}
+          name="object"
+        />
+
+      </ContextMenu>
+      <Text parent={item} standalone={false} />
+    </Group>
   )
 }
