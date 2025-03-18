@@ -39,6 +39,7 @@ export type ItemType = {
   textXOffset: number;
   textYOffset: number;
   img: string;
+  locked: boolean;
   text: TextType;
 }
 
