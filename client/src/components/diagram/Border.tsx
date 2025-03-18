@@ -43,8 +43,7 @@ export const Border = ({ item, hovered, onAnchorDragStart, onAnchorDragMove, onA
 
   const anchorPoints = getAnchorPoints(item.x, item.y, item.height, item.width)
 
-  const SIZE = 128
-  const points = [0, 0, SIZE, 0, SIZE, SIZE, 0, SIZE, 0, 0]
+  const points = [0, 0, item.height, 0, item.height, item.height, 0, item.height, 0, 0]
 
   const anchors = anchorPoints.map(({ x, y, name }) => (
     <Anchor
