@@ -6,37 +6,28 @@ import { store } from '@/store'
 export const useAddToStore = (data: ItemType | TextType | ConnectionType) => {
   const id = uuidv4()
 
-  if ('height' in data) {
-    try {
+  switch (data.type) {
+    case 'items':
       store.items.push({
         ...data,
         id: id
       })
-    } catch (error) {
-      console.error(error)
-    }
-  }
+      break
 
-  if ('color' in data) {
-    try {
+    case 'texts':
       store.texts.push({
         ...data,
         id: id
       })
-    } catch (error) {
-      console.error(error)
-    }
-  }
+      break
 
-  if ('from' in data) {
-    try {
+    case 'connections':
       store.connections.push({
         ...data,
         id: id
       })
-
-    } catch (error) {
-      console.error(error)
-    }
+      break
+    default:
+      console.log('Error with pushing to store', data)
   }
 }
