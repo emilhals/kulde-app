@@ -11,17 +11,18 @@ import { Text } from '@/components/diagram/Text'
 import { Item } from '@/components/diagram/Item'
 import { Connector } from '@/components/diagram/Connector'
 import { Actionbar } from '@/components/diagram/Actionbar'
-import { Selection } from "@/components/diagram/Selection"
 
 import { ActionContext } from '@/common/Providers'
 import { useCustomFont } from '@/hooks/useCustomFont'
-import { connect } from 'http2'
+
+import { getConnectionPoints } from '@/lib/utils'
 
 const DiagramPage = () => {
   const stageRef = useRef<Konva.Stage>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const itemLayer = useRef<Konva.Layer>(null)
   const transformerRef = useRef<Konva.Transformer>(null)
+  const connectorRef = useRef<Konva.Line>(null)
 
   /* loading the custom font */
   const [,] = useCustomFont('Open Sans')
@@ -54,21 +55,16 @@ const DiagramPage = () => {
   let stageHeight = size.height % 2 !== 0 ? size.height - 1 : size.height
 
   return (
-    <div ref={containerRef} className="flex flex-col">
+    <div ref={containerRef} className="flex flex-col dark:bg-dark-bg" onContextMenu={(e) => { e.preventDefault() }}>
       <div className="grow">
         <Actionbar />
         <Stage
-          style={{
-            width: '100%', border: '1px solid black',
-            backgroundImage: 'radial-gradient(#D9D9D9 1px, transparent 1px)', backgroundSize: '16px 16px'
-          }}
-          ref={stageRef} width={stageWidth} height={stageHeight}>
-
-          {actionContext?.action === ACTIONS.SELECT && (
-            <Selection stageRef={stageRef} transformerRef={transformerRef} />
-          )}
-
-
+          className="w-full border border-black dark:border-gray-700 bg-[radial-gradient(#D9D9D9_1px,transparent_1px)] dark:bg-[radial-gradient(#2a2a2a_1px,transparent_1px)] bg-[length:16px_16px]"
+          ref={stageRef}
+          width={stageWidth} height={stageHeight}
+          onContextMenu={(e) => { e.evt.preventDefault() }}
+          context
+        >
           <Layer ref={itemLayer}>
             {snap.items
               .map((item, index) => {
@@ -79,11 +75,15 @@ const DiagramPage = () => {
               )}
 
             {snap.connections
-              .map(({ id, from, to }) => {
+              .map((connection, index) => {
+                const points = getConnectionPoints(connection.from, connection.to, connection)
                 return (
                   <Line
-                    key={id}
-                    points={[from.x, from.y, to.x, to.y]}
+                    key={index}
+                    x={connection.from.x + connection.offsets.from.x}
+                    y={connection.from.y + connection.offsets.from.y}
+                    ref={connectorRef}
+                    points={points}
                     stroke="black"
                     strokeWidth={2}
                   />
@@ -107,9 +107,9 @@ const DiagramPage = () => {
         </Stage>
       </div>
 
-      <div className="h-32 grow-0 bg-gray-50">
+      <div className="h-32 grow-0 bg-gray-50 dark:bg-dark-bg">
         <h3>Components:</h3>
-        <div className="flex-col">
+        <div className="flex-row">
           <div className="basis-1/4">
             {snap.items
               .map((item, index) => {
@@ -124,12 +124,24 @@ const DiagramPage = () => {
           </div>
 
           <div className="basis-1/4">
+            {snap.texts
+              .map((text, index) => {
+                return (
+                  <ul key={index}>
+                    <li>{text.id} - {text.text}</li>
+                    <li>x: {text.x} | y: {text.y}</li>
+                  </ul>
+                )
+              }
+              )}
+          </div>
+
+          <div className="basis-1/4">
             {snap.connections
               .map((connection, index) => {
                 return (
                   <ul key={index}>
                     <li>{connection.id}</li>
-                    <li>from: {connection.from.x} | to: {connection.to.x}</li>
                   </ul>
                 )
               }
