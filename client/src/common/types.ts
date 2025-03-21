@@ -35,6 +35,7 @@ export type SelectionType = {
   height: number;
 }
 
+export type ItemPreview = Omit<ItemType, 'id'>
 export type ItemType = {
   id: string;
   type: "items";
@@ -43,13 +44,14 @@ export type ItemType = {
   width: number;
   x: number;
   y: number;
-  textXOffset: number;
-  textYOffset: number;
-  img: string;
   locked: boolean;
-  text: TextType;
+  textOffset: OffsetType;
+  text: TextPreview | null;
+  img: string;
 }
 
+
+export type TextPreview = Omit<TextType, 'id'>
 export type TextType = {
   id: string;
   type: "texts";
