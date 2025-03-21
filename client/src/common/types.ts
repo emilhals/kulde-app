@@ -2,11 +2,18 @@ import { ACTIONS } from "./constants";
 
 export type ActionType = keyof typeof ACTIONS
 
+
 export type PointType = {
   x: number;
   y: number;
 };
 
+export type OffsetType = {
+  placement: string;
+  position: PointType;
+}
+
+export type ConnectionPreview = Omit<ConnectionType, 'id'>
 export type ConnectionType = {
   id: string;
   type: "connections";
@@ -14,8 +21,8 @@ export type ConnectionType = {
   to: ItemType;
   points: [];
   offsets: {
-    from: PointType;
-    to: PointType;
+    from: OffsetType;
+    to: OffsetType;
   }
 };
 

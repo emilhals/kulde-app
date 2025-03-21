@@ -1,9 +1,9 @@
 import { v4 as uuidv4 } from 'uuid'
 
-import { ConnectionType, ItemType, TextType } from '@/common/types'
+import { ConnectionPreview, ItemType, TextType } from '@/common/types'
 import { store } from '@/store'
 
-export const useAddToStore = (data: ItemType | TextType | ConnectionType) => {
+export const useAddToStore = (data: ItemType | TextType | ConnectionPreview) => {
   const id = uuidv4()
 
   switch (data.type) {
