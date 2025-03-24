@@ -37,8 +37,7 @@ import { ActionContext } from '@/common/Providers'
 import { ACTIONS } from '@/common/constants'
 
 import { useAddToStore } from '@/hooks/useAddToStore'
-import { ItemType, TextType } from '@/common/types'
-import { X509Certificate } from 'crypto'
+import { ItemPreview, TextPreview } from '@/common/types'
 
 const COMPONENTS = [
   {
@@ -59,8 +58,8 @@ const COMPONENTS = [
     value: "evaporator",
     label: "Evaporator",
     img: "evaporator.png",
-    width: 124,
-    height: 124,
+    width: 96,
+    height: 96,
   },
   {
     value: "pressureswitch",
@@ -71,32 +70,10 @@ const COMPONENTS = [
   },
 ]
 
-
-let text: TextType = {
-  id: '', /* set in useAddToStore */
-  text: '',
-  size: 16,
-  x: 0,
-  y: 0,
-  standalone: true,
-  attributes: {
-    bold: false,
-    italic: false,
-    underline: false
-  }
-}
-
-let item: ItemType = {
-  id: '', /* set in useAddToStore */
-  img: '',
-  textXOffset: 0,
-  textYOffset: 0,
-  height: 0,
-  width: 0,
-  x: 64,
-  y: 64,
-  text: text,
-  type: ''
+export const getClassStyle = (active: boolean) => {
+  return active
+    ? 'bg-violet-300 dark:bg-dark-bg p-1 rounded'
+    : 'dark:bg-dark-bg hover:bg-violet-100'
 }
 
 export const Actionbar = () => {
@@ -105,212 +82,253 @@ export const Actionbar = () => {
 
   const [textPlaceholder, setTextPlaceholder] = useState('')
   const [textAttributes, setTextAttributes] = useState({ isBold: false, isItalic: false, isUnderlined: false })
-
   const [component, setComponent] = useState('')
 
   const actionContext = useContext(ActionContext)
 
-  const handleCreate = (data: ItemType | TextType) => {
+  const [item, setItem] = useState<ItemPreview>({
+    type: 'items',
+    component: '',
+    height: 0,
+    width: 0,
+    x: 50,
+    y: 50,
+    textOffset: {
+      placement: '',
+      position: { x: 0, y: 0 }
+    },
+    img: '',
+    locked: false,
+    text: null,
+  })
 
-    text.attributes.bold = textAttributes.isBold
-    text.attributes.italic = textAttributes.isItalic
-    text.attributes.underline = textAttributes.isUnderlined
-    text.text = textPlaceholder
-    text.x = 50
-    text.y = 50
+  const [text, setText] = useState<TextPreview>({
+    type: 'texts',
+    text: textPlaceholder,
+    x: 0,
+    y: 0,
+    size: 16,
+    standalone: true,
+    attributes: {
+      bold: false,
+      italic: false,
+      underline: false
+    }
+  })
 
-    if ('img' in data) {
-      console.log('ya')
+  const createItem = (item: ItemPreview) => {
+    setText({
+      ...text,
+      standalone: false,
+    })
 
-      item.type = component.type
-      item.width = component.width
-      item.height = component.height
-      item.img = component.img
-      item.text.standalone = false
-      item.text = text
-
-
-      useAddToStore(data)
-    } else if ('standalone' in data) {
-      text.standalone = true
-
-      useAddToStore(data)
+    const newItem: ItemPreview = {
+      type: item.type,
+      component: item.component,
+      height: item.height,
+      width: item.width,
+      x: item.x,
+      y: item.y,
+      locked: item.locked,
+      text: text,
+      textOffset: item.textOffset,
+      img: item.img
     }
 
+    console.log(text)
+
+    useAddToStore(newItem)
     setTextPlaceholder('')
 
-    console.log(data)
+    setText({
+      ...text,
+      text: '',
+    })
+    setItem({
+      ...item,
+      component: '',
+      height: 0,
+      width: 0,
+      img: ''
+    })
   }
-
-  console.log(actionContext?.action)
 
 
   return (
-    <div className="flex justify-center items-center gap-4 px-3 w-fit mx-auto border shadow-lg rounded-lg">
-      <TooltipProvider>
+    <div className='absolute z-10 flex justify-start items-center h-screen'>
+      <div className='flex flex-col justify-center items-center gap-4 px-3 w-fit'>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button onClick={() => { actionContext?.updateAction(ACTIONS.SELECT) }} className={getClassStyle(actionContext?.action === 'SELECT')}>
+                <SquareDashedMousePointer className="size-5"></SquareDashedMousePointer>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Select</p>
+            </TooltipContent>
+          </Tooltip>
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button onClick={() => { actionContext?.updateAction(ACTIONS.SELECT) }} className={actionContext?.action === 'SELECT' ? "bg-violet-300 p-1 rounded" : "p-1 hover:bg-violet-100 rounded"}>
-              <SquareDashedMousePointer className="size-5"></SquareDashedMousePointer>
-            </button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Select</p>
-          </TooltipContent>
-        </Tooltip>
+          <NavigationMenu>
+            <NavigationMenuList>
+              <NavigationMenuItem>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <NavigationMenuTrigger onClick={() => { actionContext?.updateAction(ACTIONS.ADD) }} className={getClassStyle(actionContext?.action === 'ADD')} onPointerMove={(e) => { e.preventDefault() }} onPointerEnter={(e) => { e.preventDefault() }} onPointerLeave={(e) => { e.preventDefault() }}>
+                      <span>
+                        <Plus className={actionContext?.action === 'ADD' ? 'size-5 text-rose-300' : ' size-5'}></Plus>
+                      </span>
+                    </NavigationMenuTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Add item</p>
+                  </TooltipContent>
+                </Tooltip>
 
-        <NavigationMenu>
-          <NavigationMenuList>
-            <NavigationMenuItem>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <NavigationMenuTrigger onClick={() => { actionContext?.updateAction(ACTIONS.ADD) }} className={actionContext?.action === 'ADD' ? 'bg-white p-1 rounded' : 'p-1 hover:bg-violet-100 rounded'} onPointerMove={(e) => { e.preventDefault() }} onPointerLeave={(e) => { e.preventDefault() }}>
-                    <span>
-                      <Plus className={actionContext?.action === 'ADD' ? 'size-5 text-rose-300' : ' size-5'}></Plus>
-                    </span>
-                  </NavigationMenuTrigger>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Add item</p>
-                </TooltipContent>
-              </Tooltip>
+                <NavigationMenuContent onPointerEnter={(e) => e.preventDefault()} onPointerMove={(e) => e.preventDefault()} onPointerLeave={(e) => e.preventDefault()}>
+                  <ul className="dark:bg-dark-panel dark:border-dark-accent grid bg-violet-100 gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
+                    <li className="row-span-3">
+                      <NavigationMenuLink asChild>
+                        <a
+                          className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md"
+                          href="/"
+                        >
+                          <img className="" src={component ? component.img : 'compressor.img'} />
+                        </a>
+                      </NavigationMenuLink>
+                    </li>
+                    <Input type="text" id="item-label" value={textPlaceholder} onChange={e => setTextPlaceholder((e.target.value))} placeholder="Label" />
+                    <Popover open={open} onOpenChange={setOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={open}
+                          className="w-[200px] justify-between dark:bg-dark-bg"
+                        >
+                          {value
+                            ? COMPONENTS.find((component) => component.value === value)?.label
+                            : "Select component..."}
+                          <ChevronsUpDown className="opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[200px] p-0">
+                        <Command>
+                          <CommandInput placeholder="Search component..." className="h-9" />
+                          <CommandList>
+                            <CommandEmpty>No component found.</CommandEmpty>
+                            <CommandGroup>
+                              {COMPONENTS.map((component) => (
+                                <CommandItem
+                                  key={component.value}
+                                  value={component.value}
+                                  onSelect={(currentValue) => {
+                                    setValue(currentValue === value ? "" : currentValue)
+                                    setComponent(component.img)
+                                    setItem({
+                                      ...item,
+                                      component: component.value,
+                                      height: component.height,
+                                      width: component.width,
+                                      img: component.img,
+                                    })
+                                    console.log("item", item)
+                                    setOpen(false)
+                                  }}
+                                >
+                                  {component.label}
+                                  <Check
+                                    className={cn(
+                                      "ml-auto",
+                                      value === component.value ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    <Button onClick={() => { createItem(item) }} variant="outline">
+                      Add component
+                    </Button>
+                  </ul>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+            </NavigationMenuList>
+          </NavigationMenu>
 
-              <NavigationMenuContent>
-                <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
-                  <li className="row-span-3">
-                    <NavigationMenuLink asChild>
-                      <a
-                        className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md"
-                        href="/"
-                      >
-                        <img className="" src={component ? component.img : 'compressor.img'} />
-                      </a>
-                    </NavigationMenuLink>
-                  </li>
-                  <Input type="text" id="item-label" value={textPlaceholder} onChange={e => setTextPlaceholder((e.target.value))} placeholder="Label" />
-                  <Popover open={open} onOpenChange={setOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={open}
-                        className="w-[200px] justify-between"
-                      >
-                        {value
-                          ? COMPONENTS.find((component) => component.value === value)?.label
-                          : "Select component..."}
-                        <ChevronsUpDown className="opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[200px] p-0">
-                      <Command>
-                        <CommandInput placeholder="Search component..." className="h-9" />
-                        <CommandList>
-                          <CommandEmpty>No component found.</CommandEmpty>
-                          <CommandGroup>
-                            {COMPONENTS.map((component) => (
-                              <CommandItem
-                                key={component.value}
-                                value={component.value}
-                                onSelect={(currentValue) => {
-                                  setValue(currentValue === value ? "" : currentValue)
-                                  setComponent(component)
-                                  setOpen(false)
-                                }}
-                              >
-                                {component.label}
-                                <Check
-                                  className={cn(
-                                    "ml-auto",
-                                    value === component.value ? "opacity-100" : "opacity-0"
-                                  )}
-                                />
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  <Button onClick={() => { handleCreate(item) }} variant="outline">
-                    Add component
-                  </Button>
-                </ul>
-              </NavigationMenuContent>
-            </NavigationMenuItem>
-          </NavigationMenuList>
-        </NavigationMenu>
-
-        <NavigationMenu>
-          <NavigationMenuList>
-            <NavigationMenuItem>
-              <Tooltip>
-                <TooltipTrigger asChild onClick={() => { actionContext?.updateAction(ACTIONS.WRITE) }} className={actionContext?.action === ACTIONS.WRITE ? "bg-violet-300 p-1 rounded" : "p-1 hover:bg-violet-100 rounded"}>
-                  <NavigationMenuTrigger onPointerMove={(e) => e.preventDefault()} onPointerLeave={(e) => e.preventDefault()}>
-                    <Type className="justify-center size-5"></Type>
-                  </NavigationMenuTrigger>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Add text</p>
-                </TooltipContent>
-              </Tooltip>
-              <NavigationMenuContent onPointerEnter={(e) => e.preventDefault()} onPointerMove={(e) => e.preventDefault()} onPointerLeave={(e) => e.preventDefault()}>
-                <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
-                  <li className="row-span-3">
-                    <NavigationMenuLink asChild>
-                      <a
-                        className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md"
-                        href="/"
-                      >
-                        <h3 className={`mt-2 ${textAttributes.isUnderlined ? 'underline' : textAttributes.isBold ? 'font-bold' : textAttributes.isItalic ? 'italic' : ''}`}>{textPlaceholder}</h3>
-                      </a>
-                    </NavigationMenuLink>
-                  </li>
-                  <Input type="text" value={textPlaceholder} onChange={(e) => setTextPlaceholder(e.target.value)} placeholder="Text" />
-                  <ToggleGroup type="multiple">
-                    <ToggleGroupItem onClick={() => setTextAttributes({ ...textAttributes, isBold: !textAttributes.isBold })} value="bold" aria-label="Toggle bold">
-                      <Bold className="h-4 w-4" />
-                    </ToggleGroupItem>
-                    <ToggleGroupItem onClick={() => setTextAttributes({ ...textAttributes, isItalic: !textAttributes.isItalic })} value="italic" aria-label="Toggle italic">
-                      <Italic className="h-4 w-4" />
-                    </ToggleGroupItem>
-                    <ToggleGroupItem onClick={() => setTextAttributes({ ...textAttributes, isUnderlined: !textAttributes.isUnderlined })} aria-label="Toggle strikethrough">
-                      <Underline className="h-4 w-4" />
-                    </ToggleGroupItem>
-                  </ToggleGroup>
-                  <Button onClick={() => { handleCreate(text) }} variant="outline">
-                    Add text
-                  </Button>
-                </ul>
-              </NavigationMenuContent>
-            </NavigationMenuItem>
-          </NavigationMenuList>
-        </NavigationMenu>
+          <NavigationMenu>
+            <NavigationMenuList>
+              <NavigationMenuItem>
+                <Tooltip>
+                  <TooltipTrigger asChild onClick={() => { actionContext?.updateAction(ACTIONS.WRITE) }} className={getClassStyle(actionContext?.action === ACTIONS.WRITE)}>
+                    <NavigationMenuTrigger onPointerMove={(e) => e.preventDefault()} onPointerLeave={(e) => e.preventDefault()}>
+                      <Type className="justify-center size-5"></Type>
+                    </NavigationMenuTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Add text</p>
+                  </TooltipContent>
+                </Tooltip>
+                <NavigationMenuContent onPointerEnter={(e) => e.preventDefault()} onPointerMove={(e) => e.preventDefault()} onPointerLeave={(e) => e.preventDefault()}>
+                  <ul className="dark:bg-dark-panel border-1 dark:border-dark-border grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
+                    <li className="row-span-3">
+                      <NavigationMenuLink asChild>
+                        <a
+                          className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md"
+                          href="/"
+                        >
+                          <h3 className={`mt-2 ${textAttributes.isUnderlined ? 'underline' : textAttributes.isBold ? 'font-bold' : textAttributes.isItalic ? 'italic' : ''}`}>{textPlaceholder}</h3>
+                        </a>
+                      </NavigationMenuLink>
+                    </li>
+                    <Input type="text" value={textPlaceholder} onChange={(e) => setTextPlaceholder(e.target.value)} placeholder="Text" />
+                    <ToggleGroup type="multiple">
+                      <ToggleGroupItem onClick={() => setTextAttributes({ ...textAttributes, isBold: !textAttributes.isBold })} value="bold" aria-label="Toggle bold">
+                        <Bold className="h-4 w-4" />
+                      </ToggleGroupItem>
+                      <ToggleGroupItem onClick={() => setTextAttributes({ ...textAttributes, isItalic: !textAttributes.isItalic })} value="italic" aria-label="Toggle italic">
+                        <Italic className="h-4 w-4" />
+                      </ToggleGroupItem>
+                      <ToggleGroupItem onClick={() => setTextAttributes({ ...textAttributes, isUnderlined: !textAttributes.isUnderlined })} aria-label="Toggle strikethrough">
+                        <Underline className="h-4 w-4" />
+                      </ToggleGroupItem>
+                    </ToggleGroup>
+                    <Button onClick={() => { handleCreate(text) }} variant="outline">
+                      Add text
+                    </Button>
+                  </ul>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+            </NavigationMenuList>
+          </NavigationMenu>
 
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button onClick={() => actionContext.updateAction(ACTIONS.CONNECTOR)} className={actionContext.action === ACTIONS.CONNECTOR ? "bg-violet-300 p-1 rounded" : "p-1 hover:bg-violet-100 rounded"} >
-              <Spline className="size-5"></Spline>
-            </button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Connect items</p>
-          </TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button onClick={() => { console.log("download") }} className="p-1 rounded hover:bg-violet-100" >
-              <Download className="size-5"></Download>
-            </button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Download</p>
-          </TooltipContent>
-        </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button onClick={() => actionContext?.updateAction(ACTIONS.CONNECTOR)} className={getClassStyle(actionContext?.action === ACTIONS.CONNECTOR)} >
+                <Spline className="size-5"></Spline>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Connect items</p>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button onClick={() => { console.log("download") }} className="dark:bg-dark-bg hover:bg-violet-100 dark:hover:bg-dark-accent-hover p-1 rounded" >
+                <Download className="size-5"></Download>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Download</p>
+            </TooltipContent>
+          </Tooltip>
 
-      </TooltipProvider>
-    </div >
+        </TooltipProvider>
+      </div>
+    </div>
   )
 }
