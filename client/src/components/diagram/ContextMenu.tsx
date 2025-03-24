@@ -3,15 +3,18 @@ import {
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuTrigger,
-} from "@/components/ui/context-menu"
+} from '@/components/ui/context-menu'
 
 import { Trash2, Lock, LockOpen, Copy, ChevronLeft } from 'lucide-react'
 
 import { useState } from 'react'
 import { Html } from 'react-konva-utils'
 
-import { useDeleteFromStore } from '@/hooks/useDeleteFromStore'
 import { store } from '@/store'
+import { useDeleteFromStore } from '@/hooks/useDeleteFromStore'
+import { useAddToStore } from '@/hooks/useAddToStore'
+
+import { ItemPreview } from '@/common/types'
 
 import { Group } from "react-konva"
 
@@ -24,6 +27,15 @@ export const ContextMenu = ({ children }: { children: React.ReactElement }) => {
 
   item.locked = locked
 
+  const duplicateItem = () => {
+    const duplicatedItem: ItemPreview = {
+      ...item,
+      x: item.x,
+      y: item.y - item.height * 1.5
+    }
+    useAddToStore(duplicatedItem)
+  }
+
   return (
     <CM>
       <ContextMenuTrigger>
@@ -32,16 +44,16 @@ export const ContextMenu = ({ children }: { children: React.ReactElement }) => {
         </Group>
       </ContextMenuTrigger>
       <Html>
-        <ContextMenuContent className="fixed flex justify-center items-center gap-4 px-3 w-fit mx-auto border rounded-lg"
-          style={{ left: `${item.x - item.width / 2}px`, top: `${item.y + item.height / 1.5}px` }}
+        <ContextMenuContent className="dark:bg-dark-panel dark:border-dark-border fixed flex justify-center items-center gap-4 px-3 w-fit mx-auto border rounded-lg"
+          style={{ left: `${item.x - item.width / 2}px`, top: `${item.y + item.height / 2.5}px` }}
         >
-          <ContextMenuItem>
+          <ContextMenuItem className='dark:hover:text-dark-accent'>
             <ChevronLeft size={15} />
           </ContextMenuItem>
-          <ContextMenuItem>
+          <ContextMenuItem onClick={duplicateItem} className='dark:hover:text-dark-accent'>
             <Copy size={15} />
           </ContextMenuItem>
-          <ContextMenuItem onClick={() => { setLocked(!locked) }}>
+          <ContextMenuItem className='dark:hover:text-dark-accent' onClick={() => { setLocked(!locked) }}>
             {locked && (
               <LockOpen size={15} />
             )}
@@ -50,7 +62,7 @@ export const ContextMenu = ({ children }: { children: React.ReactElement }) => {
             )}
           </ContextMenuItem>
 
-          <ContextMenuItem onClick={() => { useDeleteFromStore(item.id) }}>
+          <ContextMenuItem className='dark:hover:text-dark-accent' onClick={() => { useDeleteFromStore(item.id) }}>
             <Trash2 size={15} />
           </ContextMenuItem>
         </ContextMenuContent>
