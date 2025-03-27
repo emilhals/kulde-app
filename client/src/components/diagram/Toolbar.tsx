@@ -46,21 +46,21 @@ export const Toolbar = ({ stage }: { stage: React.RefObject<Konva.Stage> }) => {
   }
 
   return (
-    <div className="absolute z-50 right-0 mx-4 mt-4">
-      <div className='flex items-center gap-4 px-3 w-fit'>
-        <button onClick={() => { handleMinMaximize(true) }}>
+    <div className="absolute z-50 right-0 mx-4 mt-4 ">
+      <div className='flex items-center bg-transparent gap-4 px-3 w-fit'>
+        <button className='bg-transparent' onClick={() => { handleMinMaximize(true) }}>
           <Plus size={16} />
         </button>
 
-        <button onClick={resetZoom} className='font-semibold tracking-wide text-xs'>
+        <button onClick={resetZoom} className='font-semibold tracking-wide bg-transparent text-xs'>
           {zoomPercentage}%
         </button>
 
-        <button onClick={() => { handleMinMaximize(false) }}>
+        <button className='bg-transparent' onClick={() => { handleMinMaximize(false) }}>
           <Minus size={16} />
         </button>
 
-        <button>
+        <button className='bg-transparent'>
           {!isFullscreen && (
             <Maximize size={16} onClick={() => { setFullscreen(true) }} />
           )}
