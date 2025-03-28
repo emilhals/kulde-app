@@ -1,7 +1,7 @@
-import { Maximize, Minimize, Plus, Minus } from 'lucide-react'
-
-import Konva from 'konva'
 import { useState } from 'react'
+import Konva from 'konva'
+
+import { Maximize, Minimize, Plus, Minus } from 'lucide-react'
 
 export const Toolbar = ({ stage }: { stage: React.RefObject<Konva.Stage> }) => {
 
@@ -24,7 +24,6 @@ export const Toolbar = ({ stage }: { stage: React.RefObject<Konva.Stage> }) => {
         x: stage.current.scaleX() - zoom,
         y: stage.current.scaleY() - zoom
       })
-
       setZoomPercentage(zoomPercentage - 5)
     }
   }
@@ -38,6 +37,7 @@ export const Toolbar = ({ stage }: { stage: React.RefObject<Konva.Stage> }) => {
   }
 
   const navbar = document.getElementById('navbar') as HTMLHeadingElement
+  if (!navbar) return
 
   if (isFullscreen) {
     navbar.style.display = 'none'
@@ -46,7 +46,7 @@ export const Toolbar = ({ stage }: { stage: React.RefObject<Konva.Stage> }) => {
   }
 
   return (
-    <div className="absolute z-50 right-0 mx-4 mt-4 ">
+    <div className='absolute z-50 right-0 mx-4 mt-4'>
       <div className='flex items-center bg-transparent gap-4 px-3 w-fit'>
         <button className='bg-transparent' onClick={() => { handleMinMaximize(true) }}>
           <Plus size={16} />
