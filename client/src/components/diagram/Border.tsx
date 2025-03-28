@@ -1,4 +1,4 @@
-import { Line } from 'react-konva'
+import { Line, Group } from 'react-konva'
 import { KonvaEventObject } from 'konva/lib/Node'
 
 import { Anchor } from './Anchor'
@@ -10,22 +10,22 @@ const getAnchorPoints = (x: number, y: number, height: number, width: number) =>
     {
       name: 'top',
       x: x + width / 2,
-      y: y - 15,
+      y: y,
     },
     {
       name: 'left',
-      x: x - 15,
+      x: x,
       y: y + height / 2
     },
     {
       name: 'right',
-      x: x + width + 15,
+      x: x + width,
       y: y + height / 2,
     },
     {
       name: 'bottom',
       x: x + width / 2,
-      y: y + height + 15
+      y: y + height
     }
   ]
 }
@@ -42,7 +42,6 @@ export const Border = ({ item, hovered, onAnchorDragStart, onAnchorDragMove, onA
   if (!item) return
 
   const anchorPoints = getAnchorPoints(item.x, item.y, item.height, item.width)
-
   const points = [0, 0, item.height, 0, item.height, item.height, 0, item.height, 0, 0]
 
   const anchors = anchorPoints.map(({ x, y, name }) => (
@@ -59,18 +58,20 @@ export const Border = ({ item, hovered, onAnchorDragStart, onAnchorDragMove, onA
   ))
 
   return (
-    <>
-      <Line
-        x={item.x}
-        y={item.y}
-        points={points}
-        stroke='#E83F6F'
-        strokeWidth={2}
-        listening={false}
-        perfectDrawEnabled={false}
-      />
+    <Group>
+      {item ? (
+        <Line
+          x={item.x}
+          y={item.y}
+          points={points}
+          stroke='#2d9cbd'
+          strokeWidth={3}
+          listening={false}
+          perfectDrawEnabled={false}
+        />
+      ) : null}
       {anchors}
-    </>
+    </Group>
   )
 }
 
