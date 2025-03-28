@@ -7,6 +7,8 @@ export const useDeleteFromStore = (id: string) => {
   if (connection >= 0)
     store.connections.splice(connection, 10)
 
-  if (index >= 0)
+  if (index >= 0) {
     store.items.splice(index, 1)
+    store.selected = null
+  }
 }
