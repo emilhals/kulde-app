@@ -45,8 +45,8 @@ export const Anchor = ({ x, y, id, hovered, onDragMove, onDragStart, onDragEnd }
         id={id}
         x={x}
         y={y}
-        radius={5}
-        fill='#E83F6F'
+        radius={12}
+        fill='#2d9cdb'
         opacity={0.5}
         visible={hovered === id}
         ref={hover}
@@ -56,20 +56,20 @@ export const Anchor = ({ x, y, id, hovered, onDragMove, onDragStart, onDragEnd }
         id={id}
         x={x}
         y={y}
-        radius={5}
-        fill='#E83F6F'
+        radius={6}
+        fill='#2d9cdb'
         draggable
         onMouseEnter={(e) => {
           const container = e.target.getStage()?.container()
           if (!container) return
 
-          container.style.cursor = "crosshair"
+          container.style.cursor = 'crosshair'
         }}
         onMouseLeave={(e) => {
           const container = e.target.getStage()?.container()
           if (!container) return
 
-          container.style.cursor = "default"
+          container.style.cursor = 'default'
         }}
         onDragStart={(e) => onDragStart(e, id)}
         onDragMove={(e) => onDragMove(e, id)}
