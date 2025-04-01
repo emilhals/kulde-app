@@ -1,20 +1,17 @@
 import { useRef, useState } from 'react'
 
 import Konva from 'konva'
-import { Rect, Group, Text as KonvaText } from 'react-konva'
+import { Group, Text as KonvaText } from 'react-konva'
 import { Html } from 'react-konva-utils'
 
 import { store } from '@/store'
 
-import { PointType, TextType } from '@/common/types'
+import { ItemType, PointType, TextType } from '@/common/types'
 
-/*
- * TODO: lag snap til object for non-standalone text
- * 
- */
-export const Text = ({ parent, standalone }: { parent: TextType, standalone: Boolean }) => {
+export const Text = ({ parent, standalone }: { parent: ItemType | TextType, standalone: boolean }) => {
+  if (!parent) return
+
   const textRef = useRef<Konva.Text>(null)
-  const shadowRef = useRef<Konva.Rect>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const [canEdit, setCanEdit] = useState<boolean>(false)
@@ -25,27 +22,15 @@ export const Text = ({ parent, standalone }: { parent: TextType, standalone: Boo
     y: 0
   })
 
-  const [shadowPosition, setShadowPosition] = useState<PointType>({
-    x: 0,
-    y: 0
-  })
 
   const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
-    shadowRef.current?.show()
-
-    setShadowPosition({
-      x: Math.round(e.target.x() / 16) * 16,
-      y: Math.round(e.target.y() / 16) * 16
-    })
   }
-
 
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
     setPosition({
       x: Math.round(e.target.x() / 16) * 16 - (parent.x),
       y: Math.round(e.target.y() / 16) * 16 - parent.y
     })
-    shadowRef.current?.hide()
   }
 
   const handleDoubleClick = () => {
@@ -56,10 +41,11 @@ export const Text = ({ parent, standalone }: { parent: TextType, standalone: Boo
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     let key = e.key
 
-    let textState = store.texts.find((text) => text.id === parent.id)
+    let textState = store.items.find((item) => item.id === parent.id)?.text
     if (!textState) return
 
     if (key === 'Enter') {
+      console.log('hei')
       setCanEdit(false)
       textRef.current?.visible(true)
       textState.text = editedText
@@ -72,34 +58,25 @@ export const Text = ({ parent, standalone }: { parent: TextType, standalone: Boo
 
   return (
     <Group>
-      <Rect
-        ref={shadowRef}
-        fill="blue"
-        visible={false}
-        opacity={0.4}
-        x={shadowPosition.x}
-        y={shadowPosition.y}
-        height={textRef.current?.textHeight}
-        width={textRef.current?.textWidth}
-        name="shadow"
-      />
       {standalone && (
-        <KonvaText
-          ref={textRef}
-          id={parent.id}
-          draggable
-          onDragMove={handleDragMove}
-          onDragEnd={handleDragEnd}
-          onDblClick={handleDoubleClick}
-          fontSize={16}
-          textDecoration={parent.underline ? 'underline' : ''}
-          fontStyle={parent.bold ? 'bold' : parent.italic ? 'italic' : ''}
-          fontFamily={'Open Sans'}
-          text={parent.text}
-          x={parent.x + position.x}
-          y={parent.y + position.y}
-          name="object"
-        />
+        <>
+          <KonvaText
+            ref={textRef}
+            id={parent.id}
+            draggable
+            onDragMove={handleDragMove}
+            onDragEnd={handleDragEnd}
+            onDblClick={handleDoubleClick}
+            fontSize={16}
+            textDecoration={parent.underline ? 'underline' : ''}
+            fontStyle={parent.bold ? 'bold' : parent.italic ? 'italic' : ''}
+            fontFamily={'Inter'}
+            text={parent.text.text}
+            x={parent.x + position.x}
+            y={parent.y + position.y}
+            name="object"
+          />
+        </>
       )}
 
       {!standalone && (
@@ -111,10 +88,8 @@ export const Text = ({ parent, standalone }: { parent: TextType, standalone: Boo
           onDragEnd={handleDragEnd}
           onDblClick={handleDoubleClick}
           fontSize={16}
-          textDecoration={parent.underline ? 'underline' : ''}
-          fontStyle={parent.bold ? 'bold' : parent.italic ? 'italic' : ''}
-          fontFamily={'Open Sans'}
-          text={parent.label}
+          fontFamily={'Inter'}
+          text={parent.text.text}
           x={parent.x + position.x}
           y={parent.y + position.y}
           name="object"
@@ -126,7 +101,7 @@ export const Text = ({ parent, standalone }: { parent: TextType, standalone: Boo
         <Html>
           <input
             ref={inputRef}
-            defaultValue={parent.text}
+            defaultValue={parent.text.text}
             onChange={(e) => { setEditedText(e.target.value) }}
             onKeyDown={handleKeyDown}
             className='absolute border-0'
@@ -137,6 +112,7 @@ export const Text = ({ parent, standalone }: { parent: TextType, standalone: Boo
               margin: '0px',
               outline: 'none',
               resize: 'none',
+              textDecoration: 'underline',
               transform: 'translateY(-5px)',
               top: `${textRef.current?.y()}px`,
               left: `${textRef.current?.x()}px`,
