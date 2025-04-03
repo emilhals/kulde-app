@@ -1,6 +1,8 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
+import Konva from 'konva'
+
 import { ItemType, PointType, ConnectionType } from '@/common/types'
 
 export function cn(...inputs: ClassValue[]) {
@@ -10,7 +12,7 @@ export function cn(...inputs: ClassValue[]) {
 /*
  * For the connection related components
  */
-export const createConnectionPoints = (destination: PointType, sourceAnchor: string, destinationAnchor: string) => {
+export const createConnectionPoints = (destination: PointType, sourceAnchor: Konva.Shape, destinationAnchor: Konva.Shape) => {
   let OFFSET = 200
 
   let nullPoint: PointType = {
@@ -38,18 +40,30 @@ export const createConnectionPoints = (destination: PointType, sourceAnchor: str
         return [destination.x / 2, 0, destination.x / 2, destination.y - 100, destination.x, destination.y - 100, destination.x, destination.y]
       }
 
-      /*
+      if (sourceAnchor.id() === 'left' && destinationAnchor.id() === 'top') {
+        return [0, 0, destination.x, 0, destination.x, destination.y - (destination.y / 2), destination.x, destination.y]
+      }
+
+      if (sourceAnchor.id() === 'left' && destinationAnchor.id() === 'bottom') {
+        return [0, 0, destination.x, 0, destination.x, destination.y - (destination.y / 2), destination.x, destination.y]
+      }
+
       if (sourceAnchor.id() === 'top' && destinationAnchor.id() === 'left') {
-        return [destination.x / 2, 0, destination.x / 2, destination.y, destination.x, destination.y]
-      }*/
+        return [0, 0, 0, destination.y, destination.x, destination.y]
+      }
       if (sourceAnchor.id() === 'top' && destinationAnchor.id() === 'bottom') {
-        return [0, destination.y - 100, destination.x, destination.y + 100, destination.x, destination.y + 100, destination.x, destination.y]
+        console.log('ade')
+        return [0, 0, destination.x, destination.y, destination.x, destination.y]
       }
       if (sourceAnchor.id() === 'top' && destinationAnchor.id() === 'right') {
         return [0, destination.y, destination.x, destination.y, destination.x, destination.y]
       }
       if (sourceAnchor.id() === 'top' && destinationAnchor.id() === 'top') {
         return [0, destination.y - 100, destination.x, destination.y - 100, destination.x, destination.y - 100, destination.x, destination.y]
+      }
+
+      if (sourceAnchor.id() === 'bottom' && destinationAnchor.id() === 'left') {
+        return [0, destination.y, destination.x, destination.y, destination.x, destination.y, destination.x, destination.y]
       }
 
     }
@@ -62,7 +76,50 @@ export const createConnectionPoints = (destination: PointType, sourceAnchor: str
 }
 
 export const getConnectionPoints = (from: ItemType, to: ItemType, connection: ConnectionType) => {
-  return [from.x, from.y, connection.points.at(2), from.y, to.x, to.y]
+
+  if (connection.offsets.from.placement === 'top' && connection.offsets.to.placement === 'bottom') {
+    if (connection.from.x - connection.to.x > 50 || connection.from.x - connection.to.x < -50) {
+      return [from.x, from.y - connection.offsets.from.position.y, to.x, to.y, from.x, to.y, to.x, to.y]
+    }
+    return [from.x, from.y - connection.offsets.from.position.y, from.x, to.y + connection.offsets.to.position.y / 2]
+  }
+
+  if (connection.offsets.from.placement === 'top' && connection.offsets.to.placement === 'top') {
+    return [from.x, from.y - connection.offsets.from.position.y, to.x, to.y, to.x + connection.offsets.to.position.x / 2, to.y + connection.offsets.to.position.y]
+  }
+
+  if (connection.offsets.from.placement === 'top' && connection.offsets.to.placement === 'right') {
+    return [from.x, from.y - connection.offsets.from.position.y, from.x, to.y, to.x + connection.offsets.to.position.x / 2, to.y]
+  }
+
+  if (connection.offsets.from.placement === 'top' && connection.offsets.to.placement === 'left') {
+    return [from.x, from.y - connection.offsets.from.position.y, from.x, to.y, to.x - connection.offsets.to.position.x, to.y]
+  }
+
+  if (connection.offsets.from.placement === 'right' && connection.offsets.to.placement === 'bottom') {
+    return [from.x, from.y, to.x - connection.offsets.to.position.x, from.y, to.x - connection.offsets.to.position.x, to.y + connection.offsets.to.position.y / 2]
+  }
+
+  if (connection.offsets.from.placement === 'right' && connection.offsets.to.placement === 'top') {
+    return [from.x, from.y, to.x - connection.offsets.to.position.x, from.y, to.x - connection.offsets.to.position.x, to.y - connection.offsets.to.position.y]
+  }
+
+  if (connection.offsets.from.placement === 'left' && connection.offsets.to.placement === 'top') {
+    return [from.x, from.y, to.x, from.y, to.x, to.y - connection.offsets.to.position.y]
+  }
+
+  if (connection.offsets.from.placement === 'left' && connection.offsets.to.placement === 'bottom') {
+    return [from.x - connection.offsets.from.position.x, from.y, to.x, from.y, to.x, to.y + connection.offsets.to.position.y / 2]
+  }
+
+
+  if (connection.offsets.from.placement === 'bottom' && connection.offsets.to.placement === 'left') {
+    return [from.x, from.y, from.x, to.y - connection.offsets.to.position.y, to.x - connection.offsets.to.position.x, to.y - connection.offsets.to.position.y]
+  }
+}
+
+export const getAnchorPoints = (from: ItemType, to: ItemType, connection: Conn) => {
+
 }
 
 
@@ -71,7 +128,7 @@ export const getOffset = (placement: string, item: ItemType) => {
     case 'top':
       return {
         x: item.width / 2,
-        y: 0
+        y: item.height / 2
       }
 
     case 'bottom':
@@ -88,7 +145,7 @@ export const getOffset = (placement: string, item: ItemType) => {
 
     case 'left':
       return {
-        x: 0,
+        x: item.width / 2,
         y: item.height / 2,
       }
     default:
@@ -99,8 +156,15 @@ export const getOffset = (placement: string, item: ItemType) => {
   }
 }
 
-export const hasIntersection = (position: PointType, item) => {
-  let OFFSET = 50
+export const dragBounds = (ref: React.RefObject<Konva.Circle>) => {
+  if (ref.current !== null) {
+    return ref.current.getAbsolutePosition()
+  }
+  return { x: 0, y: 0 }
+}
+
+export const hasIntersection = (position: PointType, item: Konva.Shape) => {
+  let OFFSET = 30
 
   return !(
     item.x() - OFFSET > position.x ||
