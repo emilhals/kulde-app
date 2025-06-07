@@ -25,6 +25,10 @@ export const Item = ({ item }: { item: ItemType }) => {
     if (!item) return
     setItemState(item)
 
+    store.selected = item;
+
+    if (!itemRef.current) return
+
     shadowRef.current?.hide()
     setShadowPosition({
       x: Math.round(e.target.x() / 16) * 16,
@@ -44,10 +48,6 @@ export const Item = ({ item }: { item: ItemType }) => {
     itemState.x = e.target.x()
     itemState.y = e.target.y()
 
-    /*
-     * TODO: finn ut hvorfor jeg må gi hele objektet og ikke bare kan gi posisjonene.
-    */
-    /* update connection position */
     store.connections.forEach((conn) => {
       if (conn?.from.id === itemState.id) {
         conn.from = itemState
@@ -87,7 +87,6 @@ export const Item = ({ item }: { item: ItemType }) => {
       <Image
         ref={shadowRef}
         image={image}
-        stroke='#E83F6F'
         strokeWidth={4}
         opacity={0.4}
         x={shadowPosition.x}
@@ -115,6 +114,19 @@ export const Item = ({ item }: { item: ItemType }) => {
           onPointerDown={handleOnPointerDown}
           onDragMove={handleDragMove}
           onDragEnd={handleDragEnd}
+          onMouseEnter={(e) => {
+            const container = e.target.getStage()?.container()
+            if (!container) return
+
+            container.style.cursor = "grab"
+          }}
+          onMouseLeave={(e) => {
+            const container = e.target.getStage()?.container()
+            if (!container) return
+
+            container.style.cursor = "default"
+          }}
+
           height={item.height}
           width={item.width}
           cornerRadius={8}
