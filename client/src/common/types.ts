@@ -1,8 +1,3 @@
-import { ACTIONS } from "./constants";
-
-export type ActionType = keyof typeof ACTIONS
-
-
 export type PointType = {
   x: number;
   y: number;

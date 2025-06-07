@@ -1,7 +1,0 @@
-export const ACTIONS = {
-  SELECT: "SELECT",
-  WRITE: "WRITE",
-  ADD: "ADD",
-  CONNECTOR: "CONNECTOR",
-  DOWNLOAD: "DOWNLOAD"
-}
