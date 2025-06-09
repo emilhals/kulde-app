@@ -4,7 +4,6 @@ import Konva from 'konva'
 import { Maximize, Minimize, Plus, Minus } from 'lucide-react'
 
 const Toolbar = ({ stage }: { stage: React.RefObject<Konva.Stage> }) => {
-  const [zoomPercentage, setZoomPercentage] = useState<number>(100)
   const [isFullscreen, setFullscreen] = useState<boolean>(false)
 
   const handleMinMaximize = (maximize: boolean) => {
@@ -15,24 +14,12 @@ const Toolbar = ({ stage }: { stage: React.RefObject<Konva.Stage> }) => {
         x: stage.current.scaleX() + zoom,
         y: stage.current.scaleY() + zoom
       })
-
-      setZoomPercentage(zoomPercentage + 5)
-
     } else {
       stage.current?.scale({
         x: stage.current.scaleX() - zoom,
         y: stage.current.scaleY() - zoom
       })
-      setZoomPercentage(zoomPercentage - 5)
     }
-  }
-
-  const resetZoom = () => {
-    stage.current?.scale({
-      x: 1,
-      y: 1
-    })
-    setZoomPercentage(100)
   }
 
   const navbar = document.getElementById('navbar')
@@ -50,21 +37,17 @@ const Toolbar = ({ stage }: { stage: React.RefObject<Konva.Stage> }) => {
   }
 
   return (
-    <div className='absolute top-0 py-24 z-50 right-0 mx-4 mt-4'>
-      <div className='flex items-center bg-transparent gap-4 px-3 w-fit'>
-        <button className='bg-transparent' onClick={() => { handleMinMaximize(true) }}>
+    <div id='toolbar' className='fixed bottom-8 py-32 z-50 right-0 mx-4'>
+      <div className='flex flex-col bg-white shadow-md rounded-lg items-center'>
+        <button className='py-2 px-2 hover:bg-gray-50 rounded-lg' onClick={() => { handleMinMaximize(true) }}>
           <Plus size={16} />
         </button>
 
-        <button onClick={resetZoom} className='font-semibold tracking-wide bg-transparent text-xs'>
-          {zoomPercentage}%
-        </button>
-
-        <button className='bg-transparent' onClick={() => { handleMinMaximize(false) }}>
+        <button className='py-2 px-2 hover:bg-gray-50' onClick={() => { handleMinMaximize(false) }}>
           <Minus size={16} />
         </button>
 
-        <button className='bg-transparent'>
+        <button className='py-2 px-2 rounded-lg hover:bg-gray-50'>
           {!isFullscreen && (
             <Maximize size={16} onClick={() => { setFullscreen(true) }} />
           )}
@@ -74,7 +57,7 @@ const Toolbar = ({ stage }: { stage: React.RefObject<Konva.Stage> }) => {
           )}
         </button>
       </div>
-    </div>
+    </div >
   )
 }
 
