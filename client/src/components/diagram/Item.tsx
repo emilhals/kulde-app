@@ -6,7 +6,6 @@ import useImage from 'use-image'
 
 import { ItemType, PointType } from '@/common/types'
 import { Text } from '@/components/diagram/Text'
-import { ContextMenu } from './ContextMenu'
 
 import { store } from '@/store'
 
@@ -101,40 +100,39 @@ export const Item = ({ item }: { item: ItemType }) => {
         name="shadow"
       />
 
-      <ContextMenu>
-        <Image
-          ref={itemRef}
-          id={item.id}
-          key={item.id}
-          image={image}
-          x={item.x}
-          y={item.y}
-          draggable={!item.locked}
-          onContextMenu={(e) => { e.evt.preventDefault() }}
-          onPointerDown={handleOnPointerDown}
-          onDragMove={handleDragMove}
-          onDragEnd={handleDragEnd}
-          onMouseEnter={(e) => {
-            const container = e.target.getStage()?.container()
-            if (!container) return
+      <Image
+        ref={itemRef}
+        id={item.id}
+        key={item.id}
+        image={image}
+        x={item.x}
+        y={item.y}
+        draggable={!item.locked}
+        onContextMenu={(e) => { e.evt.preventDefault() }}
+        onPointerDown={handleOnPointerDown}
+        onDragMove={handleDragMove}
+        onDragEnd={handleDragEnd}
+        onMouseEnter={(e) => {
+          const container = e.target.getStage()?.container()
+          if (!container) return
 
-            container.style.cursor = "grab"
-          }}
-          onMouseLeave={(e) => {
-            const container = e.target.getStage()?.container()
-            if (!container) return
+          container.style.cursor = "grab"
+        }}
+        onMouseLeave={(e) => {
+          const container = e.target.getStage()?.container()
+          if (!container) return
 
-            container.style.cursor = "default"
-          }}
+          container.style.cursor = "default"
+        }}
+        height={item.height}
+        width={item.width}
+        cornerRadius={8}
+        name="object"
+      />
 
-          height={item.height}
-          width={item.width}
-          cornerRadius={8}
-          name="object"
-        />
-
-      </ContextMenu>
-      <Text parent={item} standalone={false} />
+      {item.text && (
+        <Text parent={item} standalone={false} />
+      )}
     </Group>
   )
 }
