@@ -7,17 +7,17 @@ const Toolbar = ({ stage }: { stage: React.RefObject<Konva.Stage> }) => {
   const [isFullscreen, setFullscreen] = useState<boolean>(false)
 
   const handleMinMaximize = (maximize: boolean) => {
-    const zoom = 0.1
+    const zoomAmount = 0.1
 
     if (maximize) {
       stage.current?.scale({
-        x: stage.current.scaleX() + zoom,
-        y: stage.current.scaleY() + zoom
+        x: stage.current.scaleX() + zoomAmount,
+        y: stage.current.scaleY() + zoomAmount
       })
     } else {
       stage.current?.scale({
-        x: stage.current.scaleX() - zoom,
-        y: stage.current.scaleY() - zoom
+        x: stage.current.scaleX() - zoomAmount,
+        y: stage.current.scaleY() - zoomAmount
       })
     }
   }
@@ -37,17 +37,28 @@ const Toolbar = ({ stage }: { stage: React.RefObject<Konva.Stage> }) => {
   }
 
   return (
-    <div id='toolbar' className='fixed bottom-8 py-32 z-50 right-0 mx-4'>
-      <div className='flex flex-col bg-white shadow-md rounded-lg items-center'>
-        <button className='py-2 px-2 hover:bg-gray-50 rounded-lg' onClick={() => { handleMinMaximize(true) }}>
+    <div id='toolbar' className='absolute bottom-0 py-48 z-50 right-0 mx-4'>
+      <div className='
+        flex flex-col bg-white shadow-md rounded-lg items-center
+        dark:bg-darkBackground dark:border-2 
+        '>
+        <button className='
+          py-2 px-2 hover:bg-gray-50 rounded-lg 
+          dark:bg-darkBackground' onClick={() => { handleMinMaximize(true) }}>
           <Plus size={16} />
         </button>
 
-        <button className='py-2 px-2 hover:bg-gray-50' onClick={() => { handleMinMaximize(false) }}>
+        <button className='
+          py-2 px-2 hover:bg-gray-50
+          dark:bg-darkBackground
+          ' onClick={() => { handleMinMaximize(false) }}>
           <Minus size={16} />
         </button>
 
-        <button className='py-2 px-2 rounded-lg hover:bg-gray-50'>
+        <button className='
+          py-2 px-2 rounded-lg hover:bg-gray-50
+          dark:bg-darkBackground
+          '>
           {!isFullscreen && (
             <Maximize size={16} onClick={() => { setFullscreen(true) }} />
           )}
