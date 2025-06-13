@@ -1,32 +1,39 @@
 import { v4 as uuidv4 } from 'uuid'
 
-import { ConnectionPreview, ItemType, TextType } from '@/common/types'
+import { ItemType, ItemPreview, TextType, TextPreview, ConnectionPreview, ConnectionType } from '@/common/types'
 import { store } from '@/store'
 
-export const useAddToStore = (data: ItemType | TextType | ConnectionPreview) => {
+export const useAddToStore = (data: ItemPreview | TextPreview | ConnectionPreview) => {
   const id = uuidv4()
 
   switch (data.type) {
     case 'items':
-      store.items.push({
+      const newItem: ItemType = {
         ...data,
         id: id
-      })
-      break
+      }
+
+      store.items.push(newItem)
+      return newItem
 
     case 'texts':
-      store.texts.push({
+      const newText: TextType = {
         ...data,
         id: id
-      })
-      break
+      }
+
+      store.texts.push(newText)
+      return newText
 
     case 'connections':
-      store.connections.push({
+      const newConnection: ConnectionType = {
         ...data,
         id: id
-      })
-      break
+      }
+
+      store.connections.push(newConnection)
+      return newConnection
+
     default:
       console.log('Error with pushing to store', data)
   }
