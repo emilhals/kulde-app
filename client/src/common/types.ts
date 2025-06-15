@@ -8,10 +8,11 @@ export type OffsetType = {
   position: PointType;
 }
 
+
 export type ConnectionPreview = Omit<ConnectionType, 'id'>
 export type ConnectionType = {
-  id: string;
-  type: "connections";
+  readonly id: string;
+  readonly type: 'connections';
   from: ItemType;
   to: ItemType;
   points: [];
@@ -30,34 +31,38 @@ export type SelectionType = {
   height: number;
 }
 
-export type ItemPreview = Omit<ItemType, 'id'>
+export type ItemPreview = Omit<ItemType, "id">
 export type ItemType = {
-  id: string;
-  type: "items";
+  readonly id: string;
+  readonly type: 'items';
   component: string;
   height: number;
   width: number;
   x: number;
   y: number;
   locked: boolean;
-  textOffset: OffsetType;
-  text: TextPreview | null;
   img: string;
+  text?: TextType;
 }
-
 
 export type TextPreview = Omit<TextType, 'id'>
 export type TextType = {
-  id: string;
-  type: "texts";
-  text: string;
-  x: number;
-  y: number;
+  readonly id: string;
+  readonly type: 'texts';
+  content: string;
+  position: PointType;
   size: number;
-  standalone: boolean;
-  attributes: {
+  attributes?: {
     bold: boolean;
     italic: boolean;
     underline: boolean;
   }
+}
+
+export type ComponentType = {
+  value: string;
+  img: string;
+  label: string;
+  width: number;
+  height: number;
 }
