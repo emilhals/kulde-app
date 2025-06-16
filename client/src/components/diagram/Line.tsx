@@ -1,12 +1,11 @@
 import { useRef, useState } from 'react'
 import { Line as KonvaLine, Circle } from 'react-konva'
-import Konva from 'konva'
 
 import { ConnectionType } from '@/common/types'
 import { getConnectionPoints, dragBounds } from '@/lib/utils'
 
-const getLinePoints = (points) => {
-  let p = []
+const getLinePoints = (points: number[]) => {
+  const p = []
 
   for (let i = 0; i < (points.length / 2); i++) {
     p[i] = {
@@ -21,29 +20,27 @@ export const Line = ({ connection }: { connection: ConnectionType }) => {
   const connectorRef = useRef(null)
   const circle = useRef(null)
 
-  const [activePoints, setActivePoints] = useState<Konva.Circle[]>([])
+  const [activePoints, setActivePoints] = useState<JSX.Element[]>([])
   const [dragging, setDragging] = useState<boolean>(false)
 
   const points = getConnectionPoints(connection.from, connection.to, connection)
   if (!points) return
 
   const handlePointerEnter = () => {
-    console.log(connection)
-
     const k = getLinePoints(points)
 
-    const circles = k.map((position) => {
+    const circles = k.map((position, index) => {
       return (
         <Circle
           ref={circle}
+          key={index}
           offsetX={-connection.offsets.from.position.x}
           offsetY={-connection.offsets.from.position.y}
           x={position.x}
           y={position.y}
-          stroke='black'
-          strokeWidth={1}
-          fill='#2d9cbd'
+          fill='#1c1c1c'
           radius={5}
+          onClick={() => console.log("clicked")}
           draggable={true}
           onDragStart={handleDragStart}
           dragBoundFunc={() => dragBounds(circle)}
@@ -67,10 +64,11 @@ export const Line = ({ connection }: { connection: ConnectionType }) => {
     <>
       <KonvaLine
         ref={connectorRef}
+        key={connection.id}
         x={connection.offsets.from.position.x}
         y={connection.offsets.from.position.y}
         points={points}
-        stroke="black"
+        stroke="#1c1c1c"
         strokeWidth={2}
         hitStrokeWidth={50}
         onPointerEnter={handlePointerEnter}
