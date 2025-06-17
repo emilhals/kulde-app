@@ -5,6 +5,9 @@ import { Anchor } from './Anchor'
 
 import { ItemType } from '@/common/types'
 
+import { state } from '@/stores/settingsStore'
+import { useSnapshot } from 'valtio'
+
 const getAnchorPoints = (x: number, y: number, height: number, width: number) => {
   return [
     {
@@ -41,6 +44,8 @@ type PropsType = {
 export const Border = ({ item, hovered, onAnchorDragStart, onAnchorDragMove, onAnchorDragEnd }: PropsType) => {
   if (!item) return
 
+  const snap = useSnapshot(state)
+
   const anchorPoints = getAnchorPoints(item.x, item.y, item.height, item.width)
   const points = [0, 0, item.height, 0, item.height, item.height, 0, item.height, 0, 0]
 
@@ -64,8 +69,8 @@ export const Border = ({ item, hovered, onAnchorDragStart, onAnchorDragMove, onA
           x={item.x}
           y={item.y}
           points={points}
-          stroke='#2d9cbd'
-          strokeWidth={3}
+          stroke={snap.lightAccentColor}
+          strokeWidth={2}
           listening={false}
           perfectDrawEnabled={false}
         />
