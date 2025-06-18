@@ -1,10 +1,12 @@
+export type PlacementType = 'top' | 'bottom' | 'right' | 'left'
+
 export type PointType = {
   x: number;
   y: number;
 };
 
 export type OffsetType = {
-  placement: string;
+  placement: PlacementType;
   position: PointType;
 }
 
