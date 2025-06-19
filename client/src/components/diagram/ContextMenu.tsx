@@ -1,117 +1,116 @@
-import {
-  ContextMenu as CM,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuTrigger,
-} from '@/components/ui/context-menu'
+import { useState } from 'react'
 
-import { Trash2, Lock, LockOpen, Copy, Type } from 'lucide-react'
+import { Lock, LockOpen, X } from 'lucide-react'
 
-import React, { useState, useRef } from 'react'
-import { Html } from 'react-konva-utils'
-
+import { state } from '@/stores/settingsStore'
 import { store } from '@/store'
+import { useSnapshot } from 'valtio'
+
 import { useDeleteFromStore } from '@/hooks/useDeleteFromStore'
 import { useAddToStore } from '@/hooks/useAddToStore'
 
-import { ItemPreview, TextPreview } from '@/common/types'
+import { ItemPreview, PointType, TextPreview, TextType } from '@/common/types'
 
-import { Group } from 'react-konva'
+export const ContextMenu = ({ position }: { position: PointType }) => {
+  if (!position) return
 
-export const ContextMenu = ({ children }: { children: React.ReactElement }) => {
-
-  const item = store.items.find((item) => item.id === children.props.id)
+  const item = store.items.find((item) => item.id === store.selected?.id)
   if (!item) return
 
   const [locked, setLocked] = useState<boolean>(item.locked)
-  const [showInput, setShowInput] = useState<boolean>(false)
+  const [show, setShow] = useState<boolean>(true)
 
-  const textInput = useRef<HTMLInputElement>(null)
+  const snap = useSnapshot(state)
 
   item.locked = locked
 
   const duplicateItem = () => {
+    const newText: TextPreview = {
+      type: 'texts',
+      position: { x: item.x, y: item.y },
+      content: item.text.content,
+      size: 16,
+    }
+
+    const addedText = useAddToStore(newText) as TextType
+    if (!addedText) return
+
     const duplicatedItem: ItemPreview = {
       ...item,
+      text: addedText,
       x: item.x,
       y: item.y - item.height * 1.5
     }
     useAddToStore(duplicatedItem)
   }
 
-  const addText = (content: string) => {
-    const newText: TextPreview = {
-      type: "texts",
-      x: 0,
-      y: 0,
-      content: content,
-      size: 16,
-    }
-
-    const textResult = useAddToStore(newText)
-    if (!textResult) return
-
-    /* update the item store */
-    item.text = textResult
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      if (!textInput.current) return
-      addText(textInput.current.value)
-      setShowInput(false)
-    }
-
-    if (e.key === 'Escape') {
-      setShowInput(false)
-    }
-  }
-
   return (
-    <CM>
-      <ContextMenuTrigger>
-        <Group>
-          {children}
-        </Group>
-      </ContextMenuTrigger>
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        position: 'fixed',
+        top: position.y,
+        left: position.x,
+        zIndex: 10,
+        backgroundColor: snap.isDarkMode ? snap.darkBackgroundColor : snap.lightBackgroundColor,
+        fontFamily: snap.font
+      }
+      }
+      id='contextmenu'
+      className={`
+        bg-white shadow-md w-48 h-19 gap-y-4 flex flex-col transition-colors duration-200 justify-center border-1 items-center rounded-bl-lg rounded-br-lg ${show ? '' : 'hidden'}
+        dark:border-2
+      `}
+    >
+      <div className='flex py-3'>
+        <X
+          onClick={() => setShow(false)}
+          className='absolute left-3 top-3 hover:cursor-pointer' size={12} />
+        <div className='flex flex-col justify-center items-center'>
+          <h3
+            style={{ color: snap.isDarkMode ? snap.lightAccentColor : snap.darkAccentColor }}
+            className='uppercase text-md tracking-wide'>Info</h3>
+          <p className='text-gray-600 text-sm'>{item.component}</p>
+        </div>
+      </div>
 
-      {showInput && (
-        <Html>
-          <input ref={textInput} type="text" placeholder="Label"
-            onKeyDown={handleKeyDown}
-            className="rounded-sm border fixed flex justify-center items-center gap-4 px-3 w-fit mx-auto"
-            style={{ left: `${item.x - item.width / 2}px`, top: `${item.y - item.height * .5}px` }}
-          ></input>
-        </Html>
-      )}
+      <div className='w-fit flex flex-col gap-y-1'>
+        <label className='text-sm'>Label</label>
+        <input
+          type='text'
+          className='border-gray-500 border-b-2 bg-gray-50 w-32 focus:outline-none dark:text-black'
+          value={item.text.content}
+          style={{
+            borderColor: snap.isDarkMode ? snap.darkAccentColor : snap.lightAccentColor,
+          }}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            item.text.content = e.target.value
+          }} />
+      </div>
 
-      <Html>
-        <ContextMenuContent className="dark:bg-dark-panel dark:border-dark-border fixed flex justify-center items-center gap-4 px-3 w-fit mx-auto border rounded-lg"
-          style={{ left: `${item.x - item.width / 2}px`, top: `${item.y + item.height / 4}px` }}
-        >
-          <ContextMenuItem onClick={() => setShowInput(true)} className='dark:hover:text-dark-accent'>
-            <Type size={15} />
-          </ContextMenuItem>
+      <div className='mt-4'>
+        <button className='bg-transparent' onClick={() => setLocked(false)}>
+          {locked && (
+            <Lock size={18} />
+          )}
+        </button>
+        <button className='bg-transparent' onClick={() => setLocked(true)}>
+          {!locked && (
+            <LockOpen size={18} />
+          )}
+        </button>
+      </div>
 
-          <ContextMenuItem onClick={duplicateItem} className='dark:hover:text-dark-accent'>
-            <Copy size={15} />
-          </ContextMenuItem>
-
-          <ContextMenuItem className='dark:hover:text-dark-accent' onClick={() => { setLocked(!locked) }}>
-            {locked && (
-              <LockOpen size={15} />
-            )}
-            {!locked && (
-              <Lock size={15} />
-            )}
-          </ContextMenuItem>
-
-          <ContextMenuItem className='dark:hover:text-dark-accent' onClick={() => { useDeleteFromStore(item.id) }}>
-            <Trash2 size={15} />
-          </ContextMenuItem>
-
-        </ContextMenuContent>
-      </Html>
-    </CM>
+      <div className='flex flex-row gap-3 px-4 py-3'>
+        <button
+          onClick={duplicateItem}
+          className='border-2 py-2 px-2 text-sm hover:bg-gray-50 border-1 border-gray-100 rounded-sm dark:bg-gray-900 dark:hover:bg-gray-800'>Duplicate</button>
+        <button
+          onClick={() => useDeleteFromStore(item.id)}
+          className='bg-rose-500 px-2 text-white hover:bg-rose-600 text-sm rounded-sm inset-shadow-sm inset-shadow-white/50'>Remove</button>
+      </div>
+    </div >
   )
 }
+
+export default ContextMenu
