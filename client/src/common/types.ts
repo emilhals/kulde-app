@@ -10,7 +10,6 @@ export type OffsetType = {
   position: PointType;
 }
 
-
 export type ConnectionPreview = Omit<ConnectionType, 'id'>
 export type ConnectionType = {
   readonly id: string;
@@ -44,7 +43,7 @@ export type ItemType = {
   y: number;
   locked: boolean;
   img: string;
-  text?: TextType;
+  text: TextType;
 }
 
 export type TextPreview = Omit<TextType, 'id'>
