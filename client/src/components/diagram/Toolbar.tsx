@@ -25,19 +25,14 @@ const Toolbar = ({ stage }: { stage: React.RefObject<Konva.Stage> }) => {
   const navbar = document.getElementById('navbar')
   if (!navbar) return
 
-  const componentPanel = document.getElementById('component-panel')
-  if (!componentPanel) return
-
   if (isFullscreen) {
     navbar.style.display = 'none'
-    componentPanel.style.display = 'none'
   } else {
     navbar.style.display = 'block'
-    componentPanel.style.display = 'block'
   }
 
   return (
-    <div id='toolbar' className='absolute bottom-0 py-48 z-50 right-0 mx-4'>
+    <div id='toolbar' className='absolute bottom-0 py-48 z-40 right-0 mx-4'>
       <div className='
         flex flex-col bg-white shadow-md rounded-lg items-center
         dark:bg-darkBackground dark:border-2 
