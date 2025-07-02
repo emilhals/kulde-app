@@ -1,39 +1,57 @@
-import { Line, Group } from 'react-konva'
-import { KonvaEventObject } from 'konva/lib/Node'
+import { Line, Group } from 'react-konva';
+import { KonvaEventObject } from 'konva/lib/Node';
 
-import { Anchor } from './Anchor'
+import { Anchor } from '@/components/diagram/Anchor';
 
-import { ItemType } from '@/common/types'
+import { ItemType, PointType } from '@/common/types';
 
-import { state } from '@/stores/settingsStore'
-import { useSnapshot } from 'valtio'
+import { settingsState } from '@/stores/settingsStore';
+import { useSnapshot } from 'valtio';
 
-const getAnchorPoints = (x: number, y: number, height: number, width: number) => {
-  return [
-    {
-      name: 'top',
-      x: x + width / 2,
-      y: y,
-    },
-    {
-      name: 'left',
-      x: x,
-      y: y + height / 2
-    },
-    {
-      name: 'right',
-      x: x + width,
-      y: y + height / 2,
-    },
-    {
-      name: 'bottom',
-      x: x + width / 2,
-      y: y + height
+export type AnchorType = PointType & {
+  name: string;
+};
+
+const getAnchorPoints = (item: ItemType) => {
+  const anchors: AnchorType[] = [];
+
+  item.anchors.map((placement) => {
+    if (placement === 'Top') {
+      anchors.push({
+        name: 'top',
+        x: item.x + item.width / 2,
+        y: item.y,
+      })
     }
-  ]
+    if (placement === 'Bottom') {
+      anchors.push({
+        name: 'bottom',
+        x: item.x + item.width / 2,
+        y: item.y + item.height
+      })
+    }
+
+    if (placement === 'Left') {
+      anchors.push({
+        name: 'left',
+        x: item.x,
+        y: item.y + item.height / 2
+      })
+    }
+
+    if (placement === 'Right') {
+      anchors.push({
+        name: 'right',
+        x: item.x + item.width,
+        y: item.y + item.height / 2,
+      })
+    }
+  })
+
+  return anchors;
 }
 
-type PropsType = {
+type BorderProps = {
   item: ItemType
   hovered: string
   onAnchorDragStart: (e: KonvaEventObject<DragEvent>, id: string | number) => void
@@ -41,15 +59,15 @@ type PropsType = {
   onAnchorDragEnd: (e: KonvaEventObject<DragEvent>, id: string | number) => void
 }
 
-export const Border = ({ item, hovered, onAnchorDragStart, onAnchorDragMove, onAnchorDragEnd }: PropsType) => {
-  if (!item) return
+export const Border = ({ item, hovered, onAnchorDragStart, onAnchorDragMove, onAnchorDragEnd }: BorderProps) => {
+  const snap = useSnapshot(settingsState);
 
-  const snap = useSnapshot(state)
+  if (!item) return;
 
-  const anchorPoints = getAnchorPoints(item.x, item.y, item.height, item.width)
-  const points = [0, 0, item.height, 0, item.height, item.height, 0, item.height, 0, 0]
+  const anchorPoints = getAnchorPoints(item);
+  const points = [0, 0, item.width, 0, item.width, item.height, 0, item.height, 0, 0];
 
-  const anchors = anchorPoints.map(({ x, y, name }) => (
+   const anchors = anchorPoints.map(({ x, y, name }) => (
     <Anchor
       key={`anchor-${name}`}
       id={name}
@@ -60,7 +78,7 @@ export const Border = ({ item, hovered, onAnchorDragStart, onAnchorDragMove, onA
       onDragMove={onAnchorDragMove}
       onDragEnd={onAnchorDragEnd}
     />
-  ))
+  ));
 
   return (
     <Group>
@@ -69,7 +87,7 @@ export const Border = ({ item, hovered, onAnchorDragStart, onAnchorDragMove, onA
           x={item.x}
           y={item.y}
           points={points}
-          stroke={snap.lightAccentColor}
+          stroke={snap.isDarkMode ? snap.darkAccentColor : snap.lightAccentColor}
           strokeWidth={2}
           listening={false}
           perfectDrawEnabled={false}
