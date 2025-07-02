@@ -1,4 +1,4 @@
-export type PlacementType = 'top' | 'bottom' | 'right' | 'left'
+export type PlacementType = 'top' | 'bottom' | 'right' | 'left' | null;
 
 export type PointType = {
   x: number;
@@ -8,19 +8,19 @@ export type PointType = {
 export type OffsetType = {
   placement: PlacementType;
   position: PointType;
-}
+};
 
 export type ConnectionPreview = Omit<ConnectionType, 'id'>
 export type ConnectionType = {
   readonly id: string;
   readonly type: 'connections';
-  from: ItemType;
-  to: ItemType;
+  from: ItemType | null;
+  to: ItemType | null;
   points: [];
   offsets: {
     from: OffsetType;
     to: OffsetType;
-  }
+  };
 };
 
 export type SelectionType = {
@@ -30,9 +30,9 @@ export type SelectionType = {
   y2: number;
   width: number;
   height: number;
-}
+};
 
-export type ItemPreview = Omit<ItemType, "id">
+export type ItemPreview = Omit<ItemType, 'id'>
 export type ItemType = {
   readonly id: string;
   readonly type: 'items';
@@ -41,10 +41,11 @@ export type ItemType = {
   width: number;
   x: number;
   y: number;
+  anchors: [];
   locked: boolean;
   img: string;
   text: TextType;
-}
+};
 
 export type TextPreview = Omit<TextType, 'id'>
 export type TextType = {
@@ -57,8 +58,8 @@ export type TextType = {
     bold: boolean;
     italic: boolean;
     underline: boolean;
-  }
-}
+  };
+};
 
 export type ComponentType = {
   value: string;
@@ -66,4 +67,5 @@ export type ComponentType = {
   label: string;
   width: number;
   height: number;
-}
+  anchors: PlacementType;
+};
