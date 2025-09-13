@@ -1,16 +1,25 @@
 import { v4 as uuidv4 } from 'uuid'
 
-import { ItemType, ItemPreview, TextType, TextPreview, ConnectionPreview, ConnectionType } from '@/common/types'
+import {
+  ItemType,
+  ItemPreview,
+  TextType,
+  TextPreview,
+  ConnectionPreview,
+  ConnectionType,
+} from '@/common/types'
 import { store } from '@/store'
 
-export const useAddToStore = (data: ItemPreview | TextPreview | ConnectionPreview) => {
+export const useAddToStore = (
+  data: ItemPreview | TextPreview | ConnectionPreview,
+) => {
   const id = uuidv4()
 
   switch (data.type) {
     case 'items':
       const newItem: ItemType = {
         ...data,
-        id: id
+        id: id,
       }
 
       store.items.push(newItem)
@@ -19,7 +28,7 @@ export const useAddToStore = (data: ItemPreview | TextPreview | ConnectionPrevie
     case 'texts':
       const newText: TextType = {
         ...data,
-        id: id
+        id: id,
       }
 
       store.texts.push(newText)
@@ -28,7 +37,7 @@ export const useAddToStore = (data: ItemPreview | TextPreview | ConnectionPrevie
     case 'connections':
       const newConnection: ConnectionType = {
         ...data,
-        id: id
+        id: id,
       }
 
       store.connections.push(newConnection)

@@ -7,13 +7,13 @@ export const useCustomFont = (fonts: string) => {
   useEffect(() => {
     WebFont.load({
       google: {
-        families: [fonts]
+        families: [fonts],
       },
       fontactive: () => {
         setTimeout(() => {
           setFontLoaded(true)
         }, 1000)
-      }
+      },
     })
   })
 
