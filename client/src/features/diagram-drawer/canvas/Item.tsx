@@ -13,8 +13,8 @@ export const Item = ({ item }: { item: ItemType }) => {
   const shadowRef = useRef<Konva.Rect>(null)
 
   const [shadowPosition, setShadowPosition] = useState<PointType>({
-    x: 0,
-    y: 0,
+    x: -10000,
+    y: -10000,
   })
 
   const Symbol = SYMBOL_MAP[item.component]
