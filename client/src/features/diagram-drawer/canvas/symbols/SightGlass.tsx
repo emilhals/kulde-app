@@ -8,6 +8,7 @@ const SightGlass = ({ item }: { item: ItemType }) => {
     <Group id={item.id}>
       <Rect
         id={item.id}
+        name="object"
         width={item.width}
         height={item.height}
         stroke="black"
@@ -15,6 +16,7 @@ const SightGlass = ({ item }: { item: ItemType }) => {
       />
       <Ring
         id={item.id}
+        name="object"
         x={item.width / 2}
         y={item.height / 2}
         innerRadius={5}

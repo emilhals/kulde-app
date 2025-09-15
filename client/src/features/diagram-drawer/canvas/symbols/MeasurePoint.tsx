@@ -17,8 +17,9 @@ const MeasurePoint = ({ item }: { item: ItemType }) => {
   }
 
   return (
-    <Group id={item.id}>
+    <Group>
       <Text
+        name="object"
         id={item.id}
         text={label}
         fontSize={16}
@@ -31,6 +32,7 @@ const MeasurePoint = ({ item }: { item: ItemType }) => {
       />
       <Circle
         id={item.id}
+        name="object"
         x={centerX}
         y={centerY}
         radius={radius}

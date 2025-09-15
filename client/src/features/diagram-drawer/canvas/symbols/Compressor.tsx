@@ -10,6 +10,7 @@ const Compressor = ({ item }: { item: ItemType }) => {
   return (
     <Group id={item.id}>
       <Circle
+        name="object"
         id={item.id}
         x={centerX}
         y={centerY}
@@ -18,6 +19,7 @@ const Compressor = ({ item }: { item: ItemType }) => {
         strokeWidth={2}
       />
       <Line
+        name="object"
         id={item.id}
         points={[
           centerX - radius * 0.85,
@@ -32,6 +34,7 @@ const Compressor = ({ item }: { item: ItemType }) => {
       />
 
       <Line
+        name="object"
         id={item.id}
         points={[
           centerX - radius * 0.85,
