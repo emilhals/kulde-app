@@ -1,7 +1,6 @@
 import { useState } from 'react'
-import { Line } from 'react-konva'
 
-import { Shape } from 'konva/lib/Shape'
+import { Line } from 'react-konva'
 import { Node, NodeConfig } from 'konva/lib/Node'
 
 import { PointType } from '@/features/diagram-drawer/types'
@@ -33,7 +32,7 @@ export const useConnectionPreview = () => {
     position: PointType,
     mousePosition: PointType,
     draggedFromAnchor: Node<NodeConfig>,
-    hoveredAnchor: Shape,
+    hoveredAnchor: Node<NodeConfig>,
   ) => {
     setConnectionPreview(
       <Line
