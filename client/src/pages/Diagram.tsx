@@ -40,7 +40,7 @@ const DiagramPage = () => {
   const containerRef = useRef<HTMLDivElement>(null)
   const itemLayer = useRef<Konva.Layer>(null)
 
-  const [,] = useCustomFont('Open Sans')
+  const [,] = useCustomFont('Inter')
 
   const [stage, setStage] = useState({ width: 0, height: 0, scale: 1 })
 
@@ -148,14 +148,22 @@ const DiagramPage = () => {
   }
 
   const handleKeyDown = (e: KeyboardEvent) => {
-    e.preventDefault()
+    const activeElement = document.activeElement
+
+    if (activeElement?.tagName === 'INPUT') {
+      return null
+    }
+
+    if (['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+      e.preventDefault()
+    } else {
+      return null
+    }
 
     if (!store.selected) return null
 
     const itemProxy = store.items.find((i) => i.id === store.selected?.id)
     if (!itemProxy) return null
-
-    console.log(e.key)
 
     switch (e.key) {
       case 'ArrowRight':
