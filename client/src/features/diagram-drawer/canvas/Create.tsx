@@ -4,7 +4,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"
+} from '@/components/ui/popover'
 
 import {
   NavigationMenu,
@@ -13,7 +13,7 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuTrigger,
-} from "@/components/ui/navigation-menu"
+} from '@/components/ui/navigation-menu'
 
 import {
   Command,
@@ -22,38 +22,38 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@/components/ui/command"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
+} from '@/components/ui/command'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils'
 
 const COMPONENTS = [
   {
-    value: "compressor",
-    label: "Compressor",
-    img: "compressor.png",
+    value: 'compressor',
+    label: 'Compressor',
+    img: 'compressor.png',
     width: 96,
     height: 96,
   },
   {
-    value: "condensator",
-    label: "Condensator",
-    img: "condensator.png",
+    value: 'condensator',
+    label: 'Condensator',
+    img: 'condensator.png',
     width: 96,
     height: 96,
   },
   {
-    value: "evaporator",
-    label: "Evaporator",
-    img: "evaporator.png",
+    value: 'evaporator',
+    label: 'Evaporator',
+    img: 'evaporator.png',
     width: 96,
     height: 96,
   },
   {
-    value: "pressureswitch",
-    label: "Pressure Switch",
-    img: "condevap.png",
+    value: 'pressureswitch',
+    label: 'Pressure Switch',
+    img: 'condevap.png',
     width: 64,
     height: 64,
   },
@@ -61,13 +61,13 @@ const COMPONENTS = [
 
 import { CirclePlus, ChevronsUpDown, Check } from 'lucide-react'
 
-import { ItemPreview, TextPreview } from '@/common/types'
+import { ItemPreview, TextPreview } from '@/features/diagram-drawer/types'
 
 import { useAddToStore } from '@/hooks/useAddToStore'
 
 export const Create = () => {
   const [open, setOpen] = useState(false)
-  const [value, setValue] = useState("")
+  const [value, setValue] = useState('')
 
   const [textPlaceholder, setTextPlaceholder] = useState('')
   const [component, setComponent] = useState('')
@@ -81,7 +81,7 @@ export const Create = () => {
     y: 50,
     textOffset: {
       placement: '',
-      position: { x: 0, y: 0 }
+      position: { x: 0, y: 0 },
     },
     img: '',
     locked: false,
@@ -98,8 +98,8 @@ export const Create = () => {
     attributes: {
       bold: false,
       italic: false,
-      underline: false
-    }
+      underline: false,
+    },
   })
 
   const createItem = (item: ItemPreview) => {
@@ -118,7 +118,7 @@ export const Create = () => {
       locked: item.locked,
       text: newText,
       textOffset: item.textOffset,
-      img: item.img
+      img: item.img,
     }
 
     useAddToStore(newItem)
@@ -129,20 +129,25 @@ export const Create = () => {
       component: '',
       height: 0,
       width: 0,
-      img: ''
+      img: '',
     })
   }
 
   return (
-    <div className='absolute z-50 bottom-0 mx-4 mb-4'>
+    <div className="absolute z-50 bottom-0 mx-4 mb-4">
       <Popover>
-        <PopoverTrigger className='bg-transparent'>
-          <CirclePlus size={24} onClick={() => { setOpen(!open) }} />
+        <PopoverTrigger className="bg-transparent">
+          <CirclePlus
+            size={24}
+            onClick={() => {
+              setOpen(!open)
+            }}
+          />
         </PopoverTrigger>
         <PopoverContent
-          side='top'
+          side="top"
           sideOffset={8}
-          className='bg-transparent border-none transition-none duration-0'
+          className="bg-transparent border-none transition-none duration-0"
         >
           <ul className="dark:bg-dark-panel dark:border-dark-accent grid bg-violet-100 gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
             <li className="row-span-3">
@@ -150,10 +155,19 @@ export const Create = () => {
                 className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md"
                 href="/"
               >
-                <img className="" src={component ? component.img : 'compressor.img'} />
+                <img
+                  className=""
+                  src={component ? component.img : 'compressor.img'}
+                />
               </a>
             </li>
-            <Input type="text" id="item-label" value={textPlaceholder} onChange={e => setTextPlaceholder((e.target.value))} placeholder="Label" />
+            <Input
+              type="text"
+              id="item-label"
+              value={textPlaceholder}
+              onChange={(e) => setTextPlaceholder(e.target.value)}
+              placeholder="Label"
+            />
             <Popover open={open} onOpenChange={setOpen}>
               <PopoverTrigger asChild>
                 <Button
@@ -163,14 +177,18 @@ export const Create = () => {
                   className="w-[200px] justify-between dark:bg-dark-bg"
                 >
                   {value
-                    ? COMPONENTS.find((component) => component.value === value)?.label
-                    : "Select component..."}
+                    ? COMPONENTS.find((component) => component.value === value)
+                        ?.label
+                    : 'Select component...'}
                   <ChevronsUpDown className="opacity-50" />
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-[200px] p-0">
-                <Command className='transition-none duration-0'>
-                  <CommandInput placeholder="Search component..." className="h-9" />
+                <Command className="transition-none duration-0">
+                  <CommandInput
+                    placeholder="Search component..."
+                    className="h-9"
+                  />
                   <CommandList>
                     <CommandEmpty>No component found.</CommandEmpty>
                     <CommandGroup>
@@ -179,7 +197,7 @@ export const Create = () => {
                           key={component.value}
                           value={component.value}
                           onSelect={(currentValue) => {
-                            setValue(currentValue === value ? "" : currentValue)
+                            setValue(currentValue === value ? '' : currentValue)
                             setComponent(component.img)
                             setItem({
                               ...item,
@@ -188,15 +206,17 @@ export const Create = () => {
                               width: component.width,
                               img: component.img,
                             })
-                            console.log("item", item)
+                            console.log('item', item)
                             setOpen(false)
                           }}
                         >
                           {component.label}
                           <Check
                             className={cn(
-                              "ml-auto",
-                              value === component.value ? "opacity-100" : "opacity-0"
+                              'ml-auto',
+                              value === component.value
+                                ? 'opacity-100'
+                                : 'opacity-0',
                             )}
                           />
                         </CommandItem>
@@ -206,7 +226,12 @@ export const Create = () => {
                 </Command>
               </PopoverContent>
             </Popover>
-            <Button onClick={() => { createItem(item) }} variant="outline">
+            <Button
+              onClick={() => {
+                createItem(item)
+              }}
+              variant="outline"
+            >
               Add component
             </Button>
           </ul>
@@ -215,4 +240,3 @@ export const Create = () => {
     </div>
   )
 }
-
