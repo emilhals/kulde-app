@@ -1,4 +1,4 @@
-export type PlacementType = 'top' | 'bottom' | 'right' | 'left' | null
+export type PlacementType = 'Top' | 'Bottom' | 'Right' | 'Left' | null
 
 export type PointType = {
   x: number
@@ -41,9 +41,14 @@ export type ItemType = {
   width: number
   x: number
   y: number
-  anchors: []
+  anchors: {
+    position: PlacementType[]
+    offset: {
+      x: PlacementType
+      y: PlacementType
+    }
+  }
   locked: boolean
-  img: string
   text: TextType
 }
 
