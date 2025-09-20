@@ -46,6 +46,14 @@ export const addToStore = (
   }
 }
 
+export const getFromStore = (id: string) => {
+  return (
+    store.items.find((object) => object.id === id) ??
+    store.texts.find((object) => object.id === id) ??
+    store.connections.find((object) => object.id === id)
+  )
+}
+
 export const removeFromStore = (
   property: ItemType | TextType | ConnectionType,
 ) => {
