@@ -1,5 +1,7 @@
 import Konva from 'konva'
 
+import { useState } from 'react'
+
 import {
   Scissors,
   ArrowLeft,
@@ -7,9 +9,22 @@ import {
   Type,
   Trash2,
   Download,
+  Bold,
+  Italic,
+  Underline,
 } from 'lucide-react'
 
-import { clearStore } from '@/features/diagram-drawer/store'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+
+import { TextPreview } from '@/features/diagram-drawer/types'
+
+import { addToStore, clearStore } from '@/features/diagram-drawer/store'
+import { text } from 'stream/consumers'
 
 const downloadURI = (uri: string, name: string) => {
   const link = document.createElement('a')
@@ -22,11 +37,33 @@ const downloadURI = (uri: string, name: string) => {
 }
 
 const Actionbar = ({ stage }: { stage: React.RefObject<Konva.Stage> }) => {
+  const [textPreview, setTextPreview] = useState<TextPreview>({
+    type: 'texts',
+    content: '',
+    position: { x: 0, y: 0 },
+    size: 16,
+    attributes: [],
+  })
+
   const handleExport = () => {
     if (!stage.current) return null
 
     const uri = stage.current.toDataURL()
     downloadURI(uri, 'stage.png')
+  }
+
+  const handleAddText = () => {
+    if (!textPreview.content) return null
+
+    addToStore(textPreview)
+
+    setTextPreview({
+      type: 'texts',
+      content: '',
+      position: { x: 0, y: 0 },
+      size: 16,
+      attributes: [],
+    })
   }
 
   return (
@@ -50,10 +87,55 @@ const Actionbar = ({ stage }: { stage: React.RefObject<Konva.Stage> }) => {
           <Scissors size={19} />
         </button>
 
-        <button className={'py-3 px-3 hover:bg-gray-100'}>
-          <Type size={19} />
-        </button>
-
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className={'py-3 px-3 hover:bg-gray-100'}>
+              <Type size={19} />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent>
+            <div className="">
+              <div className="flex flex-col">
+                <input
+                  id="textInput"
+                  type="text"
+                  onChange={(e) =>
+                    setTextPreview({ ...textPreview, content: e.target.value })
+                  }
+                  placeholder="Enter text"
+                  className="block py-2 px-2 bg-gray-30 text-base text-gray-900 outline outline-1 outline-offset-1 outline-gray-300 rounded-sm shadow-inner shadow-gray-100 focus:outline-1 focus:outline-skyblue"
+                />
+                <ToggleGroup
+                  variant="outline"
+                  type="multiple"
+                  className="flex py-4 mx-auto"
+                  onValueChange={(value) => {
+                    setTextPreview({ ...textPreview, attributes: value })
+                  }}
+                >
+                  <ToggleGroupItem value="bold" aria-label="Toggle bold">
+                    <Bold size={12} className="h-4 w-4" />
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="italic" aria-label="Toggle italic">
+                    <Italic className="h-4 w-4" />
+                  </ToggleGroupItem>
+                  <ToggleGroupItem
+                    value="strikethrough"
+                    aria-label="Toggle strikethrough"
+                  >
+                    <Underline className="h-4 w-4" />
+                  </ToggleGroupItem>
+                </ToggleGroup>
+                <button
+                  onClick={handleAddText}
+                  className="bg-black text-gray-100 hover:bg-gray-800 px-3 py-3 mx-auto rounded-lg w-2/3 tracking-wide font-semibold justify-center items-center shadow-sm border-2 border-gray-200"
+                >
+                  Add Text
+                </button>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
         <button
           onClick={() => clearStore()}
           className={'py-3 px-3 hover:bg-gray-100'}
