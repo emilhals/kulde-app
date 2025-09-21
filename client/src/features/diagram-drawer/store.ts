@@ -26,7 +26,7 @@ const initialUIState = {
   action: null as string | null,
 }
 
-export const diagramHistory = proxyWithHistory(deepClone(initialDiagramState))
+export const diagramHistory = proxyWithHistory(initialDiagramState)
 export const uiState = proxy(deepClone(initialUIState))
 
 export const addToStore = (
@@ -78,6 +78,9 @@ export const removeFromStore = (
 }
 
 export const clearStore = () => {
-  Object.assign(diagramHistory, deepClone(initialDiagramState))
+  diagramHistory.value.items.length = 0
+  diagramHistory.value.connections.length = 0
+  diagramHistory.value.texts.length = 0
+
   Object.assign(uiState, deepClone(initialUIState))
 }
