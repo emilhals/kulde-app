@@ -2,10 +2,8 @@ import { useRef, useState } from 'react'
 import { Group, Rect } from 'react-konva'
 import Konva from 'konva'
 
-import { Text } from '@/features/diagram-drawer/canvas/Text'
-
 import { SYMBOL_MAP } from '@/features/diagram-drawer/canvas/symbols/SymbolMap'
-import { store } from '@/features/diagram-drawer/store'
+import { uiState, diagramHistory } from '@/features/diagram-drawer/store'
 import { ItemType, PointType } from '@/features/diagram-drawer/types'
 
 export const Item = ({ item }: { item: ItemType }) => {
@@ -19,11 +17,11 @@ export const Item = ({ item }: { item: ItemType }) => {
 
   const Symbol = SYMBOL_MAP[item.component]
 
-  const proxyItem = store.items.find((i) => i.id === item.id)
+  const proxyItem = diagramHistory.value.items.find((i) => i.id === item.id)
   if (!proxyItem) return null
 
   const handleOnPointerDown = (e: Konva.KonvaEventObject<PointerEvent>) => {
-    store.selected = proxyItem
+    uiState.selected = proxyItem
 
     shadowRef.current?.hide()
     setShadowPosition({
@@ -43,7 +41,7 @@ export const Item = ({ item }: { item: ItemType }) => {
     proxyItem.x = e.target.getAbsolutePosition().x
     proxyItem.y = e.target.getAbsolutePosition().y
 
-    store.connections.forEach((conn) => {
+    diagramHistory.value.connections.forEach((conn) => {
       if (conn.from && conn.from.id === item.id) {
         conn.from = proxyItem
       }
@@ -65,7 +63,7 @@ export const Item = ({ item }: { item: ItemType }) => {
       y: Math.round(e.target.getAbsolutePosition().y / 16) * 16,
     })
 
-    store.connections.forEach((conn) => {
+    diagramHistory.value.connections.forEach((conn) => {
       if (conn.from && conn.from.id === proxyItem.id) {
         conn.from = proxyItem
       }
@@ -76,50 +74,50 @@ export const Item = ({ item }: { item: ItemType }) => {
   }
 
   return (
-    <Group
-      ref={groupRef}
-      id={item.id}
-      name="object"
-      draggable={!item.locked}
-      x={item.x}
-      y={item.y}
-      onPointerDown={handleOnPointerDown}
-      onDragMove={handleDragMove}
-      onDragEnd={handleDragEnd}
-      onContextMenu={(e) => {
-        e.evt.preventDefault()
-      }}
-      onMouseEnter={(e) => {
-        const container = e.target.getStage()?.container()
-        if (!container) return
-
-        container.style.cursor = 'grab'
-      }}
-      onMouseLeave={(e) => {
-        const container = e.target.getStage()?.container()
-        if (!container) return
-
-        container.style.cursor = 'default'
-      }}
-    >
-      <Rect
-        ref={shadowRef}
-        name="shadow"
-        x={shadowPosition.x - item.x}
-        y={shadowPosition.y - item.y}
-        height={item.height}
-        width={item.width}
-        strokeWidth={2}
-        stroke="black"
-        opacity={0.2}
+    <Group>
+      <Group
+        ref={groupRef}
+        id={item.id}
+        name="object"
+        draggable={!item.locked}
+        x={item.x}
+        y={item.y}
         onPointerDown={handleOnPointerDown}
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
-      />
+        onContextMenu={(e) => {
+          e.evt.preventDefault()
+        }}
+        onMouseEnter={(e) => {
+          const container = e.target.getStage()?.container()
+          if (!container) return
 
-      <Symbol item={item} />
+          container.style.cursor = 'grab'
+        }}
+        onMouseLeave={(e) => {
+          const container = e.target.getStage()?.container()
+          if (!container) return
 
-      {item.text && <Text parent={item} standalone={false} />}
+          container.style.cursor = 'default'
+        }}
+      >
+        <Rect
+          ref={shadowRef}
+          name="shadow"
+          x={shadowPosition.x - item.x}
+          y={shadowPosition.y - item.y}
+          height={item.height}
+          width={item.width}
+          strokeWidth={2}
+          stroke="black"
+          opacity={0.2}
+          onPointerDown={handleOnPointerDown}
+          onDragMove={handleDragMove}
+          onDragEnd={handleDragEnd}
+        />
+
+        <Symbol item={item} />
+      </Group>
     </Group>
   )
 }

@@ -4,37 +4,33 @@ import Konva from 'konva'
 import { Group, Text as KonvaText } from 'react-konva'
 import { Html } from 'react-konva-utils'
 
-import { store } from '@/store'
+import { diagramHistory } from '@/features/diagram-drawer/store'
 
-import { ItemType, PointType, TextType } from '@/features/diagram-drawer/types'
+import { ItemType, TextType } from '@/features/diagram-drawer/types'
 
-export const Text = ({
-  parent,
-  standalone,
-}: {
-  parent: ItemType | TextType
-  standalone: boolean
-}) => {
-  if (!parent) return
-
+const Text = ({ parent }: { parent: ItemType | TextType }) => {
   const textRef = useRef<Konva.Text>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const [canEdit, setCanEdit] = useState<boolean>(false)
   const [editedText, setEditedText] = useState<string>('')
 
-  const [position, setPosition] = useState<PointType>({
-    x: 0,
-    y: 0,
-  })
+  const textProxy = diagramHistory.value.texts.find(
+    (text) =>
+      text.id === (parent.type === 'texts' ? parent.id : parent.text.id),
+  )
+  if (!textProxy) return null
 
-  const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {}
+  const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
+    if (!textProxy) return null
+    textProxy.position.x = e.target.getAbsolutePosition().x
+    textProxy.position.y = e.target.getAbsolutePosition().y
+  }
 
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
-    setPosition({
-      x: Math.round(e.target.x() / 16) * 16 - parent.x,
-      y: Math.round(e.target.y() / 16) * 16 - parent.y,
-    })
+    if (!textProxy) return null
+    textProxy.position.x = e.target.getAbsolutePosition().x
+    textProxy.position.y = e.target.getAbsolutePosition().y
   }
 
   const handleDoubleClick = () => {
@@ -45,14 +41,11 @@ export const Text = ({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     const key = e.key
 
-    const textState = store.items.find((item) => item.id === parent.id)?.text
-    if (!textState) return
-
     if (key === 'Enter') {
       console.log('hei')
       setCanEdit(false)
       textRef.current?.visible(true)
-      textState.text = editedText
+      textProxy.content = editedText
     }
     if (key === 'Escape') {
       setCanEdit(false)
@@ -62,49 +55,25 @@ export const Text = ({
 
   return (
     <Group>
-      {standalone && (
-        <>
-          <KonvaText
-            ref={textRef}
-            id={parent.id}
-            draggable
-            onDragMove={handleDragMove}
-            onDragEnd={handleDragEnd}
-            onDblClick={handleDoubleClick}
-            fontSize={16}
-            textDecoration={parent.underline ? 'underline' : ''}
-            fontStyle={parent.bold ? 'bold' : parent.italic ? 'italic' : ''}
-            fontFamily={'Inter'}
-            text={parent.text.text}
-            x={parent.x + position.x}
-            y={parent.y + position.y}
-            name="object"
-          />
-        </>
-      )}
-
-      {!standalone && (
-        <KonvaText
-          ref={textRef}
-          id={parent.id}
-          draggable
-          onDragMove={handleDragMove}
-          onDragEnd={handleDragEnd}
-          onDblClick={handleDoubleClick}
-          fontSize={16}
-          fontFamily={'Inter'}
-          text={parent.text.text}
-          x={parent.x + position.x}
-          y={parent.y + position.y}
-          name="object"
-        />
-      )}
+      <KonvaText
+        draggable
+        onDragMove={handleDragMove}
+        onDragEnd={handleDragEnd}
+        onDblClick={handleDoubleClick}
+        fontSize={16}
+        fontFamily={'Inter'}
+        text={textProxy?.content}
+        x={textProxy?.position.x}
+        y={textProxy?.position.y}
+        id={parent.id}
+        ref={textRef}
+      />
 
       {canEdit && (
         <Html>
           <input
             ref={inputRef}
-            defaultValue={parent.text.text}
+            defaultValue={textProxy?.content}
             onChange={(e) => {
               setEditedText(e.target.value)
             }}
@@ -129,3 +98,5 @@ export const Text = ({
     </Group>
   )
 }
+
+export default Text

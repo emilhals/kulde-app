@@ -11,7 +11,7 @@ import {
 
 import { getOffset } from '@/features/diagram-drawer/utils/helpers'
 
-import { store } from '@/features/diagram-drawer/store'
+import { diagramHistory } from '@/features/diagram-drawer/store'
 
 export const useCreateConnection = () => {
   const [connection, setConnection] = useState<ConnectionPreview>()
@@ -58,7 +58,7 @@ export const useCreateConnection = () => {
       },
     }
 
-    store.connections.push(updatedConnection)
+    diagramHistory.value.connections.push(updatedConnection)
     clearConnection()
   }
 

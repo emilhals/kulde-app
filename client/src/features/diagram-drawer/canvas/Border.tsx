@@ -1,9 +1,11 @@
 import { Line, Group } from 'react-konva'
 import { KonvaEventObject } from 'konva/lib/Node'
 
+import { getAnchorOffset } from '@/features/diagram-drawer/utils/helpers'
 import { Anchor } from '@/features/diagram-drawer/canvas/Anchor'
-
 import { ItemType, PointType } from '@/features/diagram-drawer/types'
+
+import { diagramHistory } from '@/features/diagram-drawer/store'
 
 export type AnchorType = PointType & {
   name: string
@@ -12,35 +14,37 @@ export type AnchorType = PointType & {
 const getAnchorPoints = (item: ItemType): AnchorType[] => {
   const anchors: AnchorType[] = []
 
-  item.anchors.map((placement) => {
+  const { offsetX, offsetY } = getAnchorOffset(item)
+
+  item.anchors.position.map((placement) => {
     if (placement === 'Top') {
       anchors.push({
-        name: 'top',
-        x: item.x + item.width / 2,
-        y: item.y,
+        name: 'Top',
+        x: item.x + item.width / 2 + offsetX,
+        y: item.y + offsetY,
       })
     }
     if (placement === 'Bottom') {
       anchors.push({
-        name: 'bottom',
-        x: item.x + item.width / 2,
-        y: item.y + item.height,
+        name: 'Bottom',
+        x: item.x + item.width / 2 + offsetX,
+        y: item.y + item.height + offsetY,
       })
     }
 
     if (placement === 'Left') {
       anchors.push({
-        name: 'left',
-        x: item.x,
-        y: item.y + item.height / 2,
+        name: 'Left',
+        x: item.x + offsetX,
+        y: item.y + item.height / 2 + offsetY,
       })
     }
 
     if (placement === 'Right') {
       anchors.push({
-        name: 'right',
-        x: item.x + item.width,
-        y: item.y + item.height / 2,
+        name: 'Right',
+        x: item.x + item.width + offsetX,
+        y: item.y + item.height / 2 + offsetY,
       })
     }
   })
@@ -71,23 +75,26 @@ export const Border = ({
 }: BorderProps) => {
   if (!item) return
 
-  const anchorPoints = getAnchorPoints(item)
+  const itemProxy = diagramHistory.value.items.find((i) => i.id === item.id)
+  if (!itemProxy) return
+
+  const anchorPoints = getAnchorPoints(itemProxy)
   const points = [
     0,
     0,
-    item.width,
+    itemProxy.width,
     0,
-    item.width,
-    item.height,
+    itemProxy.width,
+    itemProxy.height,
     0,
-    item.height,
+    itemProxy.height,
     0,
     0,
   ]
 
   const anchors = anchorPoints.map(({ x, y, name }) => (
     <Anchor
-      key={`anchor-${name}`}
+      key={`${item.id}-anchor-${name}`}
       id={name}
       x={x}
       y={y}
@@ -102,8 +109,9 @@ export const Border = ({
     <Group>
       {item ? (
         <Line
-          x={item.x}
-          y={item.y}
+          id={itemProxy.id}
+          x={itemProxy.x}
+          y={itemProxy.y}
           points={points}
           stroke="#00A1E4"
           strokeWidth={2}

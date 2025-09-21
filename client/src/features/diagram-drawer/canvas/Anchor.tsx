@@ -14,12 +14,26 @@ type PropsType = {
   y: number
   id: string
   hovered: string
-  onDragStart: (e: Konva.KonvaEventObject<DragEvent>, id: string | number) => void
-  onDragMove: (e: Konva.KonvaEventObject<DragEvent>, id: string | number) => void
+  onDragStart: (
+    e: Konva.KonvaEventObject<DragEvent>,
+    id: string | number,
+  ) => void
+  onDragMove: (
+    e: Konva.KonvaEventObject<DragEvent>,
+    id: string | number,
+  ) => void
   onDragEnd: (e: Konva.KonvaEventObject<DragEvent>, id: string | number) => void
 }
 
-export const Anchor = ({ x, y, id, hovered, onDragMove, onDragStart, onDragEnd }: PropsType) => {
+export const Anchor = ({
+  x,
+  y,
+  id,
+  hovered,
+  onDragMove,
+  onDragStart,
+  onDragEnd,
+}: PropsType) => {
   const anchor = useRef<Konva.Circle>(null)
   const hover = useRef<Konva.Circle>(null)
 
@@ -28,36 +42,39 @@ export const Anchor = ({ x, y, id, hovered, onDragMove, onDragStart, onDragEnd }
       hover.current?.to({
         radius: 9,
         duration: 0.2,
-        easing: Konva.Easings.EaseIn
+        easing: Konva.Easings.EaseIn,
       })
     } else {
       hover.current?.to({
         radius: 5,
         duration: 0.2,
-        easing: Konva.Easings.EaseOut
+        easing: Konva.Easings.EaseOut,
       })
     }
-  }, [hovered])
+  }, [hovered, id])
 
   return (
     <>
       <Circle
+        ref={hover}
         id={id}
         x={x}
         y={y}
         radius={12}
-        fill='#2d9cdb'
+        fill="#2d9cdb"
         opacity={0.5}
         visible={hovered === id}
-        ref={hover}
+        listening={false}
       />
 
       <Circle
+        ref={anchor}
         id={id}
+        name="anchor"
         x={x}
         y={y}
         radius={6}
-        fill='#2d9cdb'
+        fill="#2d9cdb"
         draggable
         onMouseEnter={(e) => {
           const container = e.target.getStage()?.container()
@@ -76,10 +93,8 @@ export const Anchor = ({ x, y, id, hovered, onDragMove, onDragStart, onDragEnd }
         onDragEnd={(e) => onDragEnd(e, id)}
         dragBoundFunc={() => dragBounds(anchor)}
         perfectDrawEnabled={false}
-        name='anchor'
-        ref={anchor}
+        listening={true}
       />
-
     </>
   )
 }
