@@ -1,5 +1,7 @@
 import { proxy } from 'valtio'
 import { deepClone } from 'valtio/utils'
+import { proxyWithHistory } from 'valtio-history'
+
 import {
   ItemType,
   ConnectionType,
@@ -7,20 +9,25 @@ import {
   ItemPreview,
   TextPreview,
   ConnectionPreview,
+  ComponentType,
 } from '@/features/diagram-drawer/types'
 
 import { v4 as uuidv4 } from 'uuid'
 
-const initialState = {
+const initialDiagramState = {
   items: [] as ItemType[],
   connections: [] as ConnectionType[],
   texts: [] as TextType[],
-  selected: null as ItemType | null,
-  dragged: '',
-  action: '',
 }
 
-export const store = proxy(deepClone(initialState))
+const initialUIState = {
+  selected: null as ItemType | null,
+  dragged: null as ComponentType | null,
+  action: null as string | null,
+}
+
+export const diagramHistory = proxyWithHistory(deepClone(initialDiagramState))
+export const uiState = proxy(deepClone(initialUIState))
 
 export const addToStore = (
   property: ItemPreview | TextPreview | ConnectionPreview,
@@ -31,41 +38,46 @@ export const addToStore = (
 
   if (property.type === 'items') {
     const newItem = { ...property, id: id }
-    store.items.push(newItem)
+
+    diagramHistory.value.items.push(newItem)
     return newItem
   }
 
   if (property.type === 'texts') {
-    const newText = store.texts.push({ ...property, id: id })
+    const newText = { ...property, id: id }
+    diagramHistory.value.texts.push(newText)
     return newText
   }
 
   if (property.type === 'connections') {
-    const newConnection = store.connections.push({ ...property, id: id })
+    const newConnection = { ...property, id: id }
+    diagramHistory.value.connections.push(newConnection)
+
     return newConnection
   }
 }
 
 export const getFromStore = (id: string) => {
   return (
-    store.items.find((object) => object.id === id) ??
-    store.texts.find((object) => object.id === id) ??
-    store.connections.find((object) => object.id === id)
+    diagramHistory.value.items.find((object) => object.id === id) ??
+    diagramHistory.value.texts.find((object) => object.id === id) ??
+    diagramHistory.value.connections.find((object) => object.id === id)
   )
 }
 
 export const removeFromStore = (
   property: ItemType | TextType | ConnectionType,
 ) => {
-  const index = store[property.type].findIndex(
+  const index = diagramHistory.value[property.type].findIndex(
     (object) => object.id === property.id,
   )
 
   if (index >= 0) {
-    store[property.type].splice(index, 1)
+    diagramHistory.value[property.type].splice(index, 1)
   }
 }
 
 export const clearStore = () => {
-  Object.assign(store, deepClone(initialState))
+  Object.assign(diagramHistory, deepClone(initialDiagramState))
+  Object.assign(uiState, deepClone(initialUIState))
 }
