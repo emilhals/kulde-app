@@ -1,6 +1,6 @@
-import Konva from 'konva'
-
 import { useState } from 'react'
+
+import Konva from 'konva'
 
 import {
   Scissors,
@@ -21,10 +21,15 @@ import {
 } from '@/components/ui/popover'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 
-import { TextPreview } from '@/features/diagram-drawer/types'
+import { useSnapshot } from 'valtio'
+import {
+  addToStore,
+  clearStore,
+  diagramHistory,
+  uiState,
+} from '@/features/diagram-drawer/store'
 
-import { addToStore, clearStore } from '@/features/diagram-drawer/store'
-import { text } from 'stream/consumers'
+import { TextPreview } from '@/features/diagram-drawer/types'
 
 const downloadURI = (uri: string, name: string) => {
   const link = document.createElement('a')
@@ -40,10 +45,13 @@ const Actionbar = ({ stage }: { stage: React.RefObject<Konva.Stage> }) => {
   const [textPreview, setTextPreview] = useState<TextPreview>({
     type: 'texts',
     content: '',
-    position: { x: 0, y: 0 },
+    position: { x: 10, y: 10 },
     size: 16,
     attributes: [],
   })
+
+  const diagramSnap = useSnapshot(diagramHistory)
+  const uiSnap = useSnapshot(uiState)
 
   const handleExport = () => {
     if (!stage.current) return null
@@ -67,33 +75,55 @@ const Actionbar = ({ stage }: { stage: React.RefObject<Konva.Stage> }) => {
   }
 
   return (
-    <div className="absolute z-50 flex md:top-8 sm:top-24 justify-center items-center w-full">
+    <div className="fixed z-50 flex md:top-28 sm:top-24 justify-center items-center left-1/2 right-1/2">
       <div className="flex flex-row w-fit bg-white shadow-md rounded-lg">
         <div className="flex border-r-2">
           <button
             className={
               'px-3 py-3 border-l rounded-tl-lg rounded-bl-lg hover-bg-gray-100'
             }
+            disabled={!diagramSnap.isUndoEnabled}
+            onClick={() => diagramSnap.undo()}
           >
-            <ArrowLeft className="text-gray-400" size={19} />
+            <ArrowLeft
+              className={`${diagramSnap.isUndoEnabled ? 'text-gray-900' : 'text-gray-400'}`}
+              size={19}
+            />
           </button>
 
-          <button className={'px-3 py-3 hover-bg-gray-100'}>
-            <ArrowRight className="text-gray-400" size={19} />
+          <button
+            className={'px-3 py-3 hover-bg-gray-100'}
+            disabled={!diagramSnap.isRedoEnabled}
+            onClick={() => diagramSnap.redo()}
+          >
+            <ArrowRight
+              className={`${diagramSnap.isRedoEnabled ? 'text-gray-900' : 'text-gray-400'}`}
+              size={19}
+            />
           </button>
         </div>
 
-        <button className={'py-3 px-3 hover:bg-gray-100'}>
+        <button
+          className={`py-3 px-3 hover:bg-gray-100 ${uiSnap.action == 'delete' ? 'bg-gray-100' : 'bg-white'}`}
+          onClick={() => {
+            uiState.action = 'delete'
+          }}
+        >
           <Scissors size={19} />
         </button>
 
         <Popover>
           <PopoverTrigger asChild>
-            <button className={'py-3 px-3 hover:bg-gray-100'}>
+            <button
+              className={`py-3 px-3 hover:bg-gray-100 ${uiSnap.action == 'write' ? 'bg-gray-100' : 'bg-white'}`}
+            >
               <Type size={19} />
             </button>
           </PopoverTrigger>
-          <PopoverContent>
+          <PopoverContent
+            onOpenAutoFocus={() => (uiState.action = 'write')}
+            onCloseAutoFocus={() => (uiState.action = null)}
+          >
             <div className="">
               <div className="flex flex-col">
                 <input
