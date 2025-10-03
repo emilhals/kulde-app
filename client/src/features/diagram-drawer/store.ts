@@ -68,12 +68,41 @@ export const getFromStore = (id: string) => {
 export const removeFromStore = (
   property: ItemType | TextType | ConnectionType,
 ) => {
-  const index = diagramHistory.value[property.type].findIndex(
-    (object) => object.id === property.id,
-  )
+  if (!property) return null
+
+  const properties = diagramHistory.value[property.type]
+
+  /* If the property is an Item, we want to remove the connection and text belonging to it */
+  if (property.type === 'items') {
+    const connections = diagramHistory.value.connections
+
+    const filteredConnections = connections.filter(
+      (connection) =>
+        connection.from?.id === property.id ||
+        connection.to?.id === property.id,
+    )
+
+    filteredConnections.forEach((connection) => {
+      const index = connections.findIndex((con) => con.id === connection.id)
+      if (index >= 0) {
+        connections.splice(index, 1)
+      }
+    })
+
+    if (property.text) {
+      const index = diagramHistory.value.texts.findIndex(
+        (text) => text.id === property.text.id,
+      )
+      if (index >= 0) {
+        diagramHistory.value.texts.splice(index, 1)
+      }
+    }
+  }
+
+  const index = properties.findIndex((object) => object.id === property.id)
 
   if (index >= 0) {
-    diagramHistory.value[property.type].splice(index, 1)
+    properties.splice(index, 1)
   }
 }
 
