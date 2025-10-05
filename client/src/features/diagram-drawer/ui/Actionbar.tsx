@@ -19,6 +19,15 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 
 import { useSnapshot } from 'valtio'
@@ -150,8 +159,8 @@ const Actionbar = ({ stage }: { stage: React.RefObject<Konva.Stage> }) => {
                     <Italic className="h-4 w-4" />
                   </ToggleGroupItem>
                   <ToggleGroupItem
-                    value="strikethrough"
-                    aria-label="Toggle strikethrough"
+                    value="underline"
+                    aria-label="Toggle underline"
                   >
                     <Underline className="h-4 w-4" />
                   </ToggleGroupItem>
@@ -166,21 +175,37 @@ const Actionbar = ({ stage }: { stage: React.RefObject<Konva.Stage> }) => {
             </div>
           </PopoverContent>
         </Popover>
-        <button
-          onClick={() => clearStore()}
-          className={'py-3 px-3 hover:bg-gray-100'}
-        >
-          <Trash2 size={19} />
-        </button>
-
-        <button
-          className={
-            'py-3 px-3 border-r-2 rounded-tr-lg rounded-br-lg hover:bg-gray-100'
-          }
-        >
-          <Download onClick={handleExport} size={19} />
-        </button>
+        <Dialog>
+          <DialogTrigger>
+            <div className="py-3 px-3 justify-center flex hover:bg-gray-100 hover:cursor-pointer">
+              <Trash2 size={19} />
+            </div>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Are you absolutely sure?</DialogTitle>
+              <DialogDescription>
+                This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogClose asChild>
+              <button
+                onClick={clearStore}
+                className="bg-black text-gray-100 hover:bg-gray-800 px-3 py-3 mx-auto rounded-lg w-2/3 tracking-wide font-semibold justify-center items-center shadow-sm border-2 border-gray-200"
+              >
+                Clear Canvas
+              </button>
+            </DialogClose>
+          </DialogContent>
+        </Dialog>
       </div>
+      <button
+        className={
+          'py-3 px-3 border-r-2 rounded-tr-lg rounded-br-lg hover:bg-gray-100'
+        }
+      >
+        <Download onClick={handleExport} size={19} />
+      </button>
     </div>
   )
 }
