@@ -56,17 +56,23 @@ const Text = ({ parent }: { parent: ItemType | TextType }) => {
   return (
     <Group>
       <KonvaText
+        ref={textRef}
+        id={parent.id}
+        x={textProxy?.position.x}
+        y={textProxy?.position.y}
         draggable
+        text={textProxy?.content}
+        fontFamily={'Inter'}
+        textDecoration={textProxy.attributes
+          ?.filter((attr) => attr === 'underline')
+          .join('')}
+        fontStyle={textProxy.attributes
+          ?.filter((attr) => attr !== 'underline')
+          .join(' ')}
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
         onDblClick={handleDoubleClick}
         fontSize={16}
-        fontFamily={'Inter'}
-        text={textProxy?.content}
-        x={textProxy?.position.x}
-        y={textProxy?.position.y}
-        id={parent.id}
-        ref={textRef}
       />
 
       {canEdit && (
