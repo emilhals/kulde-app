@@ -3,7 +3,11 @@ import { KonvaEventObject } from 'konva/lib/Node'
 
 import { getAnchorOffset } from '@/features/diagram-drawer/utils/helpers'
 import { Anchor } from '@/features/diagram-drawer/canvas/Anchor'
-import { ItemType, PointType } from '@/features/diagram-drawer/types'
+import {
+  ItemType,
+  PointType,
+  PlacementType,
+} from '@/features/diagram-drawer/types'
 
 import { diagramHistory } from '@/features/diagram-drawer/store'
 
@@ -54,16 +58,19 @@ const getAnchorPoints = (item: ItemType): AnchorType[] => {
 
 type BorderProps = {
   item: ItemType
-  hovered: string
+  hovered?: PlacementType
   onAnchorDragStart: (
     e: KonvaEventObject<DragEvent>,
-    id: string | number,
+    placement: PlacementType,
   ) => void
   onAnchorDragMove: (
     e: KonvaEventObject<DragEvent>,
-    id: string | number,
+    placement: PlacementType,
   ) => void
-  onAnchorDragEnd: (e: KonvaEventObject<DragEvent>, id: string | number) => void
+  onAnchorDragEnd: (
+    e: KonvaEventObject<DragEvent>,
+    placement: PlacementType,
+  ) => void
 }
 
 export const Border = ({
@@ -73,21 +80,21 @@ export const Border = ({
   onAnchorDragMove,
   onAnchorDragEnd,
 }: BorderProps) => {
-  if (!item) return
+  if (!item) return null
 
-  const itemProxy = diagramHistory.value.items.find((i) => i.id === item.id)
-  if (!itemProxy) return
+  const proxyItem = diagramHistory.value.items.find((i) => i.id === item.id)
+  if (!proxyItem) return null
 
-  const anchorPoints = getAnchorPoints(itemProxy)
-  const points = [
+  const anchorPoints = getAnchorPoints(proxyItem)
+  const borderPoints = [
     0,
     0,
-    itemProxy.width,
+    proxyItem.width,
     0,
-    itemProxy.width,
-    itemProxy.height,
+    proxyItem.width,
+    proxyItem.height,
     0,
-    itemProxy.height,
+    proxyItem.height,
     0,
     0,
   ]
@@ -95,7 +102,7 @@ export const Border = ({
   const anchors = anchorPoints.map(({ x, y, name }) => (
     <Anchor
       key={`${item.id}-anchor-${name}`}
-      id={name}
+      placement={name}
       x={x}
       y={y}
       hovered={hovered}
@@ -109,10 +116,10 @@ export const Border = ({
     <Group>
       {item ? (
         <Line
-          id={itemProxy.id}
-          x={itemProxy.x}
-          y={itemProxy.y}
-          points={points}
+          id={proxyItem.id}
+          x={proxyItem.x}
+          y={proxyItem.y}
+          points={borderPoints}
           stroke="#00A1E4"
           strokeWidth={2}
           listening={false}

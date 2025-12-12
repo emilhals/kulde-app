@@ -1,4 +1,7 @@
 export type PlacementType = 'Top' | 'Bottom' | 'Right' | 'Left' | null
+export type ComponentContext = 'Panel' | 'Diagram'
+
+export type WithId<T> = T & { id: string }
 
 export type PointType = {
   x: number
@@ -12,8 +15,8 @@ export type OffsetType = {
 
 export type ConnectionPreview = Omit<ConnectionType, 'id'>
 export type ConnectionType = {
-  readonly id: string
   readonly type: 'connections'
+  readonly id: string
   from: ItemType | null
   to: ItemType | null
   points: []
@@ -34,8 +37,8 @@ export type SelectionType = {
 
 export type ItemPreview = Omit<ItemType, 'id'>
 export type ItemType = {
-  readonly id: string
   readonly type: 'items'
+  readonly id: string
   component: string
   height: number
   width: number
@@ -54,16 +57,12 @@ export type ItemType = {
 
 export type TextPreview = Omit<TextType, 'id'>
 export type TextType = {
-  readonly id: string
   readonly type: 'texts'
+  readonly id: string
   content: string
   position: PointType
   size: number
-  attributes?: {
-    bold: boolean
-    italic: boolean
-    underline: boolean
-  }
+  attributes?: string[]
 }
 
 export type ComponentType = {

@@ -35,8 +35,6 @@ export const Line = ({ connection }: { connection: ConnectionType }) => {
         <Circle
           ref={circle}
           key={index}
-          offsetX={-connection.offsets.from.position.x}
-          offsetY={-connection.offsets.from.position.y}
           x={position.x}
           y={position.y}
           fill="#1c1c1c"
@@ -65,8 +63,6 @@ export const Line = ({ connection }: { connection: ConnectionType }) => {
       <KonvaLine
         ref={connectorRef}
         key={connection.id}
-        x={connection.offsets.from.position.x}
-        y={connection.offsets.from.position.y}
         points={points}
         stroke="#1c1c1c"
         strokeWidth={2}

@@ -1,26 +1,25 @@
-import React, {
-  KeyboardEventHandler,
-  MouseEvent,
-  useEffect,
-  useRef,
-  useState,
-} from 'react'
+import React, { MouseEvent, useEffect, useRef, useState } from 'react'
 
-import { Stage, Layer } from 'react-konva'
+import { Stage, Layer, Transformer } from 'react-konva'
 import Konva from 'konva'
 
 import { useSnapshot } from 'valtio'
-import { store } from '@/features/diagram-drawer/store'
+import {
+  getFromStore,
+  addToStore,
+  removeFromStore,
+  diagramHistory,
+  uiState,
+} from '@/features/diagram-drawer/store'
 
 import ComponentPanel from '@/features/diagram-drawer/ui/ComponentPanel'
 import { Item } from '@/features/diagram-drawer/canvas/Item'
 import { Connector } from '@/features/diagram-drawer/canvas/Connector'
 import { Line } from '@/features/diagram-drawer/canvas/Line'
 import Toolbar from '@/features/diagram-drawer/canvas/Toolbar'
-import ContextMenu from '@/features/diagram-drawer/canvas/ContextMenu'
-import Actionbar from '@/features/diagram-drawer/canvas/Actionbar'
-
-import { v4 as uuidv4 } from 'uuid'
+import ContextMenu from '@/features/diagram-drawer/ui/ContextMenu'
+import Actionbar from '@/features/diagram-drawer/ui/Actionbar'
+import Text from '@/features/diagram-drawer/canvas/Text'
 
 import { useCustomFont } from '@/features/diagram-drawer/hooks/useCustomFont'
 
@@ -30,15 +29,20 @@ import {
   ItemType,
   TextType,
   TextPreview,
+  ConnectionType,
 } from '@/features/diagram-drawer/types'
 
 import { KonvaEventObject } from 'konva/lib/Node'
 import { KonvaPointerEvent } from 'konva/lib/PointerEvents'
+import { Selection } from '@/features/diagram-drawer/canvas/Selection'
 
 const DiagramPage = () => {
   const stageRef = useRef<Konva.Stage>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const transformerRef = useRef<Konva.Transformer>(null)
+
   const itemLayer = useRef<Konva.Layer>(null)
+  const textLayer = useRef<Konva.Layer>(null)
 
   const [,] = useCustomFont('Inter')
 
@@ -47,7 +51,8 @@ const DiagramPage = () => {
   const [showContextMenu, setShowContextMenu] = useState<boolean>(false)
   const [pointer, setPointer] = useState<PointType>({ x: 0, y: 0 })
 
-  const snap = useSnapshot(store)
+  const diagramSnap = useSnapshot(diagramHistory)
+  const uiSnap = useSnapshot(uiState)
 
   /* set stage size and ensure responsiveness  */
   useEffect(() => {
@@ -69,7 +74,18 @@ const DiagramPage = () => {
   }, [])
 
   const handleClick = (e: KonvaEventObject<Konva.KonvaPointerEvent>) => {
-    if (!e.target.id()) store.selected = null
+    if (!e.target.id()) uiState.selected = null
+
+    if (uiState.action != 'delete') uiState.action = null
+
+    if (uiState.action == 'delete') {
+      const objectProxy = getFromStore(e.target.id()) as
+        | ItemType
+        | TextType
+        | ConnectionType
+      if (!objectProxy) return null
+      removeFromStore(objectProxy)
+    }
 
     if (e.target === e.target.getStage()) {
       setShowContextMenu(false)
@@ -83,41 +99,44 @@ const DiagramPage = () => {
   }
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+
     if (!stageRef.current) return
 
     const stage = stageRef.current
     stage.setPointersPositions(e)
 
     const position = stage.getPointerPosition()
-    const dragged = store.dragged
+    const dragged = uiState.dragged
 
     if (!position || !dragged) return
 
-    const newText: TextType = {
-      id: uuidv4(),
+    const newText: TextPreview = {
       type: 'texts',
       content: '',
-      position: { x: 0, y: 0 },
+      position: {
+        x: position.x - dragged.width / 2,
+        y: position.y - dragged.height / 2,
+      },
       size: 16,
     }
 
-    const newItem: ItemType = {
-      id: uuidv4(),
+    const addedText = addToStore(newText)
+
+    const newItem: ItemPreview = {
       type: 'items',
       component: dragged.value,
       height: dragged.height,
       width: dragged.width,
       x: position.x - dragged.width / 2,
-      y: position.y - dragged.height / 2,
+      y: position.y - dragged.height / 3,
       locked: false,
       anchors: dragged.anchors,
-      text: newText,
+      text: addedText,
     }
 
-    store.items.push(newItem)
-    store.texts.push(newText)
-
-    store.dragged = null
+    addToStore(newItem)
+    uiState.dragged = null
   }
 
   const handleDragOver = (e) => {
@@ -151,32 +170,40 @@ const DiagramPage = () => {
     const activeElement = document.activeElement
 
     if (activeElement?.tagName === 'INPUT') {
+      console.log('return')
       return null
     }
 
-    if (['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+    if (
+      ['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown', 'Escape'].includes(
+        e.key,
+      )
+    ) {
       e.preventDefault()
     } else {
       return null
     }
 
-    if (!store.selected) return null
-
-    const itemProxy = store.items.find((i) => i.id === store.selected?.id)
-    if (!itemProxy) return null
+    const itemProxy = diagramHistory.value.items.find(
+      (i) => i.id === uiState.selected?.id,
+    )
 
     switch (e.key) {
       case 'ArrowRight':
-        itemProxy.x += 4
+        if (itemProxy) itemProxy.x += 4
         break
       case 'ArrowLeft':
-        itemProxy.x -= 4
+        if (itemProxy) itemProxy.x -= 4
         break
       case 'ArrowUp':
-        itemProxy.y -= 4
+        if (itemProxy) itemProxy.y -= 4
         break
       case 'ArrowDown':
-        itemProxy.y += 4
+        if (itemProxy) itemProxy.y += 4
+        break
+      case 'Escape':
+      case 'Return':
+        uiState.action = null
         break
       default:
         break
@@ -199,7 +226,7 @@ const DiagramPage = () => {
         tabIndex={0}
         onKeyDown={handleKeyDown}
       >
-        <Actionbar />
+        <Actionbar stage={stageRef} />
         <Toolbar stage={stageRef} />
 
         <ComponentPanel />
@@ -213,19 +240,31 @@ const DiagramPage = () => {
           onContextMenu={handleContextMenu}
           onClick={handleClick}
         >
-          <Layer>
-            {snap.connections.map((connection) => {
+          <Layer key={`connections-${diagramSnap.value.connections.length}`}>
+            {diagramSnap.value.connections.map((connection) => {
               return <Line key={connection.id} connection={connection} />
             })}
           </Layer>
 
-          <Layer ref={itemLayer}>
-            {snap.items.map((item) => {
+          <Layer
+            key={`items-${diagramSnap.value.items.length}`}
+            ref={itemLayer}
+          >
+            {diagramSnap.value.items.map((item) => {
               return <Item key={item.id} item={item} />
             })}
           </Layer>
 
-          <Connector stageRef={stageRef} selected={snap.selected} />
+          <Layer
+            key={`texts-${diagramSnap.value.texts.length}`}
+            ref={textLayer}
+          >
+            {diagramSnap.value.texts.map((text) => {
+              return <Text key={text.id} parent={text} />
+            })}
+          </Layer>
+
+          <Connector stageRef={stageRef} />
         </Stage>
         {showContextMenu && <ContextMenu position={pointer} />}
       </div>

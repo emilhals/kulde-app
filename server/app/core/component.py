@@ -30,5 +30,13 @@ class Component(ABC):
             logger.error("System does not exist")
 
     @abstractmethod
+    async def initialize(self) -> None:
+        pass
+
+    @abstractmethod
+    async def simulate_step(self) -> None:
+        pass
+
+    @abstractmethod
     async def get_values(self) -> dict[str, str | int | float]:
         pass

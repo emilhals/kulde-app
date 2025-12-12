@@ -74,50 +74,47 @@ export const Item = ({ item }: { item: ItemType }) => {
   }
 
   return (
-    <Group>
-      <Group
-        ref={groupRef}
-        id={item.id}
-        name="object"
-        draggable={!item.locked}
-        x={item.x}
-        y={item.y}
+    <Group
+      ref={groupRef}
+      id={item.id}
+      draggable={!item.locked}
+      x={item.x}
+      y={item.y}
+      onPointerDown={handleOnPointerDown}
+      onDragMove={handleDragMove}
+      onDragEnd={handleDragEnd}
+      onContextMenu={(e) => {
+        e.evt.preventDefault()
+      }}
+      onMouseEnter={(e) => {
+        const container = e.target.getStage()?.container()
+        if (!container) return
+
+        container.style.cursor = 'grab'
+      }}
+      onMouseLeave={(e) => {
+        const container = e.target.getStage()?.container()
+        if (!container) return
+
+        container.style.cursor = 'default'
+      }}
+    >
+      <Rect
+        ref={shadowRef}
+        name="shadow"
+        x={shadowPosition.x - item.x}
+        y={shadowPosition.y - item.y}
+        height={item.height}
+        width={item.width}
+        strokeWidth={2}
+        stroke="black"
+        opacity={0.2}
         onPointerDown={handleOnPointerDown}
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
-        onContextMenu={(e) => {
-          e.evt.preventDefault()
-        }}
-        onMouseEnter={(e) => {
-          const container = e.target.getStage()?.container()
-          if (!container) return
+      />
 
-          container.style.cursor = 'grab'
-        }}
-        onMouseLeave={(e) => {
-          const container = e.target.getStage()?.container()
-          if (!container) return
-
-          container.style.cursor = 'default'
-        }}
-      >
-        <Rect
-          ref={shadowRef}
-          name="shadow"
-          x={shadowPosition.x - item.x}
-          y={shadowPosition.y - item.y}
-          height={item.height}
-          width={item.width}
-          strokeWidth={2}
-          stroke="black"
-          opacity={0.2}
-          onPointerDown={handleOnPointerDown}
-          onDragMove={handleDragMove}
-          onDragEnd={handleDragEnd}
-        />
-
-        <Symbol item={item} />
-      </Group>
+      <Symbol item={item} />
     </Group>
   )
 }

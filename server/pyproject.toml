@@ -3,12 +3,24 @@ name = "server"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 dependencies = [
     "asyncio>=3.4.3",
     "fastapi[standard]>=0.116.0",
     "pydantic>=2.11.7",
     "pyfluids>=2.8.1",
     "python-dotenv>=1.1.1",
+    "ruff>=0.14.1",
     "websockets>=15.0.1",
 ]
+[tool.basedpyright]
+typeCheckingMode = "strict"
+pythonVersion = "3.13"
+analysis.diagnosticMode = "openFilesOnly"
+analysis.autoSearchPaths = true
+analysis.useLibraryCodeForTypes = true
+
+reportMissingTypeStubs = false
+reportUnknownMemberType = false
+reportUnknownVariableType = false
+reportUnknownParameterType = false

@@ -12,7 +12,6 @@ export const Selection = ({
   transformerRef: React.RefObject<Konva.Transformer>
 }) => {
   const selectRef = useRef<Konva.Rect>(null)
-
   const overlayRef = useRef<Konva.Rect>(null)
 
   const [selecting, setSelecting] = useState<boolean>(false)
@@ -39,19 +38,18 @@ export const Selection = ({
   }
 
   const handleMouseMove = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    e.evt.preventDefault()
+
     const stage = e.target.getStage()
     const pointer = stage?.getPointerPosition()
 
-    if (!pointer) return
-    if (!selecting) return
-
-    e.evt.preventDefault()
+    if (!pointer || !selecting) return null
 
     selection.current.x2 = pointer.x
     selection.current.y2 = pointer.y
 
     const node = selectRef.current
-    if (!node) return
+    if (!node) return null
 
     node.setAttrs({
       visible: true,
@@ -63,8 +61,8 @@ export const Selection = ({
   }
 
   const handleMouseUp = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    setSelecting(false)
     e.evt.preventDefault()
+    setSelecting(false)
 
     if (!selectRef.current) return
 
@@ -80,14 +78,14 @@ export const Selection = ({
   }
 
   const handleClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    if (selectRef.current?.visible()) return
+    if (selectRef.current?.visible()) return null
 
     if (e.target === stageRef.current) {
       transformerRef.current?.nodes([])
-      return
+      return null
     }
 
-    if (!e.target.hasName('.object')) return
+    if (!e.target.hasName('.object')) return null
   }
 
   return (

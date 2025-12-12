@@ -1,7 +1,14 @@
 import { Group, Circle, Line } from 'react-konva'
-import { ItemType } from '../../types'
+import { ItemType, ComponentContext } from '@/features/diagram-drawer/types'
+import { uiState } from '../../store'
 
-const Compressor = ({ item }: { item: ItemType }) => {
+const Compressor = ({
+  item,
+  context = 'Diagram',
+}: {
+  item: ItemType
+  context?: ComponentContext
+}) => {
   const centerX = item.width / 2
   const centerY = item.height / 2
 
@@ -12,8 +19,8 @@ const Compressor = ({ item }: { item: ItemType }) => {
       <Circle
         name="object"
         id={item.id}
-        x={centerX}
-        y={centerY}
+        x={context === 'Diagram' ? centerX : item.x}
+        y={context === 'Diagram' ? centerY : item.y}
         radius={radius}
         stroke="black"
         strokeWidth={2}

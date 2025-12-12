@@ -1,6 +1,7 @@
 import { useRef, useEffect } from 'react'
 import Konva from 'konva'
 import { Circle } from 'react-konva'
+import { PlacementType } from '../types'
 
 const dragBounds = (ref: React.RefObject<Konva.Circle>) => {
   if (ref.current !== null) {
@@ -12,64 +13,67 @@ const dragBounds = (ref: React.RefObject<Konva.Circle>) => {
 type PropsType = {
   x: number
   y: number
-  id: string
+  placement: PlacementType
   hovered: string
   onDragStart: (
     e: Konva.KonvaEventObject<DragEvent>,
-    id: string | number,
+    placement: PlacementType,
   ) => void
   onDragMove: (
     e: Konva.KonvaEventObject<DragEvent>,
-    id: string | number,
+    placement: PlacementType,
   ) => void
-  onDragEnd: (e: Konva.KonvaEventObject<DragEvent>, id: string | number) => void
+  onDragEnd: (
+    e: Konva.KonvaEventObject<DragEvent>,
+    placement: PlacementType,
+  ) => void
 }
 
 export const Anchor = ({
   x,
   y,
-  id,
+  placement,
   hovered,
   onDragMove,
   onDragStart,
   onDragEnd,
 }: PropsType) => {
-  const anchor = useRef<Konva.Circle>(null)
-  const hover = useRef<Konva.Circle>(null)
+  const anchorRef = useRef<Konva.Circle>(null)
+  const hoveredAnchorRef = useRef<Konva.Circle>(null)
 
   useEffect(() => {
-    if (hovered === id) {
-      hover.current?.to({
-        radius: 9,
+    if (hovered === placement) {
+      hoveredAnchorRef.current?.to({
+        radius: 10,
         duration: 0.2,
         easing: Konva.Easings.EaseIn,
       })
     } else {
-      hover.current?.to({
+      hoveredAnchorRef.current?.to({
         radius: 5,
         duration: 0.2,
         easing: Konva.Easings.EaseOut,
       })
     }
-  }, [hovered, id])
+  }, [hovered, placement])
 
   return (
     <>
       <Circle
-        ref={hover}
-        id={id}
+        ref={hoveredAnchorRef}
+        id={placement}
         x={x}
         y={y}
         radius={12}
         fill="#2d9cdb"
         opacity={0.5}
-        visible={hovered === id}
+        visible={hovered === placement}
         listening={false}
       />
 
       <Circle
-        ref={anchor}
-        id={id}
+        ref={anchorRef}
+        id={placement}
         name="anchor"
         x={x}
         y={y}
@@ -88,10 +92,10 @@ export const Anchor = ({
 
           container.style.cursor = 'default'
         }}
-        onDragStart={(e) => onDragStart(e, id)}
-        onDragMove={(e) => onDragMove(e, id)}
-        onDragEnd={(e) => onDragEnd(e, id)}
-        dragBoundFunc={() => dragBounds(anchor)}
+        onDragStart={(e) => onDragStart(e, placement)}
+        onDragMove={(e) => onDragMove(e, placement)}
+        onDragEnd={(e) => onDragEnd(e, placement)}
+        dragBoundFunc={() => dragBounds(anchorRef)}
         perfectDrawEnabled={false}
         listening={true}
       />

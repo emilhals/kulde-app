@@ -84,8 +84,8 @@ const Actionbar = ({ stage }: { stage: React.RefObject<Konva.Stage> }) => {
   }
 
   return (
-    <div className="fixed z-50 flex md:top-28 sm:top-24 justify-center items-center left-1/2 right-1/2">
-      <div className="flex flex-row w-fit bg-white shadow-md rounded-lg">
+    <div className="flex fixed right-1/2 left-1/2 z-50 justify-center items-center sm:top-24 md:top-28">
+      <div className="flex flex-row bg-white rounded-lg shadow-md w-fit">
         <div className="flex border-r-2">
           <button
             className={
@@ -142,7 +142,7 @@ const Actionbar = ({ stage }: { stage: React.RefObject<Konva.Stage> }) => {
                     setTextPreview({ ...textPreview, content: e.target.value })
                   }
                   placeholder="Enter text"
-                  className="block py-2 px-2 bg-gray-30 text-base text-gray-900 outline outline-1 outline-offset-1 outline-gray-300 rounded-sm shadow-inner shadow-gray-100 focus:outline-1 focus:outline-skyblue"
+                  className="block py-2 px-2 text-base text-gray-900 rounded-sm shadow-inner bg-gray-30 outline outline-1 outline-offset-1 outline-gray-300 shadow-gray-100 focus:outline-1 focus:outline-skyblue"
                 />
                 <ToggleGroup
                   variant="outline"
@@ -153,21 +153,21 @@ const Actionbar = ({ stage }: { stage: React.RefObject<Konva.Stage> }) => {
                   }}
                 >
                   <ToggleGroupItem value="bold" aria-label="Toggle bold">
-                    <Bold size={12} className="h-4 w-4" />
+                    <Bold size={12} className="w-4 h-4" />
                   </ToggleGroupItem>
                   <ToggleGroupItem value="italic" aria-label="Toggle italic">
-                    <Italic className="h-4 w-4" />
+                    <Italic className="w-4 h-4" />
                   </ToggleGroupItem>
                   <ToggleGroupItem
                     value="underline"
                     aria-label="Toggle underline"
                   >
-                    <Underline className="h-4 w-4" />
+                    <Underline className="w-4 h-4" />
                   </ToggleGroupItem>
                 </ToggleGroup>
                 <button
                   onClick={handleAddText}
-                  className="bg-black text-gray-100 hover:bg-gray-800 px-3 py-3 mx-auto rounded-lg w-2/3 tracking-wide font-semibold justify-center items-center shadow-sm border-2 border-gray-200"
+                  className="justify-center items-center py-3 px-3 mx-auto w-2/3 font-semibold tracking-wide text-gray-100 bg-black rounded-lg border-2 border-gray-200 shadow-sm hover:bg-gray-800"
                 >
                   Add Text
                 </button>
@@ -177,7 +177,7 @@ const Actionbar = ({ stage }: { stage: React.RefObject<Konva.Stage> }) => {
         </Popover>
         <Dialog>
           <DialogTrigger>
-            <div className="py-3 px-3 justify-center flex hover:bg-gray-100 hover:cursor-pointer">
+            <div className="flex justify-center py-3 px-3 hover:bg-gray-100 hover:cursor-pointer">
               <Trash2 size={19} />
             </div>
           </DialogTrigger>
@@ -191,21 +191,22 @@ const Actionbar = ({ stage }: { stage: React.RefObject<Konva.Stage> }) => {
             <DialogClose asChild>
               <button
                 onClick={clearStore}
-                className="bg-black text-gray-100 hover:bg-gray-800 px-3 py-3 mx-auto rounded-lg w-2/3 tracking-wide font-semibold justify-center items-center shadow-sm border-2 border-gray-200"
+                className="justify-center items-center py-3 px-3 mx-auto w-2/3 font-semibold tracking-wide text-gray-100 bg-black rounded-lg border-2 border-gray-200 shadow-sm hover:bg-gray-800"
               >
                 Clear Canvas
               </button>
             </DialogClose>
           </DialogContent>
         </Dialog>
+
+        <button
+          className={
+            'py-3 px-3 border-r-2 rounded-tr-lg rounded-br-lg hover:bg-gray-100'
+          }
+        >
+          <Download onClick={handleExport} size={19} />
+        </button>
       </div>
-      <button
-        className={
-          'py-3 px-3 border-r-2 rounded-tr-lg rounded-br-lg hover:bg-gray-100'
-        }
-      >
-        <Download onClick={handleExport} size={19} />
-      </button>
     </div>
   )
 }

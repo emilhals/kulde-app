@@ -1,4 +1,8 @@
-import { PointType, ItemType, PlacementType } from '@/common/types'
+import {
+  PointType,
+  ItemType,
+  PlacementType,
+} from '@/features/diagram-drawer/types'
 import Konva from 'konva'
 
 export const dragBounds = (ref: React.RefObject<Konva.Circle>) => {
@@ -9,7 +13,7 @@ export const dragBounds = (ref: React.RefObject<Konva.Circle>) => {
 }
 
 export const hasIntersection = (position: PointType, item: Konva.Shape) => {
-  let OFFSET = 30
+  const OFFSET = 30
 
   return !(
     item.x() - OFFSET > position.x ||
@@ -24,7 +28,7 @@ export const getOffset = (placement: PlacementType, item: ItemType) => {
     case 'top':
       return {
         x: item.width / 2,
-        y: item.height / 2
+        y: item.height / 2,
       }
 
     case 'bottom':
@@ -47,8 +51,7 @@ export const getOffset = (placement: PlacementType, item: ItemType) => {
     default:
       return {
         x: 0,
-        y: 0
+        y: 0,
       }
   }
 }
-
