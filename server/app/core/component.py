@@ -11,10 +11,11 @@ if TYPE_CHECKING:
 
 @dataclass
 class Component(ABC):
-    """Base class for all components."""
-
     component_name: str
     system: System | None
+
+    inlet_state = None
+    outlet_state = None
 
     async def attach(self) -> None:
         if self.system:
