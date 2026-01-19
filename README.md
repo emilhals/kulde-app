@@ -1,6 +1,6 @@
 # kulde.app
 
-A refrigeration learning site with tools.
+A refrigeration learning site with tools. Includes a simulator for learning and a diagram-drawer.
 
 ## Client
 
@@ -14,9 +14,3 @@ A refrigeration learning site with tools.
 
 - FastAPI
 - Websockets & asyncio
-
-## TODO
-
-- [ ] Diagram Drawer: Fix diagramHistory - canUndo() is false when the first object is added/dropped.
-- [ ] Diagram Drawer: Make Component and ComponentPanel display shapes instead of text.
-- [ ] Diagram Drawer: Show modal with preview of stage when downloading canvas.
