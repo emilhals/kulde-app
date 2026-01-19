@@ -12,16 +12,16 @@ class SimulationState(str, Enum):
     RUNNING = "running"
     PAUSED = "paused"
 
-manager = ConnectionManager()
 
 @dataclass
 class SimulationService:
     system: System
-    dt: float = 1.0
+    manager: ConnectionManager
+    dt: float = 3.0
 
     _state: SimulationState = field(default=SimulationState.STOPPED, init=False)
     _sim_task: asyncio.Task[None] | None = field(default=None, init=False)
-    _broadcast_task: asyncio.Task[None] | None = field(default=None, init=False) 
+    _broadcast_task: asyncio.Task[None] | None = field(default=None, init=False)
 
     async def start(self, controllerParams: dict[str, str | int | float]) -> None:
         if self._state == SimulationState.RUNNING:
@@ -53,21 +53,20 @@ class SimulationService:
             logger.error(f"Error in simulation loop: {e}", e)
             raise
 
-    async def get_values(self) -> None:
+    async def get_values(self):
         try:
-            while self._state == SimulationState.RUNNING: 
+            while self._state == SimulationState.RUNNING:
                 values = {}
-                values["room"] = {"room_temp": self.system.room.room_temp}
+                values["Room"] = {"room_temp": self.system.room.room_temp}
+                # values["Controller"] = self.controller.
                 for component in self.system.components:
                     values[component.component_name] = await component.get_values()
+                await self.manager.broadcast(values)
 
-                logger.debug("values: %s", values)
-                await manager.broadcast(values)
-                await asyncio.sleep(1)
+                await asyncio.sleep(self.dt)
         except asyncio.CancelledError:
             logger.info("get_values cancelled")
             raise
         except Exception as e:
             logger.info(f"Error in get_values: {e}", e)
             raise
-
