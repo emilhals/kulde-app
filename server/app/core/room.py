@@ -1,14 +1,14 @@
 from dataclasses import dataclass
-from components.compressor import Compressor
 
 
 @dataclass
 class Room:
     room_temp: int
-    compressor: Compressor
+    ambient_temp: int = 16
 
     async def update_temperature(self) -> None:
-        pass 
+        pass
+
     async def decrease_temperature(self) -> None:
         self.room_temp -= 1
 

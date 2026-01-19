@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 
+from app.api.websocket.connection_manager import ConnectionManager
 from app.core.controller import Controller
 from app.core.component import Component
 
@@ -9,9 +10,11 @@ from app.logger import logger
 
 @dataclass
 class System:
+    manager: ConnectionManager
     controller: Controller
     room: Room
     components: list[Component] = field(default_factory=list)
+    refrigerant: str = "R404a"
 
     async def initialize_system(self) -> None:
         logger.info("Initialized system")
@@ -20,8 +23,8 @@ class System:
             await component.initialize()
 
     async def simulate_system(self) -> None:
-        logger.info("Simulating system")
-        for component in self.components:
+        for name in ["Evaporator", "Condensator", "Compressor", "TXV"]:
+            component = next(c for c in self.components if c.component_name == name)
             await component.simulate_step()
 
     async def add_component(self, component: Component) -> None:
