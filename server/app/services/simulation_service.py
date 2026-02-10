@@ -10,7 +10,7 @@ from app.logger import logger
 class SimulationState(str, Enum):
     STOPPED = "stopped"
     RUNNING = "running"
-    PAUSED = "paused"
+    RESTART = "restart"
 
 
 @dataclass
@@ -29,17 +29,27 @@ class SimulationService:
             return
 
         self._state = SimulationState.RUNNING
-        await self.system.initialize_system()
+        await self.manager.broadcast({"status": "RUNNING"})
+
+        if self.system.has_components() is False:
+            await self.system.initialize_system()
 
         self._sim_task = asyncio.create_task(self.simulation_loop())
         self._broadcast_task = asyncio.create_task(self.get_values())
 
-    async def pause(self) -> None:
-        self._state = SimulationState.PAUSED
-        self._sim_task.cancel()
-
     async def stop(self) -> None:
-        pass
+        self._state = SimulationState.STOPPED
+        await self.manager.broadcast({"status": "STOPPED"})
+
+    async def restart(self, controllerParams: dict[str, str | int | float]) -> None:
+        await self.manager.broadcast({"status": "RESTARTING"})
+
+        await self._cancel_tasks()
+        self._state = SimulationState.STOPPED
+
+        self.system = await self.system.rebuild_system(controllerParams)
+
+        await self.manager.broadcast({"status": "IDLE"})
 
     async def simulation_loop(self) -> None:
         try:
@@ -58,7 +68,6 @@ class SimulationService:
             while self._state == SimulationState.RUNNING:
                 values = {}
                 values["Room"] = {"room_temp": self.system.room.room_temp}
-                # values["Controller"] = self.controller.
                 for component in self.system.components:
                     values[component.component_name] = await component.get_values()
                 await self.manager.broadcast(values)
@@ -70,3 +79,15 @@ class SimulationService:
         except Exception as e:
             logger.info(f"Error in get_values: {e}", e)
             raise
+
+    async def _cancel_tasks(self):
+        for task in [self._sim_task, self._broadcast_task]:
+            if task and not task.done():
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+
+        self._sim_task = None
+        self._broadcast_task = None

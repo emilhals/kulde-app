@@ -7,6 +7,11 @@ from app.core.component import Component
 from app.core.room import Room
 from app.logger import logger
 
+from app.components.compressor import Compressor
+from app.components.evaporator import Evaporator
+from app.components.condensator import Condensator
+from app.components.txv import TXV
+
 
 @dataclass
 class System:
@@ -35,12 +40,32 @@ class System:
         self.components.remove(component)
         component.system = None
 
-    # async def update_components(self, newState: dict[str, int | float]) -> None:
-    #    for component in self.components:
-    #        await component.update(newState)
+    def has_components(self):
+        return True if len(self.components) > 0 else False
 
     async def get_values(self) -> dict[str, dict[str, str | int | float]]:
         values: dict[str, dict[str, str | int | float]] = {}
         for component in self.components:
             values[component.component_name] = await component.get_values()
         return values
+
+    async def rebuild_system(self, controllerParams: dict[str, str | int | float]):
+        print(f"rebuild: {controllerParams}")
+
+        controller = Controller(controllerParams)
+        room = Room(room_temp=24)
+
+        system = System(
+            controller=controller,
+            room=room,
+            manager=self.manager,
+        )
+
+        await system.add_component(Compressor())
+        await system.add_component(Evaporator())
+        await system.add_component(Condensator())
+        await system.add_component(TXV())
+
+        await system.initialize_system()
+
+        return system
