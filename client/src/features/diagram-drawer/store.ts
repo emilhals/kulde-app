@@ -57,7 +57,9 @@ export const addToStore = (
     }
 }
 
-export const getFromStore = (id: string) => {
+export const getFromStore = (
+    id: string,
+): ItemType | TextType | ConnectionType | undefined => {
     return (
         diagramHistory.value.items.find((object) => object.id === id) ??
         diagramHistory.value.texts.find((object) => object.id === id) ??

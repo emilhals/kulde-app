@@ -2,76 +2,84 @@ import { useRef, useState } from 'react'
 import { Line as KonvaLine, Circle } from 'react-konva'
 
 import { ConnectionType } from '@/features/diagram-drawer/types'
-import { dragBounds } from '@/features/diagram-drawer/utils/helpers'
 import { getConnectionPoints } from '@/features/diagram-drawer/utils/getConnectionPoints'
+import { diagramHistory } from '@/features/diagram-drawer/store'
 
 const getLinePoints = (points: number[]) => {
-  const p = []
+    const p = []
 
-  for (let i = 0; i < points.length / 2; i++) {
-    p[i] = {
-      x: points[i * 2],
-      y: points[i * 2 + 1],
+    for (let i = 0; i < points.length / 2; i++) {
+        p[i] = {
+            x: points[i * 2],
+            y: points[i * 2 + 1],
+        }
     }
-  }
-  return p
+    return p
 }
 
 export const Line = ({ connection }: { connection: ConnectionType }) => {
-  const connectorRef = useRef(null)
-  const circle = useRef(null)
+    const connectorRef = useRef(null)
 
-  const [activePoints, setActivePoints] = useState<JSX.Element[]>([])
-  const [dragging, setDragging] = useState<boolean>(false)
+    const from = diagramHistory.value.items.find(
+        (i) => i.id === connection.fromId,
+    )
 
-  const points = getConnectionPoints(connection.from, connection.to, connection)
-  if (!points) return
+    const to = diagramHistory.value.items.find((i) => i.id === connection.toId)
 
-  const handlePointerEnter = () => {
-    const k = getLinePoints(points)
+    if (!from || !to) return null
 
-    const circles = k.map((position, index) => {
-      return (
-        <Circle
-          ref={circle}
-          key={index}
-          x={position.x}
-          y={position.y}
-          fill="#1c1c1c"
-          radius={5}
-          onClick={() => console.log('clicked')}
-          draggable={true}
-          onDragStart={handleDragStart}
-          dragBoundFunc={() => dragBounds(circle)}
-        />
-      )
-    })
+    const [showPoints, setShowPoints] = useState(false)
+    const [dragging, setDragging] = useState<boolean>(false)
 
-    setActivePoints(circles)
-  }
+    const points = getConnectionPoints(from, to, connection)
+    if (!points) return null
 
-  const handlePointerLeave = () => {
-    if (!dragging) setActivePoints([])
-  }
+    const handlePointerEnter = () => {
+        setShowPoints(true)
+    }
 
-  const handleDragStart = () => {
-    setDragging(true)
-  }
+    const handlePointerLeave = () => {
+        if (!dragging) setShowPoints(false)
+    }
 
-  return (
-    <>
-      <KonvaLine
-        ref={connectorRef}
-        key={connection.id}
-        points={points}
-        stroke="#1c1c1c"
-        strokeWidth={2}
-        hitStrokeWidth={50}
-        onPointerEnter={handlePointerEnter}
-        onPointerLeave={handlePointerLeave}
-        perfectDrawEnabled={false}
-      />
-      {activePoints}
-    </>
-  )
+    const handleDragStart = () => {
+        setDragging(true)
+    }
+
+    const handleDragEnd = () => {
+        setDragging(false)
+        setShowPoints(false)
+    }
+
+    return (
+        <>
+            <KonvaLine
+                ref={connectorRef}
+                key={connection.id}
+                points={points}
+                stroke="#1c1c1c"
+                strokeWidth={2}
+                hitStrokeWidth={50}
+                onPointerEnter={handlePointerEnter}
+                onPointerLeave={handlePointerLeave}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+                perfectDrawEnabled={false}
+            />
+            {showPoints &&
+                getLinePoints(points).map((position, index) => (
+                    <Circle
+                        key={index}
+                        x={position.x}
+                        y={position.y}
+                        fill="#1c1c1c"
+                        radius={5}
+                        draggable
+                        onDragStart={handleDragStart}
+                        onDragEnd={handleDragEnd}
+                        dragBoundFunc={(pos) => pos}
+                    />
+                ))}
+        </>
+    )
 }
