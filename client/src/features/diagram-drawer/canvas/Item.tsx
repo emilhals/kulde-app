@@ -7,114 +7,122 @@ import { uiState, diagramHistory } from '@/features/diagram-drawer/store'
 import { ItemType, PointType } from '@/features/diagram-drawer/types'
 
 export const Item = ({ item }: { item: ItemType }) => {
-  const groupRef = useRef<Konva.Group>(null)
-  const shadowRef = useRef<Konva.Rect>(null)
+    const groupRef = useRef<Konva.Group>(null)
+    const shadowRef = useRef<Konva.Rect>(null)
 
-  const [shadowPosition, setShadowPosition] = useState<PointType>({
-    x: -10000,
-    y: -10000,
-  })
-
-  const Symbol = SYMBOL_MAP[item.component]
-
-  const proxyItem = diagramHistory.value.items.find((i) => i.id === item.id)
-  if (!proxyItem) return null
-
-  const handleOnPointerDown = (e: Konva.KonvaEventObject<PointerEvent>) => {
-    uiState.selected = proxyItem
-
-    shadowRef.current?.hide()
-    setShadowPosition({
-      x: Math.round(e.target.getAbsolutePosition().x / 16) * 16,
-      y: Math.round(e.target.getAbsolutePosition().y / 16) * 16,
-    })
-  }
-
-  const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
-    shadowRef.current?.show()
-
-    setShadowPosition({
-      x: Math.round(e.target.getAbsolutePosition().x / 16) * 16,
-      y: Math.round(e.target.getAbsolutePosition().y / 16) * 16,
+    const [shadowPosition, setShadowPosition] = useState<PointType>({
+        x: -10000,
+        y: -10000,
     })
 
-    proxyItem.x = e.target.getAbsolutePosition().x
-    proxyItem.y = e.target.getAbsolutePosition().y
+    const Symbol = SYMBOL_MAP[item.component]
 
-    diagramHistory.value.connections.forEach((conn) => {
-      if (conn.from && conn.from.id === item.id) {
-        conn.from = proxyItem
-      }
-      if (conn.to && conn.to.id === item.id) {
-        conn.to = proxyItem
-      }
-    })
-  }
+    const proxyItem = diagramHistory.value.items.find((i) => i.id === item.id)
+    if (!proxyItem) return null
 
-  const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
-    shadowRef.current?.hide()
+    const handleOnPointerDown = (e: Konva.KonvaEventObject<PointerEvent>) => {
+        uiState.selected = proxyItem
 
-    /* snap to dot-grid */
-    proxyItem.x = Math.round(e.target.getAbsolutePosition().x / 16) * 16
-    proxyItem.y = Math.round(e.target.getAbsolutePosition().y / 16) * 16
+        shadowRef.current?.hide()
+        setShadowPosition({
+            x: Math.round(e.target.getAbsolutePosition().x / 16) * 16,
+            y: Math.round(e.target.getAbsolutePosition().y / 16) * 16,
+        })
+    }
 
-    setShadowPosition({
-      x: Math.round(e.target.getAbsolutePosition().x / 16) * 16,
-      y: Math.round(e.target.getAbsolutePosition().y / 16) * 16,
-    })
+    const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
+        shadowRef.current?.show()
 
-    diagramHistory.value.connections.forEach((conn) => {
-      if (conn.from && conn.from.id === proxyItem.id) {
-        conn.from = proxyItem
-      }
-      if (conn.to && conn?.to.id === proxyItem.id) {
-        conn.to = proxyItem
-      }
-    })
-  }
+        setShadowPosition({
+            x: Math.round(e.target.getAbsolutePosition().x / 16) * 16,
+            y: Math.round(e.target.getAbsolutePosition().y / 16) * 16,
+        })
 
-  return (
-    <Group
-      ref={groupRef}
-      id={item.id}
-      draggable={!item.locked}
-      x={item.x}
-      y={item.y}
-      onPointerDown={handleOnPointerDown}
-      onDragMove={handleDragMove}
-      onDragEnd={handleDragEnd}
-      onContextMenu={(e) => {
-        e.evt.preventDefault()
-      }}
-      onMouseEnter={(e) => {
-        const container = e.target.getStage()?.container()
-        if (!container) return
+        proxyItem.x = e.target.getAbsolutePosition().x
+        proxyItem.y = e.target.getAbsolutePosition().y
 
-        container.style.cursor = 'grab'
-      }}
-      onMouseLeave={(e) => {
-        const container = e.target.getStage()?.container()
-        if (!container) return
+        diagramHistory.value.connections.forEach((conn) => {
+            if (conn.from && conn.from.id === item.id) {
+                conn.from = proxyItem
+            }
+            if (conn.to && conn.to.id === item.id) {
+                conn.to = proxyItem
+            }
+        })
+    }
 
-        container.style.cursor = 'default'
-      }}
-    >
-      <Rect
-        ref={shadowRef}
-        name="shadow"
-        x={shadowPosition.x - item.x}
-        y={shadowPosition.y - item.y}
-        height={item.height}
-        width={item.width}
-        strokeWidth={2}
-        stroke="black"
-        opacity={0.2}
-        onPointerDown={handleOnPointerDown}
-        onDragMove={handleDragMove}
-        onDragEnd={handleDragEnd}
-      />
+    const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
+        shadowRef.current?.hide()
 
-      <Symbol item={item} />
-    </Group>
-  )
+        /* snap to dot-grid */
+        proxyItem.x = Math.round(e.target.getAbsolutePosition().x / 16) * 16
+        proxyItem.y = Math.round(e.target.getAbsolutePosition().y / 16) * 16
+
+        setShadowPosition({
+            x: Math.round(e.target.getAbsolutePosition().x / 16) * 16,
+            y: Math.round(e.target.getAbsolutePosition().y / 16) * 16,
+        })
+
+        diagramHistory.value.connections.forEach((conn) => {
+            if (conn.from && conn.from.id === proxyItem.id) {
+                conn.from = proxyItem
+            }
+            if (conn.to && conn?.to.id === proxyItem.id) {
+                conn.to = proxyItem
+
+                if (!conn.from) return null
+                if (
+                    conn.from.y - conn.to.y < 20 &&
+                    conn.from.y - conn.to.y > -21
+                ) {
+                    conn.to.y = conn.from.y
+                }
+            }
+        })
+    }
+
+    return (
+        <Group
+            ref={groupRef}
+            id={item.id}
+            draggable={!item.locked}
+            x={item.x}
+            y={item.y}
+            onPointerDown={handleOnPointerDown}
+            onDragMove={handleDragMove}
+            onDragEnd={handleDragEnd}
+            onContextMenu={(e) => {
+                e.evt.preventDefault()
+            }}
+            onMouseEnter={(e) => {
+                const container = e.target.getStage()?.container()
+                if (!container) return
+
+                container.style.cursor = 'grab'
+            }}
+            onMouseLeave={(e) => {
+                const container = e.target.getStage()?.container()
+                if (!container) return
+
+                container.style.cursor = 'default'
+            }}
+        >
+            <Rect
+                ref={shadowRef}
+                name="shadow"
+                x={shadowPosition.x - item.x}
+                y={shadowPosition.y - item.y}
+                height={item.height}
+                width={item.width}
+                strokeWidth={2}
+                stroke="black"
+                opacity={0.2}
+                onPointerDown={handleOnPointerDown}
+                onDragMove={handleDragMove}
+                onDragEnd={handleDragEnd}
+            />
+
+            <Symbol item={item} />
+        </Group>
+    )
 }
