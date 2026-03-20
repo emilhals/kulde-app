@@ -55,6 +55,7 @@ const getAnchorPoints = (item: ItemType): AnchorType[] => {
 type BorderProps = {
     item: ItemType
     hovered?: Placement | null
+    active?: Placement | null
     onAnchorDragStart: (
         e: KonvaEventObject<DragEvent>,
         placement: Placement,
@@ -72,6 +73,7 @@ type BorderProps = {
 export const Border = ({
     item,
     hovered,
+    active,
     onAnchorDragStart,
     onAnchorDragMove,
     onAnchorDragEnd,
@@ -101,6 +103,7 @@ export const Border = ({
             placement={name}
             x={x}
             y={y}
+            active={active}
             hovered={hovered}
             onDragStart={onAnchorDragStart}
             onDragMove={onAnchorDragMove}
@@ -116,7 +119,7 @@ export const Border = ({
                     x={proxyItem.x}
                     y={proxyItem.y}
                     points={borderPoints}
-                    stroke="#00A1E4"
+                    stroke="#7C3AED"
                     strokeWidth={2}
                     listening={false}
                     perfectDrawEnabled={false}

@@ -1,7 +1,6 @@
 import { useRef, useEffect } from 'react'
 import Konva from 'konva'
 import { Circle } from 'react-konva'
-import { PlacementType } from '../types'
 
 import { Placement } from '@/features/diagram-drawer/types'
 
@@ -16,7 +15,8 @@ type PropsType = {
     x: number
     y: number
     placement: Placement
-    hovered?: PlacementType
+    hovered?: Placement | null
+    active?: Placement | null
     onDragStart: (
         e: Konva.KonvaEventObject<DragEvent>,
         placement: Placement,
@@ -35,6 +35,7 @@ export const Anchor = ({
     x,
     y,
     placement,
+    active,
     hovered,
     onDragMove,
     onDragStart,
@@ -44,7 +45,37 @@ export const Anchor = ({
     const hoveredAnchorRef = useRef<Konva.Circle>(null)
 
     useEffect(() => {
-        if (hovered === placement) {
+        const isHovered = hovered === placement
+        const isActive = active === placement
+
+        let anim: Konva.Animation | null = null
+
+        if (isActive && hoveredAnchorRef.current) {
+            const period = 1200
+
+            anim = new Konva.Animation((frame) => {
+                if (!frame) return
+
+                const t = Math.sin((frame.time * 2 * Math.PI) / period)
+                const scale = 1 + 0.08 * t
+                const opacity = 0.5 + 0.2 * Math.sin(t)
+
+                hoveredAnchorRef.current?.scale({ x: scale, y: scale })
+                hoveredAnchorRef.current?.opacity(opacity)
+            }, hoveredAnchorRef.current?.getLayer())
+
+            anim.start()
+        } else {
+            hoveredAnchorRef.current?.scale({ x: 1, y: 1 })
+        }
+
+        if (isActive) {
+            hoveredAnchorRef.current?.to({
+                radius: 10,
+                duration: 0.2,
+                easing: Konva.Easings.EaseOut,
+            })
+        } else if (isHovered) {
             hoveredAnchorRef.current?.to({
                 radius: 10,
                 duration: 0.2,
@@ -57,7 +88,11 @@ export const Anchor = ({
                 easing: Konva.Easings.EaseOut,
             })
         }
-    }, [hovered, placement])
+
+        return () => {
+            anim?.stop()
+        }
+    }, [hovered, active, placement])
 
     return (
         <>
@@ -66,10 +101,12 @@ export const Anchor = ({
                 id={placement?.toString()}
                 x={x}
                 y={y}
-                radius={12}
-                fill="#2d9cdb"
-                opacity={0.5}
-                visible={hovered === placement}
+                radius={9}
+                strokeWidth={1.5}
+                stroke="#FFFFFF"
+                fill={hovered ? '#A78BFA' : '#5B21B6'}
+                opacity={0.9}
+                visible={hovered === placement || active === placement}
                 listening={false}
             />
 
@@ -80,7 +117,9 @@ export const Anchor = ({
                 x={x}
                 y={y}
                 radius={6}
-                fill="#2d9cdb"
+                strokeWidth={1.5}
+                stroke="    #FFFFFF"
+                fill="#A78BFA"
                 draggable
                 onMouseEnter={(e) => {
                     const container = e.target.getStage()?.container()

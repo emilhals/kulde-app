@@ -11,7 +11,7 @@ import {
     uiState,
 } from '@/features/diagram-drawer/store'
 
-import { PointType, PlacementType } from '@/features/diagram-drawer/types'
+import { PointType, Placement } from '@/features/diagram-drawer/types'
 import { Border } from './Border'
 
 import { useConnectionPreview } from '@/features/diagram-drawer/hooks/useConnectionPreview'
@@ -35,8 +35,8 @@ export const Connector = ({
     const { setInitialConnection, addConnectionToStore } = useCreateConnection()
 
     const [draggedFromAnchor, setDraggedFromAnchor] =
-        useState<PlacementType>(null)
-    const [hoveredAnchor, setHoveredAnchor] = useState<PlacementType>(null)
+        useState<Placement | null>(null)
+    const [hoveredAnchor, setHoveredAnchor] = useState<Placement | null>(null)
 
     const [hoveredItem, setHoveredItem] = useState<string | null>(null)
     const hoveredItemObj = hoveredItem
@@ -95,7 +95,7 @@ export const Connector = ({
         })
 
         if (closest) {
-            setHoveredAnchor(closest.id() as PlacementType)
+            setHoveredAnchor(closest.id() as Placement)
             return closest
         }
 
@@ -106,7 +106,7 @@ export const Connector = ({
     const handleAnchorDragStart = (e: KonvaEventObject<DragEvent>) => {
         const position = e.target.getAbsolutePosition()
 
-        setDraggedFromAnchor(e.target.id() as PlacementType)
+        setDraggedFromAnchor(e.target.id() as Placement)
 
         const proxyFromItem = diagramSnap.value.items.find(
             (item) => item.id === uiSnap.selected?.id,
@@ -160,28 +160,27 @@ export const Connector = ({
 
         const stage = e.target.getStage()
 
-        const mousePosition = stage?.getPointerPosition()
-        if (!mousePosition) return null
-
-        if (!hoveredItem) return null
-
-        const toItem = diagramSnap.value.items.find(
-            (item) => item.id === hoveredItem,
-        )
-        if (!toItem) return null
-
-        if (!hoveredAnchor || !draggedFromAnchor) return
-
-        addConnectionToStore(toItem.id, draggedFromAnchor, hoveredAnchor)
-
-        const container = stage?.container()
-        if (!container) return null
-
-        container.style.cursor = 'default'
+        const prevDragged = draggedFromAnchor
+        const prevHovered = hoveredAnchor
 
         setHoveredItem(null)
         setHoveredAnchor(null)
         setDraggedFromAnchor(null)
+
+        const toItem = diagramSnap.value.items.find(
+            (item) => item.id === hoveredItem,
+        )
+        if (!toItem) return
+
+        if (!prevDragged || !prevHovered) return
+
+        addConnectionToStore(toItem.id, draggedFromAnchor, hoveredAnchor)
+        uiState.selected = null
+
+        const container = stage?.container()
+        if (!container) return
+
+        container.style.cursor = 'default'
     }
 
     const selectedBorder =
@@ -191,6 +190,7 @@ export const Connector = ({
                 onAnchorDragEnd={(e: Konva.KonvaEventObject<DragEvent>) =>
                     handleAnchorDragEnd(e)
                 }
+                active={draggedFromAnchor}
                 onAnchorDragMove={handleAnchorDragMove}
                 onAnchorDragStart={handleAnchorDragStart}
             />
