@@ -20,20 +20,18 @@ export const ContextMenu = ({ position }: { position: PointType }) => {
     const item = diagramSnap.value.items.find(
         (item) => item.id === uiState.selected?.id,
     )
-    if (!item) return
 
     const itemProxy = diagramHistory.value.items.find(
         (item) => item.id === uiState.selected?.id,
     )
-    if (!itemProxy) return
 
     const attachedText = diagramSnap.value.texts.find(
         (text) =>
-            text.anchor?.type === 'item' && text.anchor.itemId === item.id,
+            text.anchor?.type === 'item' && text.anchor.itemId === item?.id,
     )
     const attachedTextProxy = diagramHistory.value.texts.find(
         (text) =>
-            text.anchor?.type === 'item' && text.anchor.itemId === item.id,
+            text.anchor?.type === 'item' && text.anchor.itemId === item?.id,
     )
 
     const [textValue, setTextValue] = useState(attachedText?.content ?? '')
@@ -49,6 +47,8 @@ export const ContextMenu = ({ position }: { position: PointType }) => {
         setTextValue(attachedText?.content ?? '')
     }, [attachedText?.id])
 
+    if (!item || !itemProxy) return null
+
     const handleDuplicate = () => {
         const duplicatedItem = addToStore({
             type: 'items',
@@ -58,10 +58,13 @@ export const ContextMenu = ({ position }: { position: PointType }) => {
             x: item.x,
             y: item.y - item.height * 1.5,
             locked: item.locked,
-            anchors: item.anchors,
+            anchors: {
+                position: [...item.anchors.position],
+                offset: { ...item.anchors.offset },
+            },
         })
 
-        if (!duplicatedItem) return
+        if (duplicatedItem?.type !== 'items') return null
 
         if (attachedText) {
             addToStore({
@@ -69,7 +72,9 @@ export const ContextMenu = ({ position }: { position: PointType }) => {
                 content: attachedText.content,
                 position: { x: duplicatedItem.x, y: duplicatedItem.y },
                 size: attachedText.size,
-                attributes: attachedText.attributes,
+                attributes: attachedText.attributes
+                    ? [...attachedText.attributes]
+                    : undefined,
                 anchor: {
                     type: 'item',
                     itemId: duplicatedItem.id,
@@ -79,6 +84,7 @@ export const ContextMenu = ({ position }: { position: PointType }) => {
             })
         }
     }
+
     return (
         <div
             onClick={(e) => e.stopPropagation()}
@@ -140,6 +146,7 @@ export const ContextMenu = ({ position }: { position: PointType }) => {
                         onClick={() => {
                             removeFromStore(itemProxy)
                             uiState.selected = null
+                            setShow(false)
                         }}
                         className="group flex justify-center items-center text-red-600 w-full px-4 py-2 hover:bg-gray-50"
                     >
