@@ -1,6 +1,6 @@
-import React, { MouseEvent, useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 
-import { Stage, Layer, Transformer } from 'react-konva'
+import { Stage, Layer } from 'react-konva'
 import Konva from 'konva'
 
 import { useSnapshot } from 'valtio'
@@ -28,18 +28,15 @@ import {
     ItemPreview,
     ItemType,
     TextType,
-    TextPreview,
     ConnectionType,
 } from '@/features/diagram-drawer/types'
 
 import { KonvaEventObject } from 'konva/lib/Node'
 import { KonvaPointerEvent } from 'konva/lib/PointerEvents'
-import { Selection } from '@/features/diagram-drawer/canvas/Selection'
 
 const DiagramPage = () => {
     const stageRef = useRef<Konva.Stage>(null)
     const containerRef = useRef<HTMLDivElement>(null)
-    const transformerRef = useRef<Konva.Transformer>(null)
 
     const itemLayer = useRef<Konva.Layer>(null)
     const textLayer = useRef<Konva.Layer>(null)
@@ -48,11 +45,13 @@ const DiagramPage = () => {
 
     const [stage, setStage] = useState({ width: 0, height: 0, scale: 1 })
 
+    const [isPanning, setIsPanning] = useState(false)
+    const DRAG_THRESHOLD = 4
+
     const [showContextMenu, setShowContextMenu] = useState<boolean>(false)
     const [pointer, setPointer] = useState<PointType>({ x: 0, y: 0 })
 
     const diagramSnap = useSnapshot(diagramHistory)
-    const uiSnap = useSnapshot(uiState)
 
     /* set stage size and ensure responsiveness  */
     useEffect(() => {
@@ -73,7 +72,7 @@ const DiagramPage = () => {
         return () => window.removeEventListener('resize', resize)
     }, [])
 
-    const handleClick = (e: KonvaEventObject<Konva.KonvaPointerEvent>) => {
+    const handleClick = (e: KonvaEventObject<any>) => {
         if (!e.target.id()) uiState.selected = null
 
         if (uiState.action != 'delete') uiState.action = null
@@ -92,7 +91,7 @@ const DiagramPage = () => {
         }
     }
 
-    const handleMove = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    const handleMove = (e: React.MouseEvent<HTMLDivElement>) => {
         if (e.button === 1) {
             e.preventDefault()
         }
@@ -101,7 +100,7 @@ const DiagramPage = () => {
     const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault()
 
-        if (!stageRef.current) return
+        if (!stageRef.current) return null
 
         const stage = stageRef.current
         stage.setPointersPositions(e)
@@ -109,7 +108,7 @@ const DiagramPage = () => {
         const position = stage.getPointerPosition()
         const dragged = uiState.dragged
 
-        if (!position || !dragged) return
+        if (!position || !dragged) return null
 
         const newItem: ItemPreview = {
             type: 'items',
@@ -123,6 +122,7 @@ const DiagramPage = () => {
         }
 
         const addedItem = addToStore(newItem)
+        if (!addedItem) return
 
         addToStore({
             type: 'texts',
@@ -141,10 +141,6 @@ const DiagramPage = () => {
         })
 
         uiState.dragged = null
-    }
-
-    const handleDragOver = (e) => {
-        e.preventDefault()
     }
 
     const handleContextMenu = (e: KonvaPointerEvent) => {
@@ -170,16 +166,17 @@ const DiagramPage = () => {
         e.cancelBubble = true
     }
 
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
         const activeElement = document.activeElement
 
         if (activeElement?.tagName === 'INPUT') {
-            console.log('return')
-            return null
+            return
         }
 
+        /* This was to not cause issues with the context menu, maybe take deeper look at it later */
         if (
             [
+                ' ',
                 'ArrowRight',
                 'ArrowLeft',
                 'ArrowUp',
@@ -189,7 +186,7 @@ const DiagramPage = () => {
         ) {
             e.preventDefault()
         } else {
-            return null
+            return
         }
 
         const itemProxy = diagramHistory.value.items.find(
@@ -197,6 +194,11 @@ const DiagramPage = () => {
         )
 
         switch (e.key) {
+            case ' ':
+                setIsPanning(true)
+                const container = stageRef.current?.container()
+                if (container) container.style.cursor = 'grab'
+                break
             case 'ArrowRight':
                 if (itemProxy) itemProxy.x += 4
                 break
@@ -218,7 +220,86 @@ const DiagramPage = () => {
         }
     }
 
-    console.log(showContextMenu)
+    const handleKeyUp = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.key === ' ') {
+            setIsPanning(false)
+            const container = stageRef.current?.container()
+            if (container) container.style.cursor = 'default'
+        }
+    }
+
+    const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
+        e.evt.preventDefault()
+
+        const stage = stageRef.current
+        const oldScale = stage?.scaleX()
+        const pointer = stage?.getPointerPosition()
+
+        if (!pointer || !stage || !oldScale) return
+
+        const mousePointTo = {
+            x: (pointer.x - stage.x()) / oldScale,
+            y: (pointer.y - stage.y()) / oldScale,
+        }
+
+        let direction = e.evt.deltaY < 0 ? 1 : -1
+
+        // for trackpad
+        if (e.evt.ctrlKey) {
+            direction = -direction
+        }
+
+        const scaleBy = 1.01
+        const newScale = direction > 0 ? oldScale * scaleBy : oldScale / scaleBy
+
+        stage?.scale({ x: newScale, y: newScale })
+
+        const newPos = {
+            x: pointer.x - mousePointTo.x * newScale,
+            y: pointer.y - mousePointTo.y * newScale,
+        }
+        stage?.position(newPos)
+    }
+
+    const handlePointerMove = () => {
+        if (!uiState.pointerDown) return
+
+        const pointer = stageRef.current?.getPointerPosition()
+        if (!pointer) return
+
+        const dx = pointer.x - uiState.pointerStart.x
+        const dy = pointer.y - uiState.pointerStart.y
+
+        const distance = Math.sqrt(dx * dx + dy * dy)
+
+        if (!uiState.dragging && distance > DRAG_THRESHOLD) {
+            uiState.dragging = true
+        }
+
+        if (!uiState.dragging) return
+
+        uiState.shadowPosition = {
+            x: pointer.x - uiState.dragOffset.x,
+            y: pointer.y - uiState.dragOffset.y,
+        }
+    }
+
+    const handlePointerUp = () => {
+        if (uiState.dragging && uiState.selected) {
+            const item = diagramHistory.value.items.find(
+                (i) => i.id === uiState.selected.id,
+            )
+            if (item) {
+                item.x = uiState.shadowPosition.x
+                item.y = uiState.shadowPosition.y
+            }
+        }
+
+        uiState.pointerDown = false
+        uiState.dragging = false
+    }
+
+    console.log(uiState.dragging)
 
     return (
         <div
@@ -227,7 +308,9 @@ const DiagramPage = () => {
             onContextMenu={(e) => {
                 e.preventDefault()
             }}
-            onDragOver={handleDragOver}
+            onDragOver={(e) => {
+                e.preventDefault()
+            }}
             onDrop={handleDrop}
         >
             <div
@@ -235,11 +318,12 @@ const DiagramPage = () => {
                 className="w-full relative grow bg-[radial-gradient(#D9D9D9_1px,transparent_1px)] dark:bg-[radial-gradient(#2a2a2a_1px,transparent_1px)] bg-[length:16px_16px]"
                 tabIndex={0}
                 onKeyDown={handleKeyDown}
+                onKeyUp={handleKeyUp}
             >
                 <Actionbar stage={stageRef} />
-                <Toolbar stage={stageRef} />
 
                 <ComponentPanel />
+                <Toolbar stage={stageRef} />
 
                 <Stage
                     ref={stageRef}
@@ -249,6 +333,10 @@ const DiagramPage = () => {
                     scaleY={stage.scale}
                     onContextMenu={handleContextMenu}
                     onClick={handleClick}
+                    onWheel={handleWheel}
+                    draggable={isPanning}
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={handlePointerUp}
                 >
                     <Layer>
                         {diagramSnap.value.connections.map((connection) => {
