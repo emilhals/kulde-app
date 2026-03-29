@@ -2,10 +2,14 @@ import { useEffect, useRef, useState } from 'react'
 
 import Konva from 'konva'
 import { Line } from 'react-konva'
-import { Node, NodeConfig } from 'konva/lib/Node'
 
-import { PointType } from '@/features/diagram-drawer/types'
-import { createConnectionPoints } from '@/features/diagram-drawer/utils/createConnectionPoints'
+import {
+    Attachment,
+    ItemAttachment,
+    PointType,
+} from '@/features/diagram-drawer/types'
+import { getAttachmentPosition } from '@/features/diagram-drawer/utils/attachments'
+import { createConnectionPoints } from '@/features/diagram-drawer/utils/connections'
 
 export const useConnectionPreview = () => {
     const lineRef = useRef<Konva.Line>(null)
@@ -49,21 +53,24 @@ export const useConnectionPreview = () => {
         )
     }
 
-    const updatePreview = (
-        startPos: PointType,
-        mousePosition: PointType,
-        draggedFromAnchor: Node<NodeConfig>,
-        hoveredAnchor: Node<NodeConfig>,
-    ) => {
+    const updatePreview = (from: ItemAttachment, to: Attachment) => {
+        const fromPosition = getAttachmentPosition(from)
+        const toPosition = getAttachmentPosition(to)
+
+        if (!fromPosition || !toPosition) return
+
+        const fromPlacement = from.placement
+        const toPlacement = to.type === 'item' ? to.placement : undefined
+
         setConnectionPreview(
             <Line
                 x={0}
                 y={0}
                 points={createConnectionPoints(
-                    startPos,
-                    mousePosition,
-                    draggedFromAnchor,
-                    hoveredAnchor,
+                    fromPosition,
+                    toPosition,
+                    fromPlacement,
+                    toPlacement,
                 )}
                 strokeWidth={2.5}
                 stroke="#7C3AED"

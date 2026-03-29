@@ -1,85 +1,65 @@
-import { useRef, useState } from 'react'
-import { Line as KonvaLine, Circle } from 'react-konva'
+import { useRef } from 'react'
+import { Circle, Group, Line as KonvaLine } from 'react-konva'
+
+import Konva from 'konva'
 
 import { ConnectionType } from '@/features/diagram-drawer/types'
-import { getConnectionPoints } from '@/features/diagram-drawer/utils/getConnectionPoints'
-import { diagramHistory } from '@/features/diagram-drawer/store'
+import { getAttachmentPosition } from '@/features/diagram-drawer/utils/attachments'
+import { getConnectionPoints } from '@/features/diagram-drawer/utils/connections'
 
-const getLinePoints = (points: number[]) => {
-    const p = []
-
-    for (let i = 0; i < points.length / 2; i++) {
-        p[i] = {
-            x: points[i * 2],
-            y: points[i * 2 + 1],
-        }
-    }
-    return p
-}
-
-export const Line = ({ connection }: { connection: ConnectionType }) => {
+export const Line = ({
+    connection,
+    onSelect,
+    isSelected,
+}: {
+    connection: ConnectionType
+    onSelect: (e: Konva.KonvaEventObject<PointerEvent>) => void
+    isSelected: boolean
+}) => {
     const connectorRef = useRef(null)
 
-    const from = diagramHistory.value.items.find(
-        (i) => i.id === connection.fromId,
-    )
+    const fromAnchor = getAttachmentPosition(connection.from)
+    const toAnchor = getAttachmentPosition(connection.to)
 
-    const to = diagramHistory.value.items.find((i) => i.id === connection.toId)
+    if (!fromAnchor || !toAnchor) return null
 
-    if (!from || !to) return null
-
-    const [showPoints, setShowPoints] = useState(false)
-    const [dragging, setDragging] = useState<boolean>(false)
-
-    const points = getConnectionPoints(from, to, connection)
+    const points = getConnectionPoints(connection)
     if (!points) return null
 
-    const handlePointerEnter = () => {
-        setShowPoints(true)
-    }
-
-    const handlePointerLeave = () => {
-        if (!dragging) setShowPoints(false)
-    }
-
-    const handleDragStart = () => {
-        setDragging(true)
-    }
-
-    const handleDragEnd = () => {
-        setDragging(false)
-        setShowPoints(false)
-    }
-
     return (
-        <>
+        <Group>
             <KonvaLine
+                id={connection.id}
                 ref={connectorRef}
                 key={connection.id}
                 points={points}
                 stroke="#1c1c1c"
                 strokeWidth={2}
-                hitStrokeWidth={50}
-                onPointerEnter={handlePointerEnter}
-                onPointerLeave={handlePointerLeave}
-                onDragStart={handleDragStart}
-                onDragEnd={handleDragEnd}
+                hitStrokeWidth={20}
                 perfectDrawEnabled={false}
+                onPointerDown={onSelect}
             />
-            {showPoints &&
-                getLinePoints(points).map((position, index) => (
+
+            {isSelected && (
+                <Group>
                     <Circle
-                        key={index}
-                        x={position.x}
-                        y={position.y}
+                        x={fromAnchor.x}
+                        y={fromAnchor.y}
+                        fill="#1c1c1c"
+                        radius={5}
+                        hitStrokeWidth={20}
+                        draggable
+                    />
+
+                    <Circle
+                        x={toAnchor.x}
+                        y={toAnchor.y}
                         fill="#1c1c1c"
                         radius={5}
                         draggable
-                        onDragStart={handleDragStart}
-                        onDragEnd={handleDragEnd}
-                        dragBoundFunc={(pos) => pos}
                     />
-                ))}
-        </>
+                </Group>
+            )}
+        </Group>
     )
 }
