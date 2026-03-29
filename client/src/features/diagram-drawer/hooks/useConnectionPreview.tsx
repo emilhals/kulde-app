@@ -32,9 +32,9 @@ export const useConnectionPreview = () => {
     const setInitialPreview = (position: PointType) => {
         setConnectionPreview(
             <Line
-                x={position.x}
-                y={position.y}
-                points={[0, 0, 0, 0]}
+                x={0}
+                y={0}
+                points={[position.x, position.y, 0, 0]}
                 strokeWidth={4}
                 stroke="#2d9cdb"
                 lineJoin="round"
@@ -50,21 +50,20 @@ export const useConnectionPreview = () => {
     }
 
     const updatePreview = (
-        position: PointType,
+        startPos: PointType,
         mousePosition: PointType,
         draggedFromAnchor: Node<NodeConfig>,
         hoveredAnchor: Node<NodeConfig>,
     ) => {
         setConnectionPreview(
             <Line
-                x={position.x}
-                y={position.y}
-                points={[0, 0].concat(
-                    createConnectionPoints(
-                        mousePosition,
-                        draggedFromAnchor,
-                        hoveredAnchor,
-                    ),
+                x={0}
+                y={0}
+                points={createConnectionPoints(
+                    startPos,
+                    mousePosition,
+                    draggedFromAnchor,
+                    hoveredAnchor,
                 )}
                 strokeWidth={2.5}
                 stroke="#7C3AED"

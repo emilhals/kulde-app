@@ -1,6 +1,4 @@
-import { proxy } from 'valtio'
-import { deepClone } from 'valtio/utils'
-import { proxyWithHistory } from 'valtio-history'
+import { v4 as uuidv4 } from 'uuid'
 
 import {
     ItemType,
@@ -9,25 +7,32 @@ import {
     ItemPreview,
     TextPreview,
     ConnectionPreview,
-    ComponentType,
 } from '@/features/diagram-drawer/types'
 
-import { v4 as uuidv4 } from 'uuid'
+import { diagramHistory } from './models.ts'
 
-const initialDiagramState = {
-    items: [] as ItemType[],
-    connections: [] as ConnectionType[],
-    texts: [] as TextType[],
+type StoreMap = {
+    items: ItemType
+    texts: TextType
+    connections: ConnectionType
 }
 
-const initialUIState = {
-    selected: null as ItemType | null,
-    dragged: null as ComponentType | null,
-    action: null as string | null,
+export const getFromStore = <T extends keyof StoreMap>(
+    id: string,
+    type: T,
+): StoreMap[T] | undefined => {
+    return (diagramHistory.value[type] as StoreMap[T][]).find(
+        (object) => object.id === id,
+    )
 }
 
-export const diagramHistory = proxyWithHistory(initialDiagramState)
-export const uiState = proxy(deepClone(initialUIState))
+export const getAnyFromStore = (id: string) => {
+    return (
+        diagramHistory.value.items.find((object) => object.id === id) ??
+        diagramHistory.value.connections.find((object) => object.id === id) ??
+        null
+    )
+}
 
 export const addToStore = (
     property: ItemPreview | TextPreview | ConnectionPreview,
@@ -57,16 +62,6 @@ export const addToStore = (
     }
 }
 
-export const getFromStore = (
-    id: string,
-): ItemType | TextType | ConnectionType | undefined => {
-    return (
-        diagramHistory.value.items.find((object) => object.id === id) ??
-        diagramHistory.value.texts.find((object) => object.id === id) ??
-        diagramHistory.value.connections.find((object) => object.id === id)
-    )
-}
-
 export const removeFromStore = (
     property: ItemType | TextType | ConnectionType,
 ) => {
@@ -80,8 +75,8 @@ export const removeFromStore = (
 
         const filteredConnections = connections.filter(
             (connection) =>
-                connection.from?.id === property.id ||
-                connection.to?.id === property.id,
+                connection.from.id === property.id ||
+                connection.to.id === property.id,
         )
 
         filteredConnections.forEach((connection) => {
@@ -92,6 +87,7 @@ export const removeFromStore = (
                 connections.splice(index, 1)
             }
         })
+
         const texts = diagramHistory.value.texts
 
         const attachedTexts = texts.filter(

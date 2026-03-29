@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 
 import { Layer } from 'react-konva'
 import Konva from 'konva'
-import { KonvaEventObject } from 'konva/lib/Node'
+import { Node, NodeConfig, KonvaEventObject } from 'konva/lib/Node'
 
 import { useSnapshot } from 'valtio'
 import {
@@ -14,29 +14,36 @@ import {
 import { PointType, Placement } from '@/features/diagram-drawer/types'
 import { Border } from './Border'
 
-import { useConnectionPreview } from '@/features/diagram-drawer/hooks/useConnectionPreview'
 import { useCreateConnection } from '@/features/diagram-drawer/hooks/useCreateConnection'
+
+type ConnectorProps = {
+    stageRef: React.RefObject<Konva.Stage>
+    setInitialPreview: (position: PointType) => void
+    updatePreview: (
+        startPos: PointType,
+        targetPosition: PointType,
+        draggedFromAnchor: Node<NodeConfig>,
+        hoveredAnchor: Node<NodeConfig> | null,
+    ) => void
+    clearPreview: () => void
+}
 
 export const Connector = ({
     stageRef,
-}: {
-    stageRef: React.RefObject<Konva.Stage>
-}) => {
+    setInitialPreview,
+    updatePreview,
+    clearPreview,
+}: ConnectorProps) => {
     const uiSnap = useSnapshot(uiState)
     const diagramSnap = useSnapshot(diagramHistory)
-
-    const {
-        connectionPreview,
-        setInitialPreview,
-        updatePreview,
-        clearPreview,
-    } = useConnectionPreview()
 
     const { setInitialConnection, addConnectionToStore } = useCreateConnection()
 
     const [draggedFromAnchor, setDraggedFromAnchor] =
         useState<Placement | null>(null)
     const [hoveredAnchor, setHoveredAnchor] = useState<Placement | null>(null)
+
+    const [startPos, setStartPos] = useState<PointType | null>(null)
 
     const [hoveredItem, setHoveredItem] = useState<string | null>(null)
     const hoveredItemObj = hoveredItem
@@ -77,13 +84,17 @@ export const Connector = ({
 
     const detectAnchor = (mousePosition: PointType) => {
         const anchors = stageRef.current?.find('.anchor') ?? []
+        const stage = stageRef.current
+        if (!stage) return null
+
+        const transform = stage.getAbsoluteTransform().copy().invert()
 
         let closest: Konva.Node | null = null
         let minDist = Infinity
 
         anchors.forEach((anchor) => {
-            const pos = anchor.getAbsolutePosition()
-
+            const abs = anchor.getAbsolutePosition()
+            const pos = transform.point(abs)
             const dx = pos.x - mousePosition.x
             const dy = pos.y - mousePosition.y
             const dist = Math.sqrt(dx * dx + dy * dy)
@@ -94,7 +105,7 @@ export const Connector = ({
             }
         })
 
-        if (closest) {
+        if (closest !== null) {
             setHoveredAnchor(closest.id() as Placement)
             return closest
         }
@@ -104,7 +115,15 @@ export const Connector = ({
     }
 
     const handleAnchorDragStart = (e: KonvaEventObject<DragEvent>) => {
-        const position = e.target.getAbsolutePosition()
+        const stage = e.target.getStage()
+        const pointer = stage?.getRelativePointerPosition()
+
+        if (!pointer || !stage) return
+        const transform = stage.getAbsoluteTransform().copy().invert()
+
+        const abs = e.target.getAbsolutePosition()
+        const anchorPos = transform.point(abs)
+        setStartPos(anchorPos)
 
         setDraggedFromAnchor(e.target.id() as Placement)
 
@@ -114,45 +133,46 @@ export const Connector = ({
         if (!proxyFromItem) return null
 
         setInitialConnection(proxyFromItem.id)
-        setInitialPreview(position)
+        setInitialPreview(anchorPos)
     }
 
     const handleAnchorDragMove = (e: KonvaEventObject<DragEvent>) => {
-        const position = e.target.getAbsolutePosition()
+        if (!startPos) return
+
         const stage = e.target.getStage()
-        const pointerPosition = stage?.getPointerPosition()
+
+        const pointerStage = stage?.getRelativePointerPosition()
+        const pointerScreen = stage?.getPointerPosition()
+
+        if (!pointerStage || !pointerScreen) return
 
         const container = stage?.container()
-        if (!container) return null
-        container.style.cursor = 'grab'
-
-        if (!pointerPosition) return null
-
-        const mousePosition = {
-            x: pointerPosition.x - position.x,
-            y: pointerPosition.y - position.y,
-        }
+        if (!container) return
 
         const clickedAnchor = e.target.id()
         const anchorNode = stageRef.current?.findOne('#' + clickedAnchor)
 
-        detectConnection(pointerPosition)
-        const hoveredItemAnchor = detectAnchor(pointerPosition)
+        if (!anchorNode) return
 
-        let targetPosition = mousePosition
+        detectConnection(pointerScreen)
+        const hoveredItemAnchor = detectAnchor(
+            pointerStage,
+        ) as Konva.Node | null
+
+        let targetPosition = pointerStage
+
+        if (hoveredItemAnchor && stage) {
+            const transform = stage.getAbsoluteTransform().copy().invert()
+            const abs = hoveredItemAnchor.getAbsolutePosition()
+            targetPosition = transform.point(abs)
+        }
+        updatePreview(startPos, targetPosition, anchorNode, hoveredItemAnchor)
 
         if (hoveredItemAnchor) {
-            const anchorPos = hoveredItemAnchor.getAbsolutePosition()
-
-            targetPosition = {
-                x: anchorPos.x - position.x,
-                y: anchorPos.y - position.y,
-            }
+            container.style.cursor = 'pointer'
+        } else {
+            container.style.cursor = 'crosshair'
         }
-
-        if (!anchorNode) return null
-
-        updatePreview(position, targetPosition, anchorNode, hoveredItemAnchor)
     }
 
     const handleAnchorDragEnd = (e: KonvaEventObject<DragEvent>) => {
@@ -174,7 +194,7 @@ export const Connector = ({
 
         if (!prevDragged || !prevHovered) return
 
-        addConnectionToStore(toItem.id, draggedFromAnchor, hoveredAnchor)
+        addConnectionToStore(toItem.id, prevDragged, prevHovered)
         uiState.selected = null
 
         const container = stage?.container()
@@ -204,7 +224,6 @@ export const Connector = ({
         <Layer>
             {selectedBorder}
             {hoveredItemBorder}
-            {connectionPreview}
         </Layer>
     )
 }
