@@ -2,26 +2,25 @@ import React, { useRef, useState } from 'react'
 
 import Konva from 'konva'
 import { KonvaEventObject } from 'konva/lib/Node'
-import { Circle, Group, Layer } from 'react-konva'
+import { Circle, Group } from 'react-konva'
 
 import {
     addToStore,
     getAnyFromStore,
 } from '@/features/diagram-drawer/store/actions'
-import { uiState } from '@/features/diagram-drawer/store/models'
+import { diagramHistory, uiState } from '@/features/diagram-drawer/store/models'
 import { useSnapshot } from 'valtio'
 
 import {
     Attachment,
     ConnectionPreview,
-    ConnectionType,
     ItemAttachment,
     Placement,
     PointType,
 } from '@/features/diagram-drawer/types'
 import { Border } from './Border'
-import { Line } from './Line'
 
+import { computeT } from '@/features/diagram-drawer/utils/attachments'
 import {
     getClosestPointOnSegment,
     getConnectionPoints,
@@ -44,22 +43,20 @@ type ConnectorProps = {
     stageRef: React.RefObject<Konva.Stage>
     updatePreview: (from: ItemAttachment, to: Attachment) => void
     clearPreview: () => void
-    connections: ConnectionType[]
 }
 
 export const Connector = ({
     stageRef,
     updatePreview,
     clearPreview,
-    connections,
 }: ConnectorProps) => {
-    const { selectedId } = useSnapshot(uiState)
+    const { activeId, selectedIds } = useSnapshot(uiState)
 
     const [hoveredItem, setHoveredItem] = useState<HoveredItem | null>(null)
 
     const previewAnchorRef = useRef<Konva.Circle>(null)
 
-    const SNAP_RADIUS = 20
+    const SNAP_RADIUS = 30
 
     const dragState = useRef<DragState>({ active: false })
     const snapRef = useRef<{
@@ -187,10 +184,12 @@ export const Connector = ({
             }
 
             if (closest && closestPos) {
+                const placement = closest.id().split(':')[1] as Placement
                 const currentTarget: Attachment = {
                     type: 'item',
                     itemId: hoveredObject.id,
-                    placement: closest.id() as Placement,
+                    placement: placement,
+                    t: computeT(placement, closestPos, hoveredObject),
                 }
                 return { attachment: currentTarget, position: closestPos }
             }
@@ -200,29 +199,47 @@ export const Connector = ({
     }
 
     const handleAnchorDragStart = (e: KonvaEventObject<DragEvent>) => {
+        uiState.pointerDown = false
+
         const stage = e.target.getStage()
         const pointer = stage?.getRelativePointerPosition()
 
         if (!pointer || !stage) return
         const transform = stage.getAbsoluteTransform().copy().invert()
 
+        uiState.interaction = 'pending-connect'
+
         const abs = e.target.getAbsolutePosition()
         const anchorPos = transform.point(abs)
 
-        if (!selectedId) return
+        if (!activeId) return
+
+        const item = diagramHistory.value.items.find((i) => i.id === activeId)
+        if (!item) return
+
+        const placement = e.target.id().split(':')[1] as Placement
+        if (!placement) return
 
         dragState.current = {
             active: true,
             startPos: anchorPos,
             from: {
                 type: 'item',
-                itemId: selectedId,
-                placement: e.target.id() as Placement,
+                itemId: activeId,
+                placement: placement,
+                t: computeT(
+                    placement,
+                    { x: anchorPos.x, y: anchorPos.y },
+                    item,
+                ),
             },
         }
     }
 
     const handleAnchorDragMove = (e: KonvaEventObject<DragEvent>) => {
+        if (uiState.interaction === 'pending-connect')
+            uiState.interaction = 'connecting'
+
         const stage = e.target.getStage()
         if (!stage) return
 
@@ -240,22 +257,20 @@ export const Connector = ({
 
         const snap = detectConnectable(pointerScreen, pointerStage)
         snapRef.current = snap
-
         if (hoveredObject?.type === 'items') {
+            let anchor: Placement | undefined = undefined
+
             if (
                 snap?.attachment.type === 'item' &&
-                snap.attachment.itemId === hoveredItem?.id
+                snap.attachment.itemId === hoveredObject.id
             ) {
-                setHoveredItem({
-                    id: hoveredObject.id,
-                    anchor: snap.attachment.placement,
-                })
-            } else {
-                setHoveredItem({
-                    id: hoveredObject.id,
-                    anchor: undefined,
-                })
+                anchor = snap.attachment.placement
             }
+
+            setHoveredItem({
+                id: hoveredObject.id,
+                anchor,
+            })
         } else {
             setHoveredItem(null)
         }
@@ -277,6 +292,7 @@ export const Connector = ({
     }
 
     const handleAnchorDragEnd = (e: KonvaEventObject<DragEvent>) => {
+        uiState.interaction = 'idle'
         clearPreview()
 
         setActiveAnchor(null)
@@ -294,6 +310,8 @@ export const Connector = ({
 
         if (to.type === 'item' && from.itemId === to.itemId) return
 
+        snapRef.current = null
+        dragState.current = { active: false }
         const connection: ConnectionPreview = {
             type: 'connections',
 
@@ -303,9 +321,6 @@ export const Connector = ({
 
         addToStore(connection)
 
-        dragState.current = { active: false }
-        snapRef.current = null
-
         const stage = e.target.getStage()
         const container = stage?.container()
         if (!container) return
@@ -313,14 +328,11 @@ export const Connector = ({
         container.style.cursor = 'default'
     }
 
-    const handleOnSelect = (e: Konva.KonvaEventObject<PointerEvent>) => {
-        uiState.selectedId = e.target.id()
-    }
-
-    const selectedBorder =
-        selectedId !== null ? (
+    const selectedBorders = selectedIds?.map((id) =>
+        id === activeId ? (
             <Border
-                itemId={selectedId}
+                key={id}
+                itemId={activeId}
                 active={activeAnchor}
                 onAnchorDragMove={handleAnchorDragMove}
                 onAnchorDragStart={handleAnchorDragStart}
@@ -329,11 +341,21 @@ export const Connector = ({
                 }
             />
         ) : (
-            <Group></Group>
-        )
+            <Border key={id} itemId={id} />
+        ),
+    )
 
     const hoveredItemBorder = hoveredItem ? (
-        <Border itemId={hoveredItem.id} hovered={hoveredItem.anchor} />
+        <Border
+            itemId={hoveredItem.id}
+            hoveredItemId={hoveredItem.id}
+            hoveredAnchor={hoveredItem.anchor}
+            onAnchorDragMove={handleAnchorDragMove}
+            onAnchorDragStart={handleAnchorDragStart}
+            onAnchorDragEnd={(e: Konva.KonvaEventObject<DragEvent>) =>
+                handleAnchorDragEnd(e)
+            }
+        />
     ) : (
         <Group></Group>
     )
@@ -354,19 +376,10 @@ export const Connector = ({
         )
 
     return (
-        <Layer>
-            {selectedBorder}
+        <Group>
+            {selectedBorders}
             {hoveredItemBorder}
             {newLineAnchor}
-
-            {connections?.map((connection) => (
-                <Line
-                    key={connection.id}
-                    connection={connection}
-                    onSelect={handleOnSelect}
-                    isSelected={selectedId === connection.id}
-                />
-            ))}
-        </Layer>
+        </Group>
     )
 }

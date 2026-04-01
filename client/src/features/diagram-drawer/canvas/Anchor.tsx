@@ -1,20 +1,15 @@
-import { useRef, useEffect } from 'react'
 import Konva from 'konva'
+import { useEffect, useRef } from 'react'
 import { Circle } from 'react-konva'
 
 import { Placement } from '@/features/diagram-drawer/types'
-
-const dragBounds = (ref: React.RefObject<Konva.Circle>) => {
-    if (ref.current !== null) {
-        return ref.current.getAbsolutePosition()
-    }
-    return { x: 0, y: 0 }
-}
+import { dragBounds } from '@/features/diagram-drawer/utils/konva'
 
 type PropsType = {
+    itemId: string
+    placement: Placement
     x: number
     y: number
-    placement: Placement
     hovered?: Placement | null
     active?: Placement | null
     onDragStart: (
@@ -32,9 +27,10 @@ type PropsType = {
 }
 
 export const Anchor = ({
+    itemId,
+    placement,
     x,
     y,
-    placement,
     active,
     hovered,
     onDragMove,
@@ -97,28 +93,27 @@ export const Anchor = ({
     return (
         <>
             <Circle
-                ref={hoveredAnchorRef}
-                id={placement?.toString()}
+                id={itemId + ':' + placement?.toString()}
                 x={x}
                 y={y}
                 radius={9}
                 strokeWidth={1.5}
                 stroke="#FFFFFF"
-                fill={hovered ? '#A78BFA' : '#5B21B6'}
+                fill={hovered === placement ? '#A78BFA' : '#5B21B6'}
                 opacity={0.9}
                 visible={hovered === placement || active === placement}
                 listening={false}
+                ref={hoveredAnchorRef}
             />
 
             <Circle
-                ref={anchorRef}
-                id={placement?.toString()}
+                id={itemId + ':' + placement?.toString()}
                 name="anchor"
                 x={x}
                 y={y}
                 radius={6}
                 strokeWidth={1.5}
-                stroke="    #FFFFFF"
+                stroke="#FFFFFF"
                 fill="#A78BFA"
                 draggable
                 onMouseEnter={(e) => {
@@ -127,6 +122,7 @@ export const Anchor = ({
 
                     container.style.cursor = 'crosshair'
                 }}
+                onPointerDown={(e) => (e.cancelBubble = true)}
                 onMouseLeave={(e) => {
                     const container = e.target.getStage()?.container()
                     if (!container) return
@@ -139,6 +135,7 @@ export const Anchor = ({
                 dragBoundFunc={() => dragBounds(anchorRef)}
                 perfectDrawEnabled={false}
                 listening={true}
+                ref={anchorRef}
             />
         </>
     )

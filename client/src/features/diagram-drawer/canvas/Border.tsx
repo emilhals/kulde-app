@@ -1,14 +1,29 @@
-import { Line, Group } from 'react-konva'
 import { KonvaEventObject } from 'konva/lib/Node'
+import { Group, Line } from 'react-konva'
 
-import { getAnchorOffset } from '@/features/diagram-drawer/utils/helpers'
 import { Anchor } from '@/features/diagram-drawer/canvas/Anchor'
-import { ItemType, PointType, Placement } from '@/features/diagram-drawer/types'
-
-import { diagramHistory } from '@/features/diagram-drawer/store'
+import { diagramHistory, uiState } from '@/features/diagram-drawer/store/models'
+import { ItemType, Placement, PointType } from '@/features/diagram-drawer/types'
+import { useSnapshot } from 'valtio'
 
 export type AnchorType = PointType & {
     name: Placement
+}
+
+const getAnchorOffset = (
+    item: ItemType,
+): { offsetX: number; offsetY: number } => {
+    if (!item.anchors.offset) return { offsetX: 0, offsetY: 0 }
+
+    const offsetX = 0
+    let offsetY = 0
+
+    switch (item.anchors.offset.y) {
+        case 'Bottom':
+            offsetY = item.height / 2
+    }
+
+    return { offsetX, offsetY }
 }
 
 const getAnchorPoints = (item: ItemType): AnchorType[] => {
@@ -53,35 +68,37 @@ const getAnchorPoints = (item: ItemType): AnchorType[] => {
 }
 
 type BorderProps = {
-    item: ItemType
-    hovered?: Placement | null
+    itemId: string
+    hoveredItemId?: string
+    hoveredAnchor?: Placement | null
     active?: Placement | null
-    onAnchorDragStart: (
+    onAnchorDragStart?: (
         e: KonvaEventObject<DragEvent>,
         placement: Placement,
     ) => void
-    onAnchorDragMove: (
+    onAnchorDragMove?: (
         e: KonvaEventObject<DragEvent>,
-        placement: Placement,
+        attachment: Placement,
     ) => void
-    onAnchorDragEnd: (
+    onAnchorDragEnd?: (
         e: KonvaEventObject<DragEvent>,
         placement: Placement,
     ) => void
 }
 
 export const Border = ({
-    item,
-    hovered,
+    itemId,
+    hoveredItemId,
+    hoveredAnchor,
     active,
     onAnchorDragStart,
     onAnchorDragMove,
     onAnchorDragEnd,
 }: BorderProps) => {
-    if (!item) return null
-
-    const proxyItem = diagramHistory.value.items.find((i) => i.id === item.id)
+    const proxyItem = diagramHistory.value.items.find((i) => i.id === itemId)
     if (!proxyItem) return null
+
+    const uiSnap = useSnapshot(uiState)
 
     const anchorPoints = getAnchorPoints(proxyItem)
     const borderPoints = [
@@ -97,14 +114,18 @@ export const Border = ({
         0,
     ]
 
+    const displayAnchors =
+        uiSnap.activeId === itemId || hoveredItemId === itemId
+
     const anchors = anchorPoints.map(({ x, y, name }) => (
         <Anchor
-            key={`${item.id}-anchor-${name}`}
+            key={`${itemId}-anchor-${name}`}
+            itemId={itemId}
             placement={name}
             x={x}
             y={y}
             active={active}
-            hovered={hovered}
+            hovered={hoveredAnchor}
             onDragStart={onAnchorDragStart}
             onDragMove={onAnchorDragMove}
             onDragEnd={onAnchorDragEnd}
@@ -113,7 +134,7 @@ export const Border = ({
 
     return (
         <Group>
-            {item ? (
+            {itemId ? (
                 <Line
                     id={proxyItem.id}
                     x={proxyItem.x}
@@ -125,7 +146,7 @@ export const Border = ({
                     perfectDrawEnabled={false}
                 />
             ) : null}
-            {anchors}
+            {displayAnchors ? anchors : null}
         </Group>
     )
 }
