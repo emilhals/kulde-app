@@ -1,14 +1,24 @@
 import { proxy } from 'valtio'
-import { deepClone } from 'valtio/utils'
 import { proxyWithHistory } from 'valtio-history'
+import { deepClone } from 'valtio/utils'
 
 import {
-    ItemType,
-    ConnectionType,
-    TextType,
+    Box,
     ComponentType,
+    ConnectionType,
+    ItemType,
     PointType,
+    TextType,
 } from '@/features/diagram-drawer/types'
+
+type Interaction =
+    | 'idle'
+    | 'pending-select'
+    | 'selecting'
+    | 'pending-drag'
+    | 'dragging-item'
+    | 'pending-connect'
+    | 'connecting'
 
 const initialDiagramState = {
     items: [] as ItemType[],
@@ -16,14 +26,17 @@ const initialDiagramState = {
     texts: [] as TextType[],
 }
 
-const initialUIState = {
-    selected: null as ItemType | null,
+export const initialUIState = {
+    activeId: null as string | null,
+    selectedIds: [] as string[],
+    interaction: 'idle' as Interaction,
     dragged: null as ComponentType | null,
     action: null as string | null,
     pointerDown: false as boolean,
     pointerStart: { x: 0, y: 0 } as PointType,
-    dragging: false as boolean,
+    selectionBox: null as Box | null,
     dragOffset: { x: 0, y: 0 } as PointType,
+    dragStartPositions: {} as Record<string, { x: number; y: number }>,
     shadowPosition: { x: 0, y: 0 } as PointType,
 }
 
