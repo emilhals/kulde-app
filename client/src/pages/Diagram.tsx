@@ -1,34 +1,39 @@
 import React, { useEffect, useRef, useState } from 'react'
 
-import { Stage, Layer } from 'react-konva'
 import Konva from 'konva'
+import { Layer, Stage, Transformer } from 'react-konva'
 
-import { useSnapshot } from 'valtio'
 import {
-    getFromStore,
     addToStore,
+    getAnyFromStore,
     removeFromStore,
-    diagramHistory,
-    uiState,
-} from '@/features/diagram-drawer/store'
+} from '@/features/diagram-drawer/store/actions'
+import { diagramHistory, uiState } from '@/features/diagram-drawer/store/models'
+import { useSnapshot } from 'valtio'
 
-import ComponentPanel from '@/features/diagram-drawer/ui/ComponentPanel'
-import { Item } from '@/features/diagram-drawer/canvas/Item'
 import { Connector } from '@/features/diagram-drawer/canvas/Connector'
+import { Item } from '@/features/diagram-drawer/canvas/Item'
 import { Line } from '@/features/diagram-drawer/canvas/Line'
-import Toolbar from '@/features/diagram-drawer/canvas/Toolbar'
-import ContextMenu from '@/features/diagram-drawer/ui/ContextMenu'
-import Actionbar from '@/features/diagram-drawer/ui/Actionbar'
+import { Selection } from '@/features/diagram-drawer/canvas/Selection'
 import Text from '@/features/diagram-drawer/canvas/Text'
+import Toolbar from '@/features/diagram-drawer/canvas/Toolbar'
+import Actionbar from '@/features/diagram-drawer/ui/Actionbar'
+import ComponentPanel from '@/features/diagram-drawer/ui/ComponentPanel'
+import ContextMenu from '@/features/diagram-drawer/ui/ContextMenu'
+
+import { useConnectionPreview } from '@/features/diagram-drawer/hooks/useConnectionPreview'
 
 import { useCustomFont } from '@/features/diagram-drawer/hooks/useCustomFont'
 
+import { intersected } from '@/features/diagram-drawer/utils/konva'
+
 import {
-    PointType,
+    ConnectionType,
     ItemPreview,
     ItemType,
+    PointType,
+    Rect,
     TextType,
-    ConnectionType,
 } from '@/features/diagram-drawer/types'
 
 import { KonvaEventObject } from 'konva/lib/Node'
@@ -36,6 +41,7 @@ import { KonvaPointerEvent } from 'konva/lib/PointerEvents'
 
 const DiagramPage = () => {
     const stageRef = useRef<Konva.Stage>(null)
+    const selectionRef = useRef<Konva.Transformer>(null)
     const containerRef = useRef<HTMLDivElement>(null)
 
     const itemLayer = useRef<Konva.Layer>(null)
@@ -52,6 +58,10 @@ const DiagramPage = () => {
     const [pointer, setPointer] = useState<PointType>({ x: 0, y: 0 })
 
     const diagramSnap = useSnapshot(diagramHistory)
+    const { connectionPreview, updatePreview, clearPreview } =
+        useConnectionPreview()
+
+    const uiSnap = useSnapshot(uiState)
 
     /* set stage size and ensure responsiveness  */
     useEffect(() => {
@@ -73,12 +83,14 @@ const DiagramPage = () => {
     }, [])
 
     const handleClick = (e: KonvaEventObject<any>) => {
-        if (!e.target.id()) uiState.selected = null
+        if (e.target === e.target.getStage()) {
+            return
+        }
 
         if (uiState.action != 'delete') uiState.action = null
 
         if (uiState.action == 'delete') {
-            const objectProxy = getFromStore(e.target.id()) as
+            const objectProxy = getAnyFromStore(e.target.id()) as
                 | ItemType
                 | TextType
                 | ConnectionType
@@ -100,15 +112,15 @@ const DiagramPage = () => {
     const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault()
 
-        if (!stageRef.current) return null
+        if (!stageRef.current) return
 
         const stage = stageRef.current
         stage.setPointersPositions(e)
 
-        const position = stage.getPointerPosition()
+        const position = stage.getRelativePointerPosition()
         const dragged = uiState.dragged
 
-        if (!position || !dragged) return null
+        if (!position || !dragged) return
 
         const newItem: ItemPreview = {
             type: 'items',
@@ -116,7 +128,7 @@ const DiagramPage = () => {
             height: dragged.height,
             width: dragged.width,
             x: position.x - dragged.width / 2,
-            y: position.y - dragged.height / 3,
+            y: position.y - dragged.height / 2,
             locked: false,
             anchors: dragged.anchors,
         }
@@ -145,7 +157,6 @@ const DiagramPage = () => {
 
     const handleContextMenu = (e: KonvaPointerEvent) => {
         e.evt.preventDefault()
-
         if (e.target === e.target.getStage()) return
 
         const stage = e.target.getStage()
@@ -163,6 +174,8 @@ const DiagramPage = () => {
         })
 
         setShowContextMenu(true)
+
+        console.log('context menu fired', showContextMenu)
         e.cancelBubble = true
     }
 
@@ -190,7 +203,7 @@ const DiagramPage = () => {
         }
 
         const itemProxy = diagramHistory.value.items.find(
-            (i) => i.id === uiState.selected?.id,
+            (i) => i.id === uiState.activeId,
         )
 
         switch (e.key) {
@@ -212,6 +225,9 @@ const DiagramPage = () => {
                 if (itemProxy) itemProxy.y += 4
                 break
             case 'Escape':
+                uiState.activeId = null
+                uiState.action = null
+                break
             case 'Return':
                 uiState.action = null
                 break
@@ -261,10 +277,65 @@ const DiagramPage = () => {
         stage?.position(newPos)
     }
 
+    const handlePointerDown = (e: Konva.KonvaEventObject<PointerEvent>) => {
+        const stage = e.target.getStage()
+        if (!stage) return
+
+        const pointer = stage.getRelativePointerPosition()
+        if (!pointer) return
+
+        const itemNode = e.target.findAncestor('.item')
+
+        if (itemNode) {
+            if (uiState.selectedIds.includes(itemNode.id())) {
+            } else {
+                uiState.activeId = itemNode.id()
+                uiState.selectedIds = [itemNode.id()]
+            }
+
+            const item = diagramHistory.value.items.find(
+                (i) => i.id === itemNode.id(),
+            )
+            if (!item) return
+
+            uiState.interaction = 'pending-drag'
+            uiState.dragOffset = {
+                x: pointer.x - item.x,
+                y: pointer.y - item.y,
+            }
+            uiState.selectedIds.forEach((id) => {
+                const item = diagramHistory.value.items.find((i) => i.id === id)
+                if (!item) return
+
+                uiState.dragStartPositions[id] = {
+                    x: item.x,
+                    y: item.y,
+                }
+            })
+        } else {
+            uiState.activeId = null
+            uiState.selectedIds = []
+            uiState.interaction = 'pending-select'
+        }
+
+        uiState.pointerDown = true
+        uiState.pointerStart = pointer
+        uiState.selectionBox = {
+            start: pointer,
+            end: pointer,
+        }
+    }
+
     const handlePointerMove = () => {
         if (!uiState.pointerDown) return
 
-        const pointer = stageRef.current?.getPointerPosition()
+        if (
+            uiState.interaction === 'connecting' ||
+            uiState.interaction === 'pending-connect'
+        )
+            return
+
+        const pointer = stageRef.current?.getRelativePointerPosition()
         if (!pointer) return
 
         const dx = pointer.x - uiState.pointerStart.x
@@ -272,35 +343,81 @@ const DiagramPage = () => {
 
         const distance = Math.sqrt(dx * dx + dy * dy)
 
-        if (!uiState.dragging && distance > DRAG_THRESHOLD) {
-            uiState.dragging = true
+        if (
+            uiState.interaction === 'pending-drag' &&
+            distance > DRAG_THRESHOLD
+        ) {
+            uiState.interaction = 'dragging-item'
+        } else if (
+            distance > DRAG_THRESHOLD &&
+            uiState.interaction === 'pending-select'
+        ) {
+            uiState.interaction = 'selecting'
         }
 
-        if (!uiState.dragging) return
+        if (uiState.interaction === 'dragging-item') {
+            if (uiState.activeId && uiState.selectedIds.length <= 1) {
+                const item = diagramHistory.value.items.find(
+                    (i) => i.id === uiState.activeId,
+                )
+                if (item) {
+                    item.x = pointer.x - uiState.dragOffset.x
+                    item.y = pointer.y - uiState.dragOffset.y
+                }
+            }
 
-        uiState.shadowPosition = {
-            x: pointer.x - uiState.dragOffset.x,
-            y: pointer.y - uiState.dragOffset.y,
+            if (uiState.selectedIds.length > 1) {
+                uiState.activeId = null
+                const dx = pointer.x - uiState.pointerStart.x
+                const dy = pointer.y - uiState.pointerStart.y
+                diagramHistory.value.items.forEach((item) => {
+                    if (!(item.id in uiState.dragStartPositions)) return
+
+                    const start = uiState.dragStartPositions[item.id]
+
+                    item.x = start.x + dx
+                    item.y = start.y + dy
+                })
+            }
+        }
+
+        if (uiState.interaction === 'selecting') {
+            const selectionBox = uiState.selectionBox
+            if (!selectionBox) return
+
+            selectionBox.end = pointer
+            let selectionRect: Rect = {
+                left: Math.min(selectionBox.start.x, selectionBox.end.x),
+                right: Math.max(selectionBox.start.x, selectionBox.end.x),
+                top: Math.min(selectionBox.start.y, selectionBox.end.y),
+                bottom: Math.max(selectionBox.start.y, selectionBox.end.y),
+            }
+
+            let items = stageRef.current?.find('.item')
+            if (!items) return
+
+            const intersectedItems = diagramHistory.value.items
+                .filter((item) =>
+                    intersected(selectionRect, {
+                        left: item.x,
+                        right: item.x + item.width,
+                        top: item.y,
+                        bottom: item.y + item.height,
+                    }),
+                )
+                .map((item) => item.id)
+
+            uiState.selectedIds = intersectedItems
         }
     }
 
     const handlePointerUp = () => {
-        if (uiState.dragging && uiState.selected) {
-            const item = diagramHistory.value.items.find(
-                (i) => i.id === uiState.selected.id,
-            )
-            if (item) {
-                item.x = uiState.shadowPosition.x
-                item.y = uiState.shadowPosition.y
-            }
-        }
-
         uiState.pointerDown = false
-        uiState.dragging = false
+        uiState.selectionBox = null
+        //uiState.interaction = 'idle'
     }
 
-    console.log(uiState.dragging)
-
+    console.log(uiState.interaction)
     return (
         <div
             className="h-full flex flex-col-reverse dark:bg-darkBackground"
@@ -335,24 +452,28 @@ const DiagramPage = () => {
                     onClick={handleClick}
                     onWheel={handleWheel}
                     draggable={isPanning}
+                    onPointerDown={handlePointerDown}
                     onPointerMove={handlePointerMove}
                     onPointerUp={handlePointerUp}
                 >
-                    <Layer>
-                        {diagramSnap.value.connections.map((connection) => {
-                            return (
-                                <Line
-                                    key={connection.id}
-                                    connection={connection}
-                                />
-                            )
-                        })}
-                    </Layer>
-
                     <Layer ref={itemLayer}>
                         {diagramSnap.value.items.map((item) => {
                             return <Item key={item.id} item={item} />
                         })}
+                    </Layer>
+
+                    <Layer listening={false}>
+                        {diagramSnap.value.connections.map((connection) => (
+                            <Line key={connection.id} connection={connection} />
+                        ))}
+                    </Layer>
+
+                    <Layer>
+                        <Connector
+                            stageRef={stageRef}
+                            updatePreview={updatePreview}
+                            clearPreview={clearPreview}
+                        />
                     </Layer>
 
                     <Layer ref={textLayer}>
@@ -361,9 +482,19 @@ const DiagramPage = () => {
                         })}
                     </Layer>
 
-                    <Connector stageRef={stageRef} />
+                    <Layer listening={false}>{connectionPreview}</Layer>
+
+                    <Layer>
+                        <Selection selection={uiSnap.selectionBox} />
+                        <Transformer ref={selectionRef} />
+                    </Layer>
                 </Stage>
-                {showContextMenu && <ContextMenu position={pointer} />}
+                {showContextMenu && (
+                    <ContextMenu
+                        position={pointer}
+                        onClose={() => setShowContextMenu(false)}
+                    />
+                )}
             </div>
         </div>
     )
