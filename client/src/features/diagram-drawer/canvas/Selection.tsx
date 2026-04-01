@@ -1,113 +1,35 @@
-import { useState, useRef } from 'react'
-import { Rect, Group } from 'react-konva'
 import Konva from 'konva'
+import { useRef } from 'react'
+import { Group, Rect } from 'react-konva'
 
-import { SelectionType } from '@/features/diagram-drawer/types'
+import { Box } from '@/features/diagram-drawer/types'
 
-export const Selection = ({
-  stageRef,
-  transformerRef,
-}: {
-  stageRef: React.RefObject<Konva.Stage>
-  transformerRef: React.RefObject<Konva.Transformer>
-}) => {
-  const selectRef = useRef<Konva.Rect>(null)
-  const overlayRef = useRef<Konva.Rect>(null)
+export const Selection = ({ selection }: { selection: Box }) => {
+    if (!selection) return null
 
-  const [selecting, setSelecting] = useState<boolean>(false)
-  const selection = useRef<SelectionType>({
-    x1: 0,
-    y1: 0,
-    x2: 0,
-    y2: 0,
-    width: 0,
-    height: 0,
-  })
+    const selectRef = useRef<Konva.Rect>(null)
 
-  const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    const pointer = stageRef.current?.getPointerPosition()
-    if (!pointer) return
-    e.evt.preventDefault()
+    const x = Math.min(selection.start.x, selection.end.x)
+    const y = Math.min(selection.start.y, selection.end.y)
+    const width = Math.abs(selection.start.x - selection.end.x)
+    const height = Math.abs(selection.start.y - selection.end.y)
 
-    selection.current.x1 = pointer.x
-    selection.current.y1 = pointer.y
-    selection.current.x2 = pointer.x
-    selection.current.y2 = pointer.y
-
-    setSelecting(true)
-  }
-
-  const handleMouseMove = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    e.evt.preventDefault()
-
-    const stage = e.target.getStage()
-    const pointer = stage?.getPointerPosition()
-
-    if (!pointer || !selecting) return null
-
-    selection.current.x2 = pointer.x
-    selection.current.y2 = pointer.y
-
-    const node = selectRef.current
-    if (!node) return null
-
-    node.setAttrs({
-      visible: true,
-      x: Math.min(selection.current.x1, selection.current.x2),
-      y: Math.min(selection.current.y1, selection.current.y2),
-      width: Math.abs(selection.current.x1 - selection.current.x2),
-      height: Math.abs(selection.current.y1 - selection.current.y2),
-    })
-  }
-
-  const handleMouseUp = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    e.evt.preventDefault()
-    setSelecting(false)
-
-    if (!selectRef.current) return
-
-    selectRef.current?.visible(false)
-
-    const shapes = stageRef.current?.find('.object')
-    const box = selectRef.current.getClientRect()
-    const selected = shapes?.filter((shape) =>
-      Konva.Util.haveIntersection(box, shape.getClientRect()),
+    return (
+        <Group>
+            <Rect
+                ref={selectRef}
+                x={x}
+                y={y}
+                width={width}
+                height={height}
+                listening={false}
+                fill="#7C3AED"
+                stroke="#7C3AED"
+                strokeWidth={1}
+                dash={[4, 4]}
+                opacity={0.1}
+                name="select"
+            />
+        </Group>
     )
-    if (!selected) return
-    transformerRef.current?.nodes(selected)
-  }
-
-  const handleClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    if (selectRef.current?.visible()) return null
-
-    if (e.target === stageRef.current) {
-      transformerRef.current?.nodes([])
-      return null
-    }
-
-    if (!e.target.hasName('.object')) return null
-  }
-
-  return (
-    <Group>
-      <Rect
-        ref={selectRef}
-        listening={false}
-        visible={false}
-        fill="#E83F6F"
-        opacity={0.4}
-        name="select"
-      />
-      <Rect
-        ref={overlayRef}
-        width={stageRef.current?.width()}
-        height={stageRef.current?.height()}
-        fill="transparent"
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onClick={handleClick}
-      />
-    </Group>
-  )
 }
