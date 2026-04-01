@@ -6,7 +6,6 @@ import {
     getPointOnSegment,
     getSegmentPositions,
 } from '@/features/diagram-drawer/utils/connections'
-import { getAttachmentOffset } from './getAttachmentOffset'
 
 export const getAttachmentPosition = (
     attachment: Attachment,
@@ -17,11 +16,32 @@ export const getAttachmentPosition = (
         const item = getFromStore(attachment.itemId, 'items')
         if (!item || item.type !== 'items') return null
 
-        const offset = getAttachmentOffset(attachment.placement, item)
+        const t = attachment.t ?? 0.5
 
-        return {
-            x: item.x + offset.x,
-            y: item.y + offset.y,
+        switch (attachment.placement) {
+            case 'Top':
+                return {
+                    x: item.x + item.width * t,
+                    y: item.y,
+                }
+
+            case 'Bottom':
+                return {
+                    x: item.x + item.width * t,
+                    y: item.y + item.height,
+                }
+
+            case 'Left':
+                return {
+                    x: item.x,
+                    y: item.y + item.height * t,
+                }
+
+            case 'Right':
+                return {
+                    x: item.x + item.width,
+                    y: item.y + item.height * t,
+                }
         }
     }
 
