@@ -17,7 +17,7 @@ manager = ConnectionManager()
 
 async def create_system() -> AsyncGenerator[System, None]:
     logger.info("Created new system")
-    controller = Controller({"set_point": 4, "differential": 3})
+    controller = Controller({"setPoint": 4, "r01": 3})
     room = Room(room_temp=24)
     manager = ConnectionManager
     system = System(controller=controller, room=room, manager=manager)

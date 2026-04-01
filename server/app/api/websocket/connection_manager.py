@@ -3,7 +3,6 @@ from dataclasses import dataclass, field
 
 from fastapi import WebSocket
 
-from app.app_state import AppState
 from app.logger import logger
 
 
@@ -22,7 +21,6 @@ class ConnectionManager:
         self,
         websocket: WebSocket,
         command_queue: asyncio.Queue[str],
-        app_state: AppState,
     ) -> None:
         try:
             while True:

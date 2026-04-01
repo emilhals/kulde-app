@@ -1,10 +1,15 @@
-from dataclasses import dataclass, field
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+from dataclasses import dataclass
 
 from pyfluids import FluidsList, Fluid, Input
 from pyfluids.fluids.fluid import AbstractFluid
 
 from app.core.component import Component
-from app.core.system import System
+
+if TYPE_CHECKING:
+    from app.core.system import System
 
 
 @dataclass
@@ -72,6 +77,7 @@ class Condensator(Component):
             "condensing_temp": round(self.condensing_temp, 1),
             "condensing_pressure": round(self.condensing_pressure / 1e5, 2),
             "subcooling": self.subcooling,
+            "fan_speed": 5,
         }
 
         if self.outlet_state is None:

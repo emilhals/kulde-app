@@ -1,12 +1,17 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+from dataclasses import dataclass
+
 from pyfluids import FluidsList, Fluid, Input
 
-from dataclasses import dataclass, field
-from enum import Enum
 
 from pyfluids.fluids.fluid import AbstractFluid
 
 from app.core.component import Component
-from app.core.system import System
+
+if TYPE_CHECKING:
+    from app.core.system import System
 
 
 @dataclass
@@ -53,4 +58,5 @@ class Evaporator(Component):
         return {
             "suction_pressure": round(self.outlet_state.pressure / 1e5, 2),
             "suction_temp": round(self.outlet_state.temperature - 273.15, 2),
+            "fan_speed": 5,
         }

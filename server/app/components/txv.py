@@ -1,10 +1,16 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 from dataclasses import dataclass
 
 from pyfluids import Input, Fluid, FluidsList
 from pyfluids.fluids.fluid import AbstractFluid
 
 from app.core.component import Component
-from app.core.system import System
+
+if TYPE_CHECKING:
+    from app.core.system import System
+
 
 @dataclass
 class TXV(Component):
@@ -29,8 +35,12 @@ class TXV(Component):
         if not self.system:
             raise RuntimeError("TXV does not belong to system.")
 
-        condensator  = next(c for c in self.system.components if c.component_name == "Condensator")
-        evaporator= next(c for c in self.system.components if c.component_name == "Evaporator")
+        condensator = next(
+            c for c in self.system.components if c.component_name == "Condensator"
+        )
+        evaporator = next(
+            c for c in self.system.components if c.component_name == "Evaporator"
+        )
 
         self.inlet_state = condensator.outlet_state
 
@@ -40,13 +50,17 @@ class TXV(Component):
 
         h_in = self.inlet_state.enthalpy
         self.outlet_state = Fluid(FluidsList.R404A)
-        self.outlet_state.update(Input.pressure(evaporator.saturated_state.pressure), Input.enthalpy(h_in))
+        self.outlet_state.update(
+            Input.pressure(evaporator.saturated_state.pressure), Input.enthalpy(h_in)
+        )
 
     async def get_values(self) -> dict[str, str | int | float]:
         if self.outlet_state is None:
             return {"status": "idle"}
 
-        values: dict[str, str | int | float ] = {"outlet_pressure": round(self.outlet_state.pressure / 1e5, 2)}
+        values: dict[str, str | int | float] = {
+            "outlet_pressure": round(self.outlet_state.pressure / 1e5, 2)
+        }
 
         if self.outlet_state.quality is None:
             values["quality"] = "N/A"
@@ -55,4 +69,4 @@ class TXV(Component):
             values["quality"] = round(self.outlet_state.quality, 3)
             values["phase"] = "two-phase"
 
-        return values 
+        return values
