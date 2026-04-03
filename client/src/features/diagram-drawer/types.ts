@@ -2,12 +2,33 @@ export type Placement = 'Top' | 'Bottom' | 'Right' | 'Left'
 
 export type ComponentContext = 'Panel' | 'Diagram'
 
-export type WithId<T> = T & { id: string }
+export type SymbolName =
+    | 'compressor'
+    | 'heatexchanger'
+    | 'tev'
+    | 'liquidfilter'
+    | 'pressureswitch'
+    | 'sightglass'
+    | 'oilseparator'
+    | 'accumulator'
+    | 'receiver'
+    | 'solenoidvalve'
+    | 'checkvalve'
+    | 'ballvalve'
+    | 'pressuregauge'
+    | 'thermometer'
+    | 'levelindicator'
+    | 'flowmeter'
 
-export type PointType = {
+export type WithId<T> = T & { id: string }
+export type WithoutId<T> = Omit<T, 'id'>
+
+export type Point = {
     x: number
     y: number
 }
+
+export type Attachment = ItemAttachment | ConnectionAttachment | FreeAttachment
 
 export type ItemAttachment = {
     type: 'item'
@@ -25,13 +46,10 @@ export type ConnectionAttachment = {
 
 export type FreeAttachment = {
     type: 'free'
-    position: PointType
+    position: Point
 }
 
-export type Attachment = ItemAttachment | ConnectionAttachment | FreeAttachment
-
-export type ConnectionPreview = Omit<ConnectionType, 'id'>
-export type ConnectionType = {
+export type Connection = {
     readonly type: 'connections'
     readonly id: string
 
@@ -40,8 +58,8 @@ export type ConnectionType = {
 }
 
 export type Box = {
-    start: PointType
-    end: PointType
+    start: Point
+    end: Point
 }
 
 export type Rect = {
@@ -51,52 +69,45 @@ export type Rect = {
     bottom: number
 }
 
-export type ItemPreview = Omit<ItemType, 'id'>
-export type ItemType = {
+export type Item = {
     readonly type: 'items'
     readonly id: string
-    component: string
+    component: SymbolName
     height: number
     width: number
     x: number
     y: number
+    locked: boolean
     anchors: {
         position: readonly Placement[]
-        offset?: {
-            x?: Placement
-            y?: Placement
-        }
+        offsets?: Partial<Record<Placement, Point>>
     }
-    locked: boolean
 }
 
-export type TextPreview = Omit<TextType, 'id'>
-export type TextType = {
+export type ItemPreview = {
+    component: SymbolName
+    label: string
+    width: number
+    height: number
+    x?: number
+    y?: number
+    anchors: {
+        position: readonly Placement[]
+        offsets?: Partial<Record<Placement, Point>>
+    }
+}
+
+export type Text = {
     readonly type: 'texts'
     readonly id: string
     content: string
-    position: PointType
+    position: Point
     size: number
     attributes?: readonly string[]
     anchor?: {
         type: 'item'
         itemId: string
         placement: Placement
-        offset: PointType
-    }
-}
-
-export type ComponentType = {
-    value: string
-    img: string
-    label: string
-    width: number
-    height: number
-    anchors: {
-        position: Placement[]
-        offset?: {
-            x?: Placement
-            y?: Placement
-        }
+        offset: Point
     }
 }
