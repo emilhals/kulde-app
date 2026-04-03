@@ -1,0 +1,1 @@
+export { getAnchorPoints } from './getAnchorPoints'
