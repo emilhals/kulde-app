@@ -1,9 +1,8 @@
+import { Placement } from '@/features/diagram-drawer/types'
+import { dragBounds } from '@/features/diagram-drawer/utils/konva'
 import Konva from 'konva'
 import { useEffect, useRef } from 'react'
 import { Circle } from 'react-konva'
-
-import { Placement } from '@/features/diagram-drawer/types'
-import { dragBounds } from '@/features/diagram-drawer/utils/konva'
 
 type PropsType = {
     itemId: string
@@ -11,16 +10,17 @@ type PropsType = {
     x: number
     y: number
     hovered?: Placement | null
-    active?: Placement | null
-    onDragStart: (
+    source?: Placement | null
+    disabled?: boolean
+    onDragStart?: (
         e: Konva.KonvaEventObject<DragEvent>,
         placement: Placement,
     ) => void
-    onDragMove: (
+    onDragMove?: (
         e: Konva.KonvaEventObject<DragEvent>,
         placement: Placement,
     ) => void
-    onDragEnd: (
+    onDragEnd?: (
         e: Konva.KonvaEventObject<DragEvent>,
         placement: Placement,
     ) => void
@@ -31,64 +31,33 @@ export const Anchor = ({
     placement,
     x,
     y,
-    active,
+    source,
     hovered,
+    disabled = false,
     onDragMove,
     onDragStart,
     onDragEnd,
 }: PropsType) => {
     const anchorRef = useRef<Konva.Circle>(null)
-    const hoveredAnchorRef = useRef<Konva.Circle>(null)
+    const interactedAnchorRef = useRef<Konva.Circle>(null)
+
+    const isHovered = hovered === placement
 
     useEffect(() => {
-        const isHovered = hovered === placement
-        const isActive = active === placement
-
-        let anim: Konva.Animation | null = null
-
-        if (isActive && hoveredAnchorRef.current) {
-            const period = 1200
-
-            anim = new Konva.Animation((frame) => {
-                if (!frame) return
-
-                const t = Math.sin((frame.time * 2 * Math.PI) / period)
-                const scale = 1 + 0.08 * t
-                const opacity = 0.5 + 0.2 * Math.sin(t)
-
-                hoveredAnchorRef.current?.scale({ x: scale, y: scale })
-                hoveredAnchorRef.current?.opacity(opacity)
-            }, hoveredAnchorRef.current?.getLayer())
-
-            anim.start()
-        } else {
-            hoveredAnchorRef.current?.scale({ x: 1, y: 1 })
-        }
-
-        if (isActive) {
-            hoveredAnchorRef.current?.to({
-                radius: 10,
-                duration: 0.2,
-                easing: Konva.Easings.EaseOut,
-            })
-        } else if (isHovered) {
-            hoveredAnchorRef.current?.to({
-                radius: 10,
+        if (isHovered) {
+            interactedAnchorRef.current?.to({
+                radius: 7,
                 duration: 0.2,
                 easing: Konva.Easings.EaseIn,
             })
         } else {
-            hoveredAnchorRef.current?.to({
+            interactedAnchorRef.current?.to({
                 radius: 5,
                 duration: 0.2,
                 easing: Konva.Easings.EaseOut,
             })
         }
-
-        return () => {
-            anim?.stop()
-        }
-    }, [hovered, active, placement])
+    }, [isHovered, placement])
 
     return (
         <>
@@ -99,11 +68,11 @@ export const Anchor = ({
                 radius={9}
                 strokeWidth={1.5}
                 stroke="#FFFFFF"
-                fill={hovered === placement ? '#A78BFA' : '#5B21B6'}
+                fill={hovered === placement ? '#404040' : '#404040'}
                 opacity={0.9}
-                visible={hovered === placement || active === placement}
+                visible={hovered === placement || source === placement}
                 listening={false}
-                ref={hoveredAnchorRef}
+                ref={interactedAnchorRef}
             />
 
             <Circle
@@ -111,11 +80,12 @@ export const Anchor = ({
                 name="anchor"
                 x={x}
                 y={y}
-                radius={6}
-                strokeWidth={1.5}
+                radius={4}
+                strokeWidth={0.5}
                 stroke="#FFFFFF"
-                fill="#A78BFA"
+                fill="#202020"
                 draggable
+                visible={!disabled}
                 onMouseEnter={(e) => {
                     const container = e.target.getStage()?.container()
                     if (!container) return
@@ -129,12 +99,11 @@ export const Anchor = ({
 
                     container.style.cursor = 'default'
                 }}
-                onDragStart={(e) => onDragStart(e, placement)}
-                onDragMove={(e) => onDragMove(e, placement)}
-                onDragEnd={(e) => onDragEnd(e, placement)}
+                onDragStart={(e) => onDragStart?.(e, placement)}
+                onDragMove={(e) => onDragMove?.(e, placement)}
+                onDragEnd={(e) => onDragEnd?.(e, placement)}
                 dragBoundFunc={() => dragBounds(anchorRef)}
                 perfectDrawEnabled={false}
-                listening={true}
                 ref={anchorRef}
             />
         </>
