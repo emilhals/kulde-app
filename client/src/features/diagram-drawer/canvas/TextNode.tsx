@@ -1,20 +1,23 @@
 import { diagramHistory } from '@/features/diagram-drawer/store/models'
-import { Item, Text as TextType } from '@/features/diagram-drawer/types'
+import { Text } from '@/features/diagram-drawer/types'
 import Konva from 'konva'
+import { KonvaEventObject } from 'konva/lib/Node'
 import { useRef, useState } from 'react'
 import { Group, Text as KonvaText } from 'react-konva'
 import { Html } from 'react-konva-utils'
+import { useSnapshot } from 'valtio'
 
-export const TextNode = ({ parent }: { parent: Item | TextType }) => {
+export const TextNode = ({ text }: { text: Text }) => {
     const textRef = useRef<Konva.Text>(null)
     const inputRef = useRef<HTMLInputElement>(null)
 
     const [canEdit, setCanEdit] = useState<boolean>(false)
     const [editedText, setEditedText] = useState<string>('')
 
-    const textProxy = diagramHistory.value.texts.find(
-        (text) => text.id === parent.id,
-    )
+    const diagramSnap = useSnapshot(diagramHistory)
+    if (!diagramSnap) return null
+
+    const textProxy = diagramHistory.value.texts.find((t) => t.id === text.id)
     if (!textProxy) return null
 
     const anchor = textProxy.anchor
@@ -24,30 +27,42 @@ export const TextNode = ({ parent }: { parent: Item | TextType }) => {
             ? diagramHistory.value.items.find((i) => i.id === anchor.itemId)
             : null
 
-    const x = anchoredItem
-        ? anchoredItem.x + anchoredItem.width / 2
-        : textProxy.position.x
-
+    const x =
+        anchoredItem && textRef.current
+            ? anchoredItem.x +
+              anchoredItem.width / 2 -
+              textRef.current?.width() / 2
+            : textProxy.position.x
     const y =
         anchoredItem && anchor
             ? anchoredItem.y + anchor.offset.y
             : textProxy.position.y
 
-    const handleDragStart = () => {
-        // Detach text from anchor on drag
-        if (textProxy.anchor) {
-            textProxy.anchor = undefined
-        }
+    const handleDragStart = (e: KonvaEventObject<DragEvent>) => {
+        const stage = e.target.getStage()
+        if (!stage) return
     }
 
-    const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
+    const handleDragMove = (e: KonvaEventObject<DragEvent>) => {
         if (!textProxy) return null
         textProxy.position.x = e.target.getAbsolutePosition().x
         textProxy.position.y = e.target.getAbsolutePosition().y
+
+        if (!textProxy.anchor?.itemId) return
+        const item = diagramSnap.value.items.find(
+            (item) => item.id === textProxy.anchor?.itemId,
+        )
+        if (!item) return
+
+        const dx = text.position.x - item.x
+        const dy = text.position.y - item.y
+
+        const distance = Math.sqrt(dx * dx + dy * dy)
     }
 
-    const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
+    const handleDragEnd = (e: KonvaEventObject<DragEvent>) => {
         if (!textProxy) return null
+
         textProxy.position.x = e.target.getAbsolutePosition().x
         textProxy.position.y = e.target.getAbsolutePosition().y
     }
@@ -76,16 +91,15 @@ export const TextNode = ({ parent }: { parent: Item | TextType }) => {
         <Group>
             <KonvaText
                 ref={textRef}
-                id={parent.id}
+                id={text.id}
                 x={x}
                 y={y}
                 align="center"
-                width={200}
-                offsetX={100}
                 draggable
-                text={textProxy?.content}
+                text={text.content}
                 fontFamily={'Inter'}
-                textDecoration={textProxy.attributes
+                fill={text.color}
+                textDecoration={text.attributes
                     ?.filter((attr) => attr === 'underline')
                     .join('')}
                 fontStyle={textProxy.attributes
@@ -95,14 +109,14 @@ export const TextNode = ({ parent }: { parent: Item | TextType }) => {
                 onDragMove={handleDragMove}
                 onDragEnd={handleDragEnd}
                 onDblClick={handleDoubleClick}
-                fontSize={16}
+                fontSize={14}
             />
 
             {canEdit && (
                 <Html>
                     <input
                         ref={inputRef}
-                        defaultValue={textProxy?.content}
+                        defaultValue={text.content}
                         onChange={(e) => {
                             setEditedText(e.target.value)
                         }}

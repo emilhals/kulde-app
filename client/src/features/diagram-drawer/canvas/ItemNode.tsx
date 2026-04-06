@@ -12,7 +12,8 @@ export const ItemNode = ({ item }: { item: Item }) => {
     const groupRef = useRef<Konva.Group>(null)
 
     const isDragging =
-        uiState.interaction === 'dragging-item' && uiState.activeId === item.id
+        uiState.interaction === 'dragging-item' &&
+        uiState.activeNode?.id === item.id
 
     const Symbol: SymbolComponent = SYMBOL_MAP[item.component]
 
