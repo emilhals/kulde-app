@@ -1,15 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
-
-import Konva from 'konva'
-import { Line } from 'react-konva'
-
-import {
-    Attachment,
-    ItemAttachment,
-    PointType,
-} from '@/features/diagram-drawer/types'
+import { Attachment, ItemAttachment } from '@/features/diagram-drawer/types'
 import { getAttachmentPosition } from '@/features/diagram-drawer/utils/attachments'
 import { createConnectionPoints } from '@/features/diagram-drawer/utils/connections'
+import Konva from 'konva'
+import { useEffect, useRef, useState } from 'react'
+import { Line } from 'react-konva'
 
 export const useConnectionPreview = () => {
     const lineRef = useRef<Konva.Line>(null)
@@ -17,41 +11,24 @@ export const useConnectionPreview = () => {
     const [connectionPreview, setConnectionPreview] =
         useState<React.ReactNode>()
 
+    const shouldAnimate = useRef<boolean>(true)
+
     useEffect(() => {
         if (!lineRef.current) return
 
-        const anim = new Konva.Animation((frame) => {
-            if (!frame || !lineRef.current) return
+        if (shouldAnimate) {
+            const anim = new Konva.Animation((frame) => {
+                if (!frame || !lineRef.current) return
 
-            lineRef.current.dashOffset(-(frame.time / 30))
-        }, lineRef.current.getLayer())
+                lineRef.current.dashOffset(-(frame.time / 30))
+            }, lineRef.current.getLayer())
 
-        anim.start()
-
-        return () => {
-            anim.stop()
+            anim.start()
+            return () => {
+                anim.stop()
+            }
         }
-    }, [connectionPreview])
-
-    const setInitialPreview = (position: PointType) => {
-        setConnectionPreview(
-            <Line
-                x={0}
-                y={0}
-                points={[position.x, position.y, 0, 0]}
-                strokeWidth={4}
-                stroke="#2d9cdb"
-                lineJoin="round"
-                lineCap="round"
-                perfectDrawEnabled={false}
-                shadowBlur={1}
-                shadowColor="#ffffff"
-                shadowOpacity={0.5}
-                listening={false}
-                ref={lineRef}
-            />,
-        )
-    }
+    }, [connectionPreview, shouldAnimate])
 
     const updatePreview = (from: ItemAttachment, to: Attachment) => {
         const fromPosition = getAttachmentPosition(from)
@@ -73,17 +50,13 @@ export const useConnectionPreview = () => {
                     toPlacement,
                 )}
                 strokeWidth={2.5}
-                stroke="#7C3AED"
+                stroke="#374151"
+                opacity={0.7}
                 lineJoin="round"
                 dash={[6, 4]}
                 lineCap="round"
                 listening={false}
                 perfectDrawEnabled={false}
-                shadowBlur={10}
-                shadowOffsetY={1}
-                shadowOffsetX={1}
-                shadowColor="#42AEEC"
-                shadowOpacity={0.5}
                 ref={lineRef}
             />,
         )
@@ -93,7 +66,6 @@ export const useConnectionPreview = () => {
 
     return {
         connectionPreview,
-        setInitialPreview,
         updatePreview,
         clearPreview,
     }
