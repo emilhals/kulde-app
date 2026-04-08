@@ -1,15 +1,16 @@
 import { v4 as uuidv4 } from 'uuid'
 
 import {
-    ItemType,
-    ConnectionType,
-    TextType,
-    ItemPreview,
-    TextPreview,
     ConnectionPreview,
+    ConnectionType,
+    ItemPreview,
+    ItemType,
+    TextPreview,
+    TextType,
 } from '@/features/diagram-drawer/types'
 
-import { diagramHistory } from './models.ts'
+import { deepClone } from 'valtio/utils'
+import { diagramHistory, initialUIState, uiState } from './models.ts'
 
 type StoreMap = {
     items: ItemType

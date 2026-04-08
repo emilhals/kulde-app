@@ -1,28 +1,39 @@
-import { useState, useRef, useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
-import { Lock, LockOpen, Trash2, Copy } from 'lucide-react'
+import { Copy, Lock, LockOpen, Trash2 } from 'lucide-react'
 
 import {
-    removeFromStore,
     addToStore,
-    diagramHistory,
-    uiState,
-} from '@/features/diagram-drawer/store'
+    removeFromStore,
+} from '@/features/diagram-drawer/store/actions'
+import { diagramHistory, uiState } from '@/features/diagram-drawer/store/models'
+
 import { useSnapshot } from 'valtio'
 
 import { PointType } from '@/features/diagram-drawer/types'
 
-export const ContextMenu = ({ position }: { position: PointType }) => {
+export const ContextMenu = ({
+    position,
+    onClose,
+}: {
+    position: PointType
+    onClose: () => void
+}) => {
     const diagramSnap = useSnapshot(diagramHistory)
 
-    const [show, setShow] = useState<boolean>(true)
+    const [textValue, setTextValue] = useState<string>('')
+    const [initialValue, setInitialValue] = useState<string>('')
+
+    const menuRef = useRef<HTMLDivElement>(null)
+    const inputRef = useRef<HTMLInputElement>(null)
+    const cancelledRef = useRef<boolean>(false)
 
     const item = diagramSnap.value.items.find(
-        (item) => item.id === uiState.selected?.id,
+        (item) => item.id === uiState.activeId,
     )
 
     const itemProxy = diagramHistory.value.items.find(
-        (item) => item.id === uiState.selected?.id,
+        (item) => item.id === uiState.activeId,
     )
 
     const attachedText = diagramSnap.value.texts.find(
@@ -34,17 +45,11 @@ export const ContextMenu = ({ position }: { position: PointType }) => {
             text.anchor?.type === 'item' && text.anchor.itemId === item?.id,
     )
 
-    const [textValue, setTextValue] = useState(attachedText?.content ?? '')
-    const inputRef = useRef<HTMLInputElement>(null)
-
-    useEffect(() => {
-        if (show) {
-            inputRef.current?.focus()
-        }
-    }, [show])
-
     useEffect(() => {
         setTextValue(attachedText?.content ?? '')
+        setInitialValue(attachedText?.content ?? '')
+
+        inputRef.current?.focus()
     }, [attachedText?.id])
 
     if (!item || !itemProxy) return null
@@ -64,7 +69,7 @@ export const ContextMenu = ({ position }: { position: PointType }) => {
             },
         })
 
-        if (duplicatedItem?.type !== 'items') return null
+        if (duplicatedItem?.type !== 'items') return
 
         if (attachedText) {
             addToStore({
@@ -83,10 +88,15 @@ export const ContextMenu = ({ position }: { position: PointType }) => {
                 },
             })
         }
+        uiState.activeId = null
+        onClose()
     }
 
     return (
         <div
+            ref={menuRef}
+            id="contextmenu"
+            className="border-2 rounded-md"
             onClick={(e) => e.stopPropagation()}
             style={{
                 position: 'fixed',
@@ -95,24 +105,56 @@ export const ContextMenu = ({ position }: { position: PointType }) => {
                 zIndex: 10,
                 backgroundColor: 'white',
             }}
-            id="contextmenu"
-            className={`
-        border-2 rounded-md  
-        ${show ? '' : 'hidden'}
-      `}
         >
             <div className="relative inline-block text-sm leading-5 tracking-tight">
                 <div className="flex flex-row px-2 items-center justify-center py-2">
                     <input
-                        className="block py-2 px-2 bg-gray-30 text-sm text-gray-900 outline outline-1 outline-offset-1 outline-gray-300 rounded-sm shadow-inner shadow-gray-100 focus:outline-1 focus:outline-skyblue"
+                        className="block py-2 px-2 bg-gray-30 text-sm text-gray-900 outline outline-1 outline-offset-1 outline-gray-300 rounded-sm shadow-inner shadow-gray-100 focus:outline-1 focus:outline-black"
                         placeholder="Enter label"
                         value={textValue}
+                        onPointerDown={(e) => e.stopPropagation()}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                             setTextValue(e.target.value)
                         }}
-                        onBlur={() => {
+                        onKeyDown={(e) => {
+                            e.stopPropagation()
+                            if (e.key === 'Enter') {
+                                e.preventDefault()
+                                if (attachedTextProxy) {
+                                    attachedTextProxy.content = textValue
+                                }
+                                e.currentTarget.blur()
+                                onClose()
+                            }
+
+                            if (e.key === 'Escape') {
+                                e.preventDefault()
+                                cancelledRef.current = true
+                                setTextValue(initialValue)
+
+                                e.currentTarget.blur()
+                                onClose()
+                            }
+                        }}
+                        onBlur={(e) => {
                             if (!attachedTextProxy) return
-                            attachedTextProxy.content = textValue
+
+                            const nextFocused = e.relatedTarget as Node | null
+                            const clickedInsideMenu =
+                                nextFocused &&
+                                menuRef.current?.contains(nextFocused)
+
+                            if (
+                                textValue !== initialValue &&
+                                !cancelledRef.current
+                            ) {
+                                attachedTextProxy.content = textValue
+                            }
+
+                            cancelledRef.current = false
+                            if (!clickedInsideMenu) {
+                                onClose()
+                            }
                         }}
                         type="text"
                         ref={inputRef}
@@ -145,8 +187,8 @@ export const ContextMenu = ({ position }: { position: PointType }) => {
                     <button
                         onClick={() => {
                             removeFromStore(itemProxy)
-                            uiState.selected = null
-                            setShow(false)
+                            uiState.activeId = null
+                            onClose()
                         }}
                         className="group flex justify-center items-center text-red-600 w-full px-4 py-2 hover:bg-gray-50"
                     >

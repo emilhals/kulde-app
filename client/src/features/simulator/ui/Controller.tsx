@@ -29,12 +29,12 @@ const Parameters: ParamType[] = [
         index: 2,
         code: 'r01',
         information: 'Differential',
-        value: 4,
+        value: 3,
     },
     {
         index: 3,
         code: 'r12',
-        information: 'Controll engine',
+        information: 'Control engine',
         value: 0,
     },
 ]
@@ -63,7 +63,6 @@ const Controller = ({ roomTemp }: { roomTemp: number }) => {
     useEffect(() => {
         setCurrentParam(Parameters[paramIndex])
     }, [paramIndex, currentParam])
-
 
     const handlePressUp = () => {
         if (controllerState.view == 'DISPLAY') {
@@ -105,9 +104,11 @@ const Controller = ({ roomTemp }: { roomTemp: number }) => {
                     <span
                         className={`font-lubrifont text-4xl ${controllerSnap.view === 'DISPLAY' ? 'text-white' : 'text-gray-400'}`}
                     >
-                        {currentParam?.code === 'u56' || controllerSnap.view === 'EDIT'
-                            ? controllerSnap.parameters[currentParam.code].value +
-                            `${currentParam.code === 'u56' ? '°C' : ''}`
+                        {currentParam?.code === 'u56' ||
+                        controllerSnap.view === 'EDIT'
+                            ? controllerSnap.parameters[currentParam.code]
+                                  .value +
+                              `${currentParam.code === 'u56' ? '°C' : ''}`
                             : currentParam.code}
                     </span>
                 </div>

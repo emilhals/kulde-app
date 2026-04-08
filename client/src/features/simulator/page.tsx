@@ -1,51 +1,95 @@
 import { useEffect, useState, useRef } from 'react'
-import { Stage } from 'react-konva'
+import { Stage, Layer, Line, Text } from 'react-konva'
+import Konva from 'konva'
 
-import { Play, Pause, FastForward, Rewind } from 'lucide-react'
+import { Play, RotateCw, Square, Zap, ZapOff } from 'lucide-react'
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip'
 
 import { useSnapshot, subscribe } from 'valtio'
-import { controllerState } from '@/features/simulator/store'
+import {
+    controllerState,
+    initialControllerState,
+} from '@/features/simulator/store'
 
 import useWebSocket, { ReadyState } from 'react-use-websocket-lite'
 
 import Controller from '@/features/simulator/ui/Controller'
 
-import { Compressor, Evaporator, Condensator } from './types'
+import { CompressorType, EvaporatorType, CondensatorType } from './types'
+import HeatExchanger from '@/features/simulator/canvas/HeatExchanger'
+import Compressor from '@/features/simulator/canvas/Compressor'
+import TEV from '@/features/simulator/canvas/TEV'
+import { deepClone } from 'valtio/utils'
 
 const SimulatorPage = () => {
     const url = 'http://127.0.0.1:8000/ws'
     const [messages, setMessages] = useState<string[]>([])
 
+    const restartingRef = useRef<boolean>(false)
+
+    const stageRef = useRef<Konva.Stage>(null)
+
     const [roomTemp, setRoomTemp] = useState<number>(24)
     const controllerSnap = useSnapshot(controllerState)
 
-    const [compressor, setCompressor] = useState<Compressor>()
+    const [compressor, setCompressor] = useState<CompressorType>({
+        power_state: 'OFF',
+        run_state: 'IDLE',
+        discharge_pressure: 10,
+        discharge_temp: 24,
+        suction_pressure: 6,
+        suction_temperature: 24,
+    })
 
-    const [evaporator, setEvaporator] = useState<Evaporator>()
-    const [condensator, setCondensator] = useState<Condensator>()
+    /* TODO: Give default values */
+    const [evaporator, setEvaporator] = useState<EvaporatorType>({
+        fan_speed: 0,
+    })
+    const [condensator, setCondensator] = useState<CondensatorType>({
+        fan_speed: 0,
+    })
 
-    subscribe(controllerState.parameters, () => {
-        if (controllerState.view == 'DISPLAY') {
-            console.log("state changes to", controllerState.parameters)
-        }
+    subscribe(controllerState, () => {
+        if (controllerState.view === 'DISPLAY') return
+        console.log('values', controllerState)
     })
 
     const flatParams = Object.fromEntries(
-        Object.entries(controllerState.parameters).map(([key, param]) => [
+        Object.entries(controllerSnap.parameters).map(([key, param]) => [
             key,
             param.value,
         ]),
     )
+
     const { sendMessage, readyState } = useWebSocket({
         url: url,
         onMessage(event) {
+            if (restartingRef.current) return
+
             const data = JSON.parse(event.data)
+
+            if (data.status === 'STOPPED') {
+                restartingRef.current = false
+                setSimulationStatus('IDLE')
+                return
+            }
+
+            if (data.status === 'RUNNING') {
+                setSimulationStatus('RUNNING')
+            }
+
             setMessages((prev) => [...prev, data])
             setRoomTemp(data.Room.room_temp)
 
             setEvaporator({
-                suction_pressure: JSON.parse(event.data).Evaporator.suction_pressure,
-                suction_temperature: JSON.parse(event.data).Evaporator.suction_temp,
+                suction_pressure: JSON.parse(event.data).Evaporator
+                    .suction_pressure,
+                suction_temperature: JSON.parse(event.data).Evaporator
+                    .suction_temp,
             })
             setCondensator({
                 condensing_pressure: data.Condensator.condensing_pressure,
@@ -59,8 +103,11 @@ const SimulatorPage = () => {
                 run_state: data.Compressor.run_state,
                 discharge_pressure: data.Compressor.discharge_pressure,
                 discharge_temp: data.Compressor.discharge_temp,
+                suction_pressure: JSON.parse(event.data).Evaporator
+                    .suction_pressure,
+                suction_temperature: JSON.parse(event.data).Evaporator
+                    .suction_temp,
             })
-
         },
     })
 
@@ -72,87 +119,190 @@ const SimulatorPage = () => {
         [ReadyState.UNINSTANTIATED]: 'Uninstantiated',
     }[readyState]
 
-    const [systemConditions, setSystemConditions] = useState({
-        is_running: false,
-        refrigerant: 'R404a',
-    })
+    const [simulationStatus, setSimulationStatus] = useState<
+        'RUNNING' | 'STOPPING' | 'RESTARTING' | 'IDLE'
+    >('IDLE')
 
-    const [simulationStatus, setSimulationStatus] = useState<'run' | 'pause'>(
-        'pause',
-    )
+    useEffect(() => {
+        if (stageRef.current) {
+            const container = stageRef.current.container()
+            container.style.backgroundColor = '#f3f4f6'
+        }
+    }, [])
 
     useEffect(() => {
         console.log('Connection status: ', connectionStatus)
     }, [connectionStatus])
 
-    useEffect(() => {
-        if (readyState === ReadyState.OPEN && systemConditions.is_running) {
-            console.log('sending')
-            sendMessage(
-                JSON.stringify({
-                    command: 'start',
-                    systemConditions: systemConditions,
-                    controllerParams: flatParams,
-                }),
-            )
-        }
-    }, [readyState, sendMessage, systemConditions])
+    const handlePlay = () => {
+        if (readyState !== ReadyState.OPEN) return
+
+        sendMessage(
+            JSON.stringify({
+                command: 'start',
+                controllerParams: flatParams,
+            }),
+        )
+
+        setSimulationStatus('RUNNING')
+    }
+
+    const handleStop = () => {
+        if (readyState !== ReadyState.OPEN) return
+
+        sendMessage(
+            JSON.stringify({
+                command: 'STOP',
+            }),
+        )
+
+        setSimulationStatus('STOPPING')
+    }
+
+    const handleRestart = () => {
+        if (readyState !== ReadyState.OPEN) return
+
+        const controllerStateReset = deepClone(initialControllerState)
+
+        controllerState.view = controllerStateReset.view
+
+        Object.keys(controllerState.parameters).forEach((key) => {
+            delete controllerState.parameters[key]
+        })
+
+        Object.entries(controllerStateReset.parameters).forEach(
+            ([key, value]) => {
+                controllerState.parameters[key] = value
+            },
+        )
+
+        const resetParams = Object.fromEntries(
+            Object.entries(initialControllerState.parameters).map(
+                ([key, param]) => [key, param.value],
+            ),
+        )
+
+        setRoomTemp(24)
+        sendMessage(
+            JSON.stringify({
+                command: 'RESTART',
+                controllerParams: resetParams,
+            }),
+        )
+
+        setSimulationStatus('RESTARTING')
+    }
 
     return (
         <div className="h-32">
-            <div className="flex px-16 py-8 flex-row gap-x-2 fixed left-0 z-50">
-                <h3>{controllerSnap.view}</h3>
-                <button>
-                    <Rewind size={20} />
-                </button>
-
-                {systemConditions.is_running && (
-                    <button
-                        onClick={() =>
-                            setSystemConditions({ ...systemConditions, is_running: false })
-                        }
-                    >
-                        <Pause size={20} />
-                    </button>
-                )}
-
-                {!systemConditions.is_running && (
-                    <button
-                        onClick={() =>
-                            setSystemConditions({ ...systemConditions, is_running: true })
-                        }
-                    >
-                        <Play size={20} />
-                    </button>
-                )}
-
-                <button>
-                    <FastForward size={20} />
-                </button>
+            <div className="flex px-12 py-8 flex-row gap-x-4 fixed left-0 z-50">
+                {simulationStatus}
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        {simulationStatus == 'RUNNING' && (
+                            <button
+                                className="bg-transparent"
+                                onClick={handleStop}
+                            >
+                                <Square size={16} />
+                            </button>
+                        )}
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Stop simulation</p>
+                    </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        {simulationStatus !== 'RUNNING' && (
+                            <button
+                                className="bg-transparent"
+                                onClick={handlePlay}
+                            >
+                                <Play size={16} />
+                            </button>
+                        )}
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Start simulation</p>
+                    </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <button
+                            className="bg-transparent"
+                            onClick={handleRestart}
+                        >
+                            <RotateCw size={16} />
+                        </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Restart simulation</p>
+                    </TooltipContent>
+                </Tooltip>
             </div>
             <div className="bg-gray-100 py-2 px-4 h-32 absolute right-0 z-50">
                 <Controller roomTemp={roomTemp} />
+                <h3>{controllerSnap.view}</h3>
             </div>
+            <Stage
+                width={window.innerWidth}
+                height={window.innerHeight}
+                ref={stageRef}
+            >
+                <Layer>
+                    <HeatExchanger
+                        type="Condensor"
+                        data={condensator}
+                        position={{ x: 270, y: 150 }}
+                    />
 
-            <div className="fixed bottom-0 flex flex-row">
-                <div className="flex flex-col">
-                    <h3>Run state: {compressor?.run_state}</h3>
-                    <h3>Discharge temp: {compressor?.discharge_temp}</h3>
-                    <h3>Discharge pressure: {compressor?.discharge_pressure}</h3>
-                </div>
+                    <Compressor
+                        data={compressor}
+                        position={{ x: 200, y: 520 }}
+                    />
 
-                <div className="flex flex-col">
-                    <h3>LP: {evaporator?.suction_pressure}</h3>
-                    <h3>Suction temp: {evaporator?.suction_temperature}</h3>
-                </div>
+                    {/* Line from compressor to condensor */}
+                    <Line
+                        strokeWidth={3}
+                        stroke="red"
+                        points={[
+                            325, 600, 360, 600, 360, 400, 150, 400, 150, 180,
+                            220, 180,
+                        ]}
+                    />
 
-                <div className="flex flex-col">
-                    <h3>HP: {condensator?.condensing_pressure}</h3>
-                    <h3>Condensor temp: {condensator?.condensing_temperature}</h3>
-                    <h3>Liquid temp: {condensator?.liquid_temp}</h3>
-                </div>
-            </div>
-            <Stage width={window.innerWidth} height={window.innerHeight}></Stage>
+                    {/* Line from condensor to TEV */}
+                    <Line
+                        strokeWidth={3}
+                        stroke="#FFA276"
+                        points={[550, 300, 800, 300, 800, 444]}
+                    />
+
+                    <TEV position={{ x: 800, y: 450 }} />
+
+                    {/* Line from TEV to evaporator */}
+                    <Line
+                        strokeWidth={3}
+                        stroke="#FFA276"
+                        points={[800, 482, 800, 630, 750, 630]}
+                    />
+
+                    <HeatExchanger
+                        type="Evaporator"
+                        data={evaporator}
+                        position={{ x: 500, y: 600 }}
+                        flip={true}
+                    />
+
+                    {/* Line from evaporator to compressor */}
+                    <Line
+                        strokeWidth={3}
+                        stroke="blue"
+                        points={[480, 750, 100, 750, 100, 600, 200, 600]}
+                    />
+                </Layer>
+            </Stage>
         </div>
     )
 }

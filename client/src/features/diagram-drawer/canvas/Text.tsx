@@ -4,7 +4,7 @@ import Konva from 'konva'
 import { Group, Text as KonvaText } from 'react-konva'
 import { Html } from 'react-konva-utils'
 
-import { diagramHistory } from '@/features/diagram-drawer/store'
+import { diagramHistory } from '@/features/diagram-drawer/store/models'
 
 import { ItemType, TextType } from '@/features/diagram-drawer/types'
 

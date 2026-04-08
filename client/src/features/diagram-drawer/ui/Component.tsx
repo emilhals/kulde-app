@@ -7,7 +7,7 @@ import {
 
 import { ComponentType, ItemType } from '@/features/diagram-drawer/types'
 
-import { uiState } from '@/features/diagram-drawer/store'
+import { uiState } from '@/features/diagram-drawer/store/models'
 
 import { Stage, Layer, Group } from 'react-konva'
 import { SYMBOL_MAP } from '../canvas/symbols/SymbolMap'
@@ -38,6 +38,7 @@ const Component = ({ component }: { component: ComponentType }) => {
                     <TooltipTrigger>
                         <div
                             draggable
+                            className="rounded-md transition-all duration-150 hover:scale-105"
                             onDragStart={() => {
                                 uiState.dragged = component
                             }}

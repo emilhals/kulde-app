@@ -53,7 +53,3 @@ export const getSegmentPositions = (
 
     return { start, end }
 }
-
-export const interpolateMidPoint = (start: number, end: number) => {
-    return start + (end - start) / 2
-}
