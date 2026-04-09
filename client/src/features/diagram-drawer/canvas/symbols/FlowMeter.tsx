@@ -1,14 +1,14 @@
 import { Item, ItemPreview } from '@/features/diagram-drawer/types'
 import { Circle, Group, Line, Text } from 'react-konva'
 
-const PressureSwitch = ({ item }: { item: Item | ItemPreview }) => {
+const FlowMeter = ({ item }: { item: Item | ItemPreview }) => {
     if (!item) return null
 
     const w = item.width
     const h = item.height
     const cx = w / 2
-    const radius = Math.min(w, h * 0.55) / 2 - 2
-    const cy = radius + 2
+    const cy = h / 2
+    const radius = Math.min(w, h) / 2 - 2
 
     const itemId = 'id' in item ? item.id : ''
 
@@ -24,50 +24,56 @@ const PressureSwitch = ({ item }: { item: Item | ItemPreview }) => {
                 strokeWidth={2}
                 fill="white"
             />
-            {/* PS label */}
+            {/* FI label — flow indicator */}
             <Text
-                text="PS"
+                text="FI"
                 fontSize={Math.max(radius * 0.5, 9)}
                 fontFamily="Inter"
                 fill="black"
-                x={cx - radius * 0.38}
-                y={cy - radius * 0.32}
+                x={cx - radius * 0.3}
+                y={cy - radius * 0.55}
             />
-            {/* Connection pipe down */}
+            {/* Flow arrow inside */}
             <Line
-                points={[cx, cy + radius, cx, h * 0.72]}
+                points={[
+                    cx - radius * 0.45,
+                    cy + radius * 0.1,
+                    cx + radius * 0.2,
+                    cy + radius * 0.1,
+                ]}
+                stroke="black"
+                strokeWidth={1.5}
+                lineCap="round"
+            />
+            <Line
+                points={[
+                    cx + radius * 0.05,
+                    cy - radius * 0.15,
+                    cx + radius * 0.35,
+                    cy + radius * 0.1,
+                    cx + radius * 0.05,
+                    cy + radius * 0.35,
+                ]}
+                stroke="black"
+                strokeWidth={1.5}
+                lineCap="round"
+                lineJoin="round"
+            />
+            {/* Inline pipe connections */}
+            <Line
+                points={[0, cy, cx - radius, cy]}
                 stroke="black"
                 strokeWidth={2}
                 lineCap="round"
             />
-            {/* Switch symbol — angled line (normally open) */}
             <Line
-                points={[cx - w * 0.22, h * 0.72, cx + w * 0.22, h * 0.72]}
+                points={[cx + radius, cy, w, cy]}
                 stroke="black"
-                strokeWidth={1.5}
-                lineCap="round"
-            />
-            <Line
-                points={[cx - w * 0.22, h * 0.72, cx - w * 0.22, h]}
-                stroke="black"
-                strokeWidth={1.5}
-                lineCap="round"
-            />
-            <Line
-                points={[cx + w * 0.22, h * 0.85, cx + w * 0.22, h]}
-                stroke="black"
-                strokeWidth={1.5}
-                lineCap="round"
-            />
-            {/* Switch blade (angled = open) */}
-            <Line
-                points={[cx - w * 0.22, h * 0.72, cx + w * 0.15, h * 0.85]}
-                stroke="black"
-                strokeWidth={1.5}
+                strokeWidth={2}
                 lineCap="round"
             />
         </Group>
     )
 }
 
-export default PressureSwitch
+export default FlowMeter
