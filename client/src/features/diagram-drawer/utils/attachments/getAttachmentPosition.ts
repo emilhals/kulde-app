@@ -1,15 +1,12 @@
 import { getFromStore } from '@/features/diagram-drawer/store/actions'
-import { Attachment, PointType } from '@/features/diagram-drawer/types'
-
+import { Attachment, Point } from '@/features/diagram-drawer/types'
 import {
     getConnectionPoints,
     getPointOnSegment,
     getSegmentPositions,
 } from '@/features/diagram-drawer/utils/connections'
 
-export const getAttachmentPosition = (
-    attachment: Attachment,
-): PointType | null => {
+export const getAttachmentPosition = (attachment: Attachment): Point | null => {
     if (attachment.type === 'free') return attachment.position
 
     if (attachment.type === 'item') {

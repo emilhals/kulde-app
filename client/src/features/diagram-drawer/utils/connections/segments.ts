@@ -1,4 +1,5 @@
-import { PointType } from '@/features/diagram-drawer/types'
+import { Point } from '@/features/diagram-drawer/types'
+
 /*
 https://www.youtube.com/watch?v=egmZJU-1zPU
 */
@@ -20,10 +21,10 @@ export const getClosestPointOnSegment = (p: any, a: any, b: any) => {
 }
 
 export const getPointOnSegment = (
-    start: PointType,
-    end: PointType,
+    start: Point,
+    end: Point,
     t: number,
-): PointType => {
+): Point => {
     return {
         x: start.x + (end.x - start.x) * t,
         y: start.y + (end.y - start.y) * t,
@@ -33,7 +34,7 @@ export const getPointOnSegment = (
 export const getSegmentPositions = (
     points: number[],
     segmentIndex: number,
-): { start: PointType; end: PointType } | null => {
+): { start: Point; end: Point } | null => {
     if (points.length < 4 || segmentIndex < 0) return null
 
     const segmentCount = points.length / 2 - 1
@@ -52,8 +53,4 @@ export const getSegmentPositions = (
     }
 
     return { start, end }
-}
-
-export const interpolateMidPoint = (start: number, end: number) => {
-    return start + (end - start) / 2
 }

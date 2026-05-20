@@ -1,9 +1,9 @@
+import { Placement, Point } from '@/features/diagram-drawer/types'
 import { interpolateMidPoint } from '@/features/diagram-drawer/utils/connections'
-import { Placement, PointType } from '@/features/diagram-drawer/types'
 
 export const createConnectionPoints = (
-    start: PointType,
-    end: PointType,
+    start: Point,
+    end: Point,
     startAnchorPlacement: Placement,
     endAnchorPlacement?: Placement,
 ): number[] => {
@@ -22,7 +22,7 @@ export const createConnectionPoints = (
     }
 
     const midX = interpolateMidPoint(start.x, end.x)
-    const midY = interpolateMidPoint(start.y, end.y)
+    //const midY = interpolateMidPoint(start.y, end.y)
 
     if (horizontalFirst) {
         return [start.x, start.y, midX, start.y, midX, end.y, end.x, end.y]

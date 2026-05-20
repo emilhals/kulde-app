@@ -4,5 +4,5 @@ export {
     getClosestPointOnSegment,
     getPointOnSegment,
     getSegmentPositions,
-    interpolateMidPoint,
 } from './segments.ts'
+export { toPoints, interpolateMidPoint } from './geometry.ts'
