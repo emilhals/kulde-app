@@ -1,5 +1,27 @@
-export type Placement = 'Top' | 'Bottom' | 'Right' | 'Left'
+/* General types */
+export type WithId<T> = T & { id: string }
+export type WithoutId<T> = Omit<T, 'id'>
 
+export type Point = {
+    x: number
+    y: number
+}
+
+/* Used for snapping */
+export type Alignment = 'start' | 'center' | 'end'
+export type Edge = { alignment: Alignment; value: number }
+export type Geometry = {
+    edges: Edge[]
+    position: number
+}
+export type SnapPoint = {
+    alignment: 'start' | 'center' | 'end'
+    guide: number
+    position: number
+}
+
+/* Used for component panel/item */
+export type Placement = 'Top' | 'Bottom' | 'Right' | 'Left'
 export type ComponentContext = 'Panel' | 'Diagram'
 
 export type SymbolName =
@@ -19,14 +41,6 @@ export type SymbolName =
     | 'thermometer'
     | 'levelindicator'
     | 'flowmeter'
-
-export type WithId<T> = T & { id: string }
-export type WithoutId<T> = Omit<T, 'id'>
-
-export type Point = {
-    x: number
-    y: number
-}
 
 export type Attachment = ItemAttachment | ConnectionAttachment | FreeAttachment
 
@@ -103,11 +117,11 @@ export type Text = {
     content: string
     position: Point
     size: number
-    attributes?: readonly string[]
+    attributes: readonly string[]
+    color: string
     anchor?: {
         type: 'item'
         itemId: string
-        placement: Placement
         offset: Point
     }
 }
