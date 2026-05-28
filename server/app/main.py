@@ -1,6 +1,7 @@
 import asyncio
 import http
 import json
+import signal
 
 from websockets import Request, ServerConnection
 from websockets.asyncio.server import serve
@@ -77,7 +78,9 @@ async def handler(ws: WebSocket):
 async def main():
     setup_logging()
 
-    async with serve(handler, "", 8001, proces_request=health_check) as server:
+    async with serve(handler, "0.0.0.0", 8001, process_request=health_check) as server:
+        loop = asyncio.get_running_loop()
+        loop.add_signal_handler(signal.SIGTERM, server.close)
         await server.serve_forever()
 
 
