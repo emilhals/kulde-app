@@ -1,6 +1,8 @@
 import asyncio
+import http
 import json
 
+from websockets import Request, ServerConnection
 from websockets.asyncio.server import serve
 from websockets.exceptions import ConnectionClosed
 
@@ -24,6 +26,11 @@ async def create_system(controller_params: ControllerParams | None = None) -> Sy
     )
 
 
+def health_check(connection: ServerConnection, request: Request):
+    if request.path == "/healthz":
+        return connection.respond(http.HTTPStatus.OK, "OK\n")
+
+
 async def handler(ws: WebSocket):
     endpoint = Endpoint()
 
@@ -41,8 +48,7 @@ async def handler(ws: WebSocket):
             try:
                 event = json.loads(message)
             except json.JSONDecodeError:
-                await endpoint.send(
-                    ws,
+                await endpoint.broadcast(
                     {
                         "status": "ERROR",
                         "message": "Invalid JSON",
@@ -71,7 +77,7 @@ async def handler(ws: WebSocket):
 async def main():
     setup_logging()
 
-    async with serve(handler, "localhost", 8001) as server:
+    async with serve(handler, "", 8001, proces_request=health_check) as server:
         await server.serve_forever()
 
 
