@@ -1,22 +1,24 @@
 [project]
 name = "kulde-app-server"
-version = "0.1.0"
+version = "1.0.0"
 description = "Refrigeration simulator"
-requires-python = ">=3.14.3"
+requires-python = ">=3.14"
 dependencies = [
-    "fastapi[standard]>=0.136.1",
     "pyfluids>=2.9.0",
     "ruff>=0.15.12",
     "websockets>=16.0",
 ]
+
 [tool.basedpyright]
 typeCheckingMode = "strict"
-pythonVersion = "3.14.3"
-analysis.diagnosticMode = "openFilesOnly"
-analysis.autoSearchPaths = true
-analysis.useLibraryCodeForTypes = true
+pythonVersion = "3.14"
 
 reportMissingTypeStubs = false
 reportUnknownMemberType = false
 reportUnknownVariableType = false
 reportUnknownParameterType = false
+
+[dependency-groups]
+dev = [
+    "watchdog[watchmedo]>=6.0.0",
+]

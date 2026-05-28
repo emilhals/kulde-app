@@ -1,12 +1,13 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
-from dataclasses import dataclass
-from abc import ABC, abstractmethod
 
-from app.logger import logger
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+from app.utils.logger import logger
 
 if TYPE_CHECKING:
-    from app.core.system import System
+    from app.simulator.core.system import System
 
 
 @dataclass
@@ -35,7 +36,7 @@ class Component(ABC):
         pass
 
     @abstractmethod
-    async def simulate_step(self) -> None:
+    async def simulate_step(self, dt: float, sim_time: float) -> None:
         pass
 
     @abstractmethod

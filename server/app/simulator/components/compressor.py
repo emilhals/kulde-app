@@ -1,11 +1,16 @@
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import TYPE_CHECKING
 
 from pyfluids import Fluid, FluidsList, Input
 from pyfluids.fluids.fluid import AbstractFluid
 
-from app.core.component import Component
-from app.core.system import System
+from app.simulator.core.component import Component
+
+if TYPE_CHECKING:
+    from app.simulator.core.system import System
 
 
 class RunStateEnum(str, Enum):
@@ -47,29 +52,27 @@ class Compressor(Component):
         self.power_state = PowerStateEnum.ON
         self.run_state = RunStateEnum.RUNNING
 
-    async def simulate_step(self) -> None:
+    async def simulate_step(self, dt: float, sim_time: float) -> None:
         if not self.system:
             raise RuntimeError(
                 f"{self.component_name} class does not have a controller!"
             )
 
         evaporator = next(
-            c for c in self.system.components
-            if c.component_name == "Evaporator"
+            c for c in self.system.components if c.component_name == "Evaporator"
         )
 
-        condensator= next(
-            c for c in self.system.components
-            if c.component_name == "Condensator"
+        condensator = next(
+            c for c in self.system.components if c.component_name == "Condensator"
         )
 
         self.inlet_state = evaporator.outlet_state
-        #if self.inlet_state is None:
-        #    return
-
 
         ideal = Fluid(FluidsList.R404A)
-        ideal.update(Input.pressure(condensator.condensing_pressure), Input.entropy(self.inlet_state.entropy))
+        ideal.update(
+            Input.pressure(condensator.condensing_pressure),
+            Input.entropy(self.inlet_state.entropy),
+        )
 
         h_in = self.inlet_state.enthalpy
         h_ideal = ideal.enthalpy
@@ -77,8 +80,9 @@ class Compressor(Component):
         h_out = h_in + (h_ideal - h_in) / self.isentropic_efficieny
 
         self.outlet_state = Fluid(FluidsList.R404A)
-        self.outlet_state.update(Input.pressure(condensator.condensing_pressure), Input.enthalpy(h_out))
-
+        self.outlet_state.update(
+            Input.pressure(condensator.condensing_pressure), Input.enthalpy(h_out)
+        )
 
         # bytt til dt fra simulation_service senere
         self._current_time += 3
@@ -86,8 +90,8 @@ class Compressor(Component):
         controller = self.system.controller
         room = self.system.room
 
-        set_point = float(controller.parameters["set_point"])
-        differential = float(controller.parameters["differential"])
+        set_point = float(controller.parameters["setPoint"])
+        differential = float(controller.parameters["r03"])
 
         if self.power_state == PowerStateEnum.ON:
             if room.room_temp > set_point:
@@ -115,11 +119,17 @@ class Compressor(Component):
                 self._setpoint_reached_time = None
 
     async def get_values(self) -> dict[str, str | int | float]:
-        values : dict [str, str | int | float]= {"power_state": self.power_state, "run_state": self.run_state}
+        values: dict[str, str | int | float] = {
+            "power_state": self.power_state,
+            "run_state": self.run_state,
+        }
 
         if self.outlet_state:
-            values.update({
-                "discharge_pressure": round(self.outlet_state.pressure / 1e5, 2),
-                "discharge_temp": round(self.outlet_state.temperature - 273.15, 2)
-            })
+            values.update(
+                {
+                    "discharge_pressure": round(self.outlet_state.pressure / 1e5, 2),
+                    "discharge_temp": round(self.outlet_state.temperature - 273.15, 2),
+                    "overheat": 0,
+                }
+            )
         return values

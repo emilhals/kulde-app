@@ -1,10 +1,15 @@
-from dataclasses import dataclass, field
+from __future__ import annotations
 
-from pyfluids import FluidsList, Fluid, Input
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+from pyfluids import Fluid, FluidsList, Input
 from pyfluids.fluids.fluid import AbstractFluid
 
-from app.core.component import Component
-from app.core.system import System
+from app.simulator.core.component import Component
+
+if TYPE_CHECKING:
+    from app.simulator.core.system import System
 
 
 @dataclass
@@ -29,11 +34,9 @@ class Condensator(Component):
         await super().detach()
 
     async def initialize(self) -> None:
-        # self.power_state = PowerStateEnum.ON
-        # self.run_state = RunStateEnum.RUNNING
         pass
 
-    async def simulate_step(self) -> None:
+    async def simulate_step(self, dt: float, sim_time: float) -> None:
         if not self.system:
             raise RuntimeError(
                 f"{self.component_name} class does not have a controller!"
@@ -72,6 +75,7 @@ class Condensator(Component):
             "condensing_temp": round(self.condensing_temp, 1),
             "condensing_pressure": round(self.condensing_pressure / 1e5, 2),
             "subcooling": self.subcooling,
+            "fan_speed": self.fan_speed,
         }
 
         if self.outlet_state is None:

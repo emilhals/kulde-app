@@ -1,10 +1,16 @@
-from dataclasses import dataclass
+from __future__ import annotations
 
-from pyfluids import Input, Fluid, FluidsList
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+from pyfluids import Fluid, FluidsList, Input
 from pyfluids.fluids.fluid import AbstractFluid
 
-from app.core.component import Component
-from app.core.system import System
+from app.simulator.core.component import Component
+
+if TYPE_CHECKING:
+    from app.simulator.core.system import System
+
 
 @dataclass
 class TXV(Component):
@@ -25,12 +31,16 @@ class TXV(Component):
     async def initialize(self) -> None:
         pass
 
-    async def simulate_step(self) -> None:
+    async def simulate_step(self, dt: float, sim_time: float) -> None:
         if not self.system:
             raise RuntimeError("TXV does not belong to system.")
 
-        condensator  = next(c for c in self.system.components if c.component_name == "Condensator")
-        evaporator= next(c for c in self.system.components if c.component_name == "Evaporator")
+        condensator = next(
+            c for c in self.system.components if c.component_name == "Condensator"
+        )
+        evaporator = next(
+            c for c in self.system.components if c.component_name == "Evaporator"
+        )
 
         self.inlet_state = condensator.outlet_state
 
@@ -40,13 +50,17 @@ class TXV(Component):
 
         h_in = self.inlet_state.enthalpy
         self.outlet_state = Fluid(FluidsList.R404A)
-        self.outlet_state.update(Input.pressure(evaporator.saturated_state.pressure), Input.enthalpy(h_in))
+        self.outlet_state.update(
+            Input.pressure(evaporator.saturated_state.pressure), Input.enthalpy(h_in)
+        )
 
     async def get_values(self) -> dict[str, str | int | float]:
         if self.outlet_state is None:
             return {"status": "idle"}
 
-        values: dict[str, str | int | float ] = {"outlet_pressure": round(self.outlet_state.pressure / 1e5, 2)}
+        values: dict[str, str | int | float] = {
+            "outlet_pressure": round(self.outlet_state.pressure / 1e5, 2)
+        }
 
         if self.outlet_state.quality is None:
             values["quality"] = "N/A"
@@ -55,4 +69,4 @@ class TXV(Component):
             values["quality"] = round(self.outlet_state.quality, 3)
             values["phase"] = "two-phase"
 
-        return values 
+        return values

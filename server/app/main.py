@@ -1,44 +1,79 @@
-from typing import Annotated
-from fastapi import Depends, FastAPI, WebSocket, WebSocketDisconnect
+import asyncio
+import json
 
-from app.api.websocket.connection_manager import ConnectionManager
+from websockets.asyncio.server import serve
+from websockets.exceptions import ConnectionClosed
 
-from app.dependencies import create_simulation_service, get_manager
+from app.api.endpoint import Endpoint
+from app.models.api import WebSocket
+from app.models.simulator import ControllerParams
 from app.services.simulation_service import SimulationService
-
-from app.logger import load_config
-
-app: FastAPI = FastAPI(title="kulde.app")
-
-load_config()
-
-simulation_dependency = Annotated[SimulationService, Depends(create_simulation_service)]
-manager_dependency = Annotated[ConnectionManager, Depends(get_manager)]
+from app.simulator.core.controller import Controller
+from app.simulator.core.room import Room
+from app.simulator.core.system import System
+from app.utils.logger import logger, setup_logging
 
 
-@app.websocket("/ws")
-async def websocket_endpoint(
-    websocket: WebSocket,
-    simulation_service: simulation_dependency,
-    manager: manager_dependency,
-) -> None:
-    await manager.connect(websocket)
+async def create_system(controller_params: ControllerParams | None = None) -> System:
+    if controller_params is None:
+        controller_params = {"setPoint": 4, "r01": 3}
+
+    return System(
+        controller=Controller(controller_params),
+        room=Room(room_temp=24),
+    )
+
+
+async def handler(ws: WebSocket):
+    endpoint = Endpoint()
+
+    await endpoint.accept(ws)
+    logger.info("Client connected. Connenctions: %s", len(endpoint.connections))
+
+    system = await create_system()
+    sim_service = SimulationService(
+        endpoint=endpoint,
+        system=system,
+    )
+
     try:
-        while True:
-            data = await websocket.receive_json()
+        async for message in ws:
+            try:
+                event = json.loads(message)
+            except json.JSONDecodeError:
+                await endpoint.send(
+                    ws,
+                    {
+                        "status": "ERROR",
+                        "message": "Invalid JSON",
+                    },
+                )
+                continue
 
-            print(data["command"])
+            command = event.get("command")
+            controller_params = event.get("controllerParams")
 
-            if data["command"] == "start":
-                await simulation_service.start(data["controllerParams"])
+            if command == "START":
+                await sim_service.start(controller_params)
+            elif command == "RESTART":
+                await sim_service.restart(controller_params)
+            elif command == "STOP":
+                await sim_service.stop()
+            else:
+                logger.error("Unsupported event: %s", event)
+    except ConnectionClosed:
+        logger.info("Client disconnected")
+    finally:
+        await endpoint.close(ws)
+        logger.info("Client removed. Connenctions: %s", len(endpoint.connections))
 
-            if data["command"] == "update_params":
-                pass
 
-            if data["command"] == "RESTART":
-                await simulation_service.restart(data["controllerParams"])
+async def main():
+    setup_logging()
 
-            if data["command"] == "STOP":
-                await simulation_service.stop()
-    except WebSocketDisconnect:
-        manager.disconnect(websocket)
+    async with serve(handler, "localhost", 8001) as server:
+        await server.serve_forever()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

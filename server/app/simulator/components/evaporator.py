@@ -1,12 +1,15 @@
-from pyfluids import FluidsList, Fluid, Input
+from __future__ import annotations
 
-from dataclasses import dataclass, field
-from enum import Enum
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
+from pyfluids import Fluid, FluidsList, Input
 from pyfluids.fluids.fluid import AbstractFluid
 
-from app.core.component import Component
-from app.core.system import System
+from app.simulator.core.component import Component
+
+if TYPE_CHECKING:
+    from app.simulator.core.system import System
 
 
 @dataclass
@@ -30,7 +33,7 @@ class Evaporator(Component):
     async def initialize(self) -> None:
         pass
 
-    async def simulate_step(self) -> None:
+    async def simulate_step(self, dt: float, sim_time: float) -> None:
         if not self.system:
             raise RuntimeError(
                 f"{self.component_name} class does not have a controller!"
@@ -53,4 +56,6 @@ class Evaporator(Component):
         return {
             "suction_pressure": round(self.outlet_state.pressure / 1e5, 2),
             "suction_temp": round(self.outlet_state.temperature - 273.15, 2),
+            "superheat": self.superheat,
+            "fan_speed": self.fan_speed,
         }
