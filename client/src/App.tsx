@@ -1,22 +1,17 @@
-import { createBrowserRouter, RouterProvider } from 'react-router'
-
-import Layout from './components/Layout'
-import HomePage from './pages/Home'
-import SimulatorPage from '@/features/simulator/page'
+import { SimulatorPage } from '@/features/simulator/page'
+import { createBrowserRouter, Navigate, RouterProvider } from 'react-router'
 import DiagramPage from './pages/Diagram'
-import ComponentsPage from './pages/Components'
-import ErrorPage from './pages/Error'
+import Layout from './shared/Layout'
+import './i18n'
 
 const router = createBrowserRouter([
   {
     path: '/',
-    errorElement: <ErrorPage />,
     element: <Layout />,
     children: [
-      { path: '/', element: <HomePage /> },
+      { index: true, element: <Navigate to="/simulator" replace /> },
       { path: '/simulator', element: <SimulatorPage /> },
-      { path: '/diagram', element: <DiagramPage /> },
-      { path: '/components', element: <ComponentsPage /> },
+      { path: '/diagram-drawer', element: <DiagramPage /> },
     ],
   },
 ])
