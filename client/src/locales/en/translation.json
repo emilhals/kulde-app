@@ -1,0 +1,21 @@
+{
+  "navbar": {
+    "simulator": "Simulator",
+    "diagram-drawer": "Diagram Drawer"
+  },
+  "routes": {
+    "simulator": "simulator",
+    "diagram-drawer": "diagram-drawer"
+  },
+  "cm": {
+    "header": "Properties",
+    "text": "Attached text",
+    "color": "Color",
+    "attributes": "Attributes",
+    "attach": "Attach",
+    "connections": "Connections",
+    "no-connections": "No connections",
+    "delete": "Delete",
+    "enter-label": "Enter label"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "navbar": {
+    "simulator": "Simulator",
+    "diagram-drawer": "Rørskjema-tegner"
+  },
+  "routes": {
+    "simulator": "simulator",
+    "diagram-drawer": "rørskjema-tegner"
+  },
+  "cm": {
+    "header": "Egenskaper",
+    "text": "Tilhørende tekst",
+    "color": "Farge",
+    "attributes": "Stil",
+    "attach": "Legg til",
+    "connections": "Koblinger",
+    "no-connections": "Ingen koblinger",
+    "delete": "Slett",
+    "enter-label": "Skriv inn tekst"
+  },
+  "symbols": {
+    "Compressor": "Kompressor",
+    "Heat Exchanger": "Varmeveksler",
+    "Thermostatic Expansion Valve": "Termostatisk ekspansjonsventil",
+    "Oil Separator": "Oljeutskiller",
+    "Receiver": "",
+    "Liquid Filter": "Væskefilter",
+    "Sight Glass": "Seglass",
+    "Solenoid valve": "Magnetventil"
+  }
+}
