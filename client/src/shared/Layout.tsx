@@ -9,14 +9,14 @@ const Layout = () => {
     })
 
     return (
-        <div className="flex flex-col h-screen overflow-hidden">
+        <div className="flex overflow-hidden flex-col h-screen">
             <div className="grow-0">
                 <Navigation
                     center={navContent.center}
                     right={navContent.right}
                 />
             </div>
-            <main className="grow min-h-0 overflow-hidden relative">
+            <main className="overflow-hidden relative min-h-0 grow">
                 <Outlet context={{ setNavContent }} />
             </main>
         </div>
