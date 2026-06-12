@@ -17,5 +17,24 @@
     "no-connections": "No connections",
     "delete": "Delete",
     "enter-label": "Enter label"
+  },
+  "symbols": {
+    "Compressor": "Compressor",
+    "Condensor": "Condensor",
+    "Evaporator": "Evaporator",
+    "Heat Exchanger": "Heat Exchanger",
+    "Thermostatic Expansion Valve": "Termostatisk ekspansjonsventil",
+    "Oil Separator": "Oil Seperator",
+    "Receiver": "Receiver",
+    "Liquid Filter": "Liquid Filter",
+    "Sight Glass": "Sight Glass",
+    "Solenoid valve": "Solenoid Valve"
+  },
+  "diagram-drawer": {
+    "export": "Export"
+  },
+  "simulator": {
+    "connecting": "Connecting to simulator server.",
+    "no-connection": "Failed to connect to simulator server."
   }
 }

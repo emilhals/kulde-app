@@ -20,6 +20,8 @@
   },
   "symbols": {
     "Compressor": "Kompressor",
+    "Condensor": "Kondensator",
+    "Evaporator": "Fordamper",
     "Heat Exchanger": "Varmeveksler",
     "Thermostatic Expansion Valve": "Termostatisk ekspansjonsventil",
     "Oil Separator": "Oljeutskiller",
@@ -27,5 +29,12 @@
     "Liquid Filter": "Væskefilter",
     "Sight Glass": "Seglass",
     "Solenoid valve": "Magnetventil"
+  },
+  "diagram-drawer": {
+    "export": "Eksporter"
+  },
+  "simulator": {
+    "connecting": "Kobler til simulator serveren.",
+    "no-connection": "Klarte ikke å koble til simulator serveren."
   }
 }
