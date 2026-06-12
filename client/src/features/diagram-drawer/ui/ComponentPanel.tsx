@@ -1,38 +1,23 @@
-import { ArrowDownFromLineIcon, ArrowUpFromLineIcon } from 'lucide-react'
-
-import { COMPONENTS } from '@/features/diagram-drawer/utils/components'
-import Component from '@/features/diagram-drawer/ui/Component'
-
-import { useState } from 'react'
+import { COMPONENTS } from '@/features/diagram-drawer/constants/components'
+import { ComponentItem } from '@/features/diagram-drawer/ui/ComponentItem'
+import { ScrollArea } from '@/shared/ui/scroll-area'
 
 const ComponentPanel = () => {
-  const [showPanel, setShowPanel] = useState<boolean>(true)
-
-  const togglePanel = () => {
-    setShowPanel(!showPanel)
-  }
-
   return (
-    <div id="component-panel" className="absolute z-50 bottom-0 w-full">
-      <div className="py-4 px-4 bg-transparent hover:cursor-pointer">
-        {showPanel && <ArrowDownFromLineIcon size={16} onClick={togglePanel} />}
-
-        {!showPanel && <ArrowUpFromLineIcon size={16} onClick={togglePanel} />}
-      </div>
+    <>
       <div
-        className={`bg-white w-full shadow-lg transition-all duration-300 border-t-2 
-          dark:bg-darkBackground dark:border-gray-600
-          ${showPanel ? 'h-32' : 'h-0 overflow-hidden'}`}
+        id="component-panel"
+        className="top-0 left-0 z-50 w-48 h-full bg-white rounded-lg border border-gray-300 shrink-0"
       >
-        {showPanel && (
-          <ul className="flex h-full flex-row px-2 items-center">
-            {COMPONENTS.map((component) => (
-              <Component key={component.value} component={component} />
+        <ScrollArea className="w-full h-full">
+          <div className="grid grid-cols-2 gap-2 py-2 px-2">
+            {COMPONENTS.map((c) => (
+              <ComponentItem key={c.component} item={c} />
             ))}
-          </ul>
-        )}
+          </div>
+        </ScrollArea>
       </div>
-    </div>
+    </>
   )
 }
 
