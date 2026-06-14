@@ -1,6 +1,11 @@
 {
   "semi": false,
   "singleQuote": true,
-  "printWidth": 80
+  "printWidth": 80,
+  "tabWidth": 2,
+  "editor.insertSpaces": false,
+  "objectWrap": "collapse",
+  "plugins": [
+    "prettier-plugin-imports"
+  ]
 }
-
