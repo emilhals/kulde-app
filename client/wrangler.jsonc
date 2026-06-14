@@ -1,0 +1,12 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "kulde-app",
+	// Set this to today's date
+	"compatibility_date": "2026-04-03",
+	"assets": {
+		"not_found_handling": "single-page-application",
+	},
+	"vars": {
+		"VITE_WS_URL": "https://kulde-app.onrender.com"
+	},
+}
