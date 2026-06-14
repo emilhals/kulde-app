@@ -55,8 +55,10 @@ export const Border = ({
         -padding,
     ]
 
+    const activeNode = uiSnap.activeNode
+
     const displayAnchors =
-        uiSnap.activeId === itemId ||
+        (activeNode && activeNode.id === itemId) ||
         hoveredItemId === itemId ||
         uiSnap.interaction !== 'dragging-item'
 
@@ -68,7 +70,7 @@ export const Border = ({
     const anchors = anchorPoints.map(({ x, y, name }) => {
         const disabled = isDragging
 
-        const isSourceItem = uiSnap.activeId === itemId
+        const isSourceItem = activeNode?.id === itemId
         const isSourceAnchor = name === sourceAnchor
         const disabledDuringConnect =
             isConnecting && isSourceItem && !isSourceAnchor
