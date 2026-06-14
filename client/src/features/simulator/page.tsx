@@ -1,160 +1,275 @@
-import { useEffect, useState, useRef } from 'react'
-import { Stage } from 'react-konva'
-
-import { Play, Pause, FastForward, Rewind } from 'lucide-react'
-
-import { useSnapshot, subscribe } from 'valtio'
-import { controllerState } from '@/features/simulator/store'
-
+import { Compressor } from '@/features/simulator/canvas/Compressor'
+import { HeatExchanger } from '@/features/simulator/canvas/HeatExchanger'
+import { TEV } from '@/features/simulator/canvas/TEV'
+import {
+  controllerState,
+  initialControllerState,
+} from '@/features/simulator/store/models'
+import type {
+  Compressor as CompressorType,
+  Condensator,
+  Evaporator,
+  SystemState,
+} from '@/features/simulator/types'
+import { Controller } from '@/features/simulator/ui/Controller'
+import Konva from 'konva'
+import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Layer, Line, Stage } from 'react-konva'
 import useWebSocket, { ReadyState } from 'react-use-websocket-lite'
+import { subscribe, useSnapshot } from 'valtio'
+import { flattenParams, resetControllerState } from './store/actions'
+import { SimulationControls } from './ui/SimulationControls'
+import {
+  DEFAULT_COMPRESSOR,
+  DEFAULT_CONDENSATOR,
+  DEFAULT_EVAPORATOR,
+} from './utils/default.components'
+import { parseSimulationData } from './utils/parseSimulationData'
 
-import Controller from '@/features/simulator/ui/Controller'
+export const SimulatorPage = () => {
+  const { t } = useTranslation()
 
-import { Compressor, Evaporator, Condensator } from './types'
+  const url = import.meta.env.VITE_WS_URL
 
-const SimulatorPage = () => {
-    const url = 'http://127.0.0.1:8000/ws'
-    const [messages, setMessages] = useState<string[]>([])
+  const controllerSnap = useSnapshot(controllerState)
 
-    const [roomTemp, setRoomTemp] = useState<number>(24)
-    const controllerSnap = useSnapshot(controllerState)
+  const restartingRef = useRef<boolean>(false)
 
-    const [compressor, setCompressor] = useState<Compressor>()
+  const stageRef = useRef<Konva.Stage>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
-    const [evaporator, setEvaporator] = useState<Evaporator>()
-    const [condensator, setCondensator] = useState<Condensator>()
+  const [stage, setStage] = useState({ width: 800, height: 600, scale: 1 })
+  const DESIGN_WIDTH = 900
+  const DESIGN_HEIGHT = 700
 
-    subscribe(controllerState.parameters, () => {
-        if (controllerState.view == 'DISPLAY') {
-            console.log("state changes to", controllerState.parameters)
+  useEffect(() => {
+    if (!containerRef.current) return
+    const resize = () => {
+      const container = containerRef.current
+      if (!container) return
+      const { clientWidth, clientHeight } = containerRef.current
+
+      const scaleX = clientWidth / DESIGN_WIDTH
+      const scaleY = clientHeight / DESIGN_HEIGHT
+      const scale = Math.min(scaleX, scaleY)
+      console.count('resize observer fired')
+      setStage((prev) => {
+        if (
+          prev.width === clientWidth &&
+          prev.height === clientHeight &&
+          prev.scale === scale
+        ) {
+          return prev
         }
+
+        return { width: clientWidth, height: clientHeight, scale }
+      })
+    }
+    resize()
+    const ro = new ResizeObserver(resize)
+    ro.observe(containerRef.current)
+    containerRef.current?.focus()
+    return () => ro.disconnect()
+  }, [])
+
+  const [systemState, setSystemState] = useState<SystemState>({
+    isCooling: false,
+    isDefrosting: false,
+    runningFans: false,
+  })
+  const [roomTemp, setRoomTemp] = useState<number>(24)
+
+  const [compressor, setCompressor] =
+    useState<CompressorType>(DEFAULT_COMPRESSOR)
+  const [evaporator, setEvaporator] = useState<Evaporator>(DEFAULT_EVAPORATOR)
+  const [condensator, setCondensator] =
+    useState<Condensator>(DEFAULT_CONDENSATOR)
+
+  const { sendMessage, readyState } = useWebSocket({
+    url: url,
+    onClose() {
+      setSimulationStatus('IDLE')
+    },
+    onMessage(event) {
+      if (restartingRef.current) return
+
+      const data = JSON.parse(event.data)
+      console.log(data)
+
+      if (data.status === 'STOPPED') {
+        setEvaporator({ ...evaporator, fan_speed: 0 })
+        setCondensator({ ...condensator, fan_speed: 0 })
+        restartingRef.current = false
+        setSimulationStatus('IDLE')
+        setSystemState({
+          isCooling: false,
+          isDefrosting: false,
+          runningFans: false,
+        })
+
+        return
+      }
+
+      if (data.status === 'RUNNING') {
+        setSimulationStatus('RUNNING')
+      }
+
+      const parsed = parseSimulationData(data)
+      if (parsed === null || parsed === undefined) return
+
+      setRoomTemp(parsed.roomTemp)
+      setEvaporator(parsed.evaporator)
+      setCondensator(parsed.condensator)
+      setCompressor(parsed.compressor)
+
+      if (compressor.run_state === 'RUNNING') {
+        setSystemState({ ...systemState, isCooling: true })
+      }
+    },
+  })
+
+  const [simulationStatus, setSimulationStatus] = useState<
+    'RUNNING' | 'STOPPING' | 'RESTARTING' | 'IDLE'
+  >('IDLE')
+
+  useEffect(() => {
+    const unsubscribe = subscribe(controllerState, () => {
+      if (readyState !== ReadyState.OPEN) return
+      sendMessage(
+        JSON.stringify({
+          command: 'UPDATE_PARAMS',
+          controllerParams: flattenParams(controllerState),
+        }),
+      )
     })
 
-    const flatParams = Object.fromEntries(
-        Object.entries(controllerState.parameters).map(([key, param]) => [
-            key,
-            param.value,
-        ]),
+    return () => unsubscribe()
+  }, [readyState, sendMessage])
+
+  const handlePlay = () => {
+    if (readyState !== ReadyState.OPEN) return
+
+    sendMessage(
+      JSON.stringify({
+        command: 'START',
+        controllerParams: flattenParams(controllerSnap),
+      }),
     )
-    const { sendMessage, readyState } = useWebSocket({
-        url: url,
-        onMessage(event) {
-            const data = JSON.parse(event.data)
-            setMessages((prev) => [...prev, data])
-            setRoomTemp(data.Room.room_temp)
 
-            setEvaporator({
-                suction_pressure: JSON.parse(event.data).Evaporator.suction_pressure,
-                suction_temperature: JSON.parse(event.data).Evaporator.suction_temp,
-            })
-            setCondensator({
-                condensing_pressure: data.Condensator.condensing_pressure,
-                condensing_temperature: data.Condensator.condensing_temp,
-                liquid_temp: data.Condensator.liquid_temp,
-                subcooling: data.Condensator.subcooling,
-            })
+    setSimulationStatus('RUNNING')
+  }
 
-            setCompressor({
-                power_state: data.Compressor.power_state,
-                run_state: data.Compressor.run_state,
-                discharge_pressure: data.Compressor.discharge_pressure,
-                discharge_temp: data.Compressor.discharge_temp,
-            })
+  const handleStop = () => {
+    if (readyState !== ReadyState.OPEN) return
 
-        },
-    })
+    sendMessage(JSON.stringify({ command: 'STOP' }))
 
-    const connectionStatus = {
-        [ReadyState.CONNECTING]: 'Connecting',
-        [ReadyState.OPEN]: 'Open',
-        [ReadyState.CLOSING]: 'Closing',
-        [ReadyState.CLOSED]: 'Closed',
-        [ReadyState.UNINSTANTIATED]: 'Uninstantiated',
-    }[readyState]
+    setSimulationStatus('STOPPING')
+  }
 
-    const [systemConditions, setSystemConditions] = useState({
-        is_running: false,
-        refrigerant: 'R404a',
-    })
+  const handleRestart = () => {
+    if (readyState !== ReadyState.OPEN) return
 
-    const [simulationStatus, setSimulationStatus] = useState<'run' | 'pause'>(
-        'pause',
+    resetControllerState()
+
+    setRoomTemp(24)
+    sendMessage(
+      JSON.stringify({
+        command: 'RESTART',
+        controllerParams: initialControllerState,
+      }),
     )
 
-    useEffect(() => {
-        console.log('Connection status: ', connectionStatus)
-    }, [connectionStatus])
+    setSimulationStatus('RESTARTING')
+  }
 
-    useEffect(() => {
-        if (readyState === ReadyState.OPEN && systemConditions.is_running) {
-            console.log('sending')
-            sendMessage(
-                JSON.stringify({
-                    command: 'start',
-                    systemConditions: systemConditions,
-                    controllerParams: flatParams,
-                }),
-            )
-        }
-    }, [readyState, sendMessage, systemConditions])
+  return (
+    <div className="flex gap-2 py-2 px-2 w-full h-full min-h-0">
+      <SimulationControls
+        status={simulationStatus}
+        onPlay={handlePlay}
+        onRestart={handleRestart}
+        onStop={handleStop}
+      />
+      <div
+        ref={containerRef}
+        className="overflow-hidden relative flex-1 bg-gray-100 rounded-lg border border-gray-300 focus:outline-none"
+      >
+        <Stage
+          width={stage.width}
+          height={stage.height}
+          scaleX={stage.scale}
+          scaleY={stage.scale}
+          ref={stageRef}
+        >
+          <Layer
+            x={(stage.width - DESIGN_WIDTH * stage.scale) / 2}
+            y={(stage.height - DESIGN_HEIGHT * stage.scale) / 2}
+          >
+            <HeatExchanger
+              type="Condensor"
+              data={condensator}
+              position={{ x: 270, y: 50 }}
+            />
 
-    return (
-        <div className="h-32">
-            <div className="flex px-16 py-8 flex-row gap-x-2 fixed left-0 z-50">
-                <h3>{controllerSnap.view}</h3>
-                <button>
-                    <Rewind size={20} />
-                </button>
+            <Compressor data={compressor} position={{ x: 200, y: 320 }} />
 
-                {systemConditions.is_running && (
-                    <button
-                        onClick={() =>
-                            setSystemConditions({ ...systemConditions, is_running: false })
-                        }
-                    >
-                        <Pause size={20} />
-                    </button>
-                )}
+            {/* Line from compressor to condensor */}
+            <Line
+              strokeWidth={3}
+              stroke="red"
+              points={[
+                325, 400, 360, 400, 360, 270, 150, 270, 150, 80, 220, 80,
+              ]}
+            />
 
-                {!systemConditions.is_running && (
-                    <button
-                        onClick={() =>
-                            setSystemConditions({ ...systemConditions, is_running: true })
-                        }
-                    >
-                        <Play size={20} />
-                    </button>
-                )}
+            {/* Line from condensor to TEV */}
+            <Line
+              strokeWidth={3}
+              stroke="#FFA276"
+              points={[550, 200, 800, 200, 800, 344]}
+            />
 
-                <button>
-                    <FastForward size={20} />
-                </button>
-            </div>
-            <div className="bg-gray-100 py-2 px-4 h-32 absolute right-0 z-50">
-                <Controller roomTemp={roomTemp} />
-            </div>
+            <TEV position={{ x: 800, y: 350 }} />
 
-            <div className="fixed bottom-0 flex flex-row">
-                <div className="flex flex-col">
-                    <h3>Run state: {compressor?.run_state}</h3>
-                    <h3>Discharge temp: {compressor?.discharge_temp}</h3>
-                    <h3>Discharge pressure: {compressor?.discharge_pressure}</h3>
-                </div>
+            {/* Line from TEV to evaporator */}
+            <Line
+              strokeWidth={3}
+              stroke="#FFA276"
+              points={[800, 382, 800, 480, 750, 480]}
+            />
 
-                <div className="flex flex-col">
-                    <h3>LP: {evaporator?.suction_pressure}</h3>
-                    <h3>Suction temp: {evaporator?.suction_temperature}</h3>
-                </div>
+            <HeatExchanger
+              type="Evaporator"
+              data={evaporator}
+              position={{ x: 500, y: 450 }}
+              flip={true}
+            />
 
-                <div className="flex flex-col">
-                    <h3>HP: {condensator?.condensing_pressure}</h3>
-                    <h3>Condensor temp: {condensator?.condensing_temperature}</h3>
-                    <h3>Liquid temp: {condensator?.liquid_temp}</h3>
-                </div>
-            </div>
-            <Stage width={window.innerWidth} height={window.innerHeight}></Stage>
+            {/* Line from evaporator to compressor */}
+            <Line
+              strokeWidth={3}
+              stroke="blue"
+              points={[480, 600, 100, 600, 100, 430, 200, 430]}
+            />
+          </Layer>
+        </Stage>
+      </div>
+
+      <div className="absolute right-0 py-2 px-4 h-32">
+        <Controller roomTemp={roomTemp} systemState={systemState} />
+      </div>
+
+      {readyState !== ReadyState.OPEN && (
+        <div className="flex absolute inset-0 z-40 justify-center items-center bg-white/70">
+          <div className="p-5 text-sm text-red-800 bg-red-50 rounded-md shadow">
+            {readyState === ReadyState.CONNECTING
+              ? 'Connecting to simulation server...'
+              : t('simulator.no-connection')}
+          </div>
         </div>
-    )
+      )}
+    </div>
+  )
 }
-
-export default SimulatorPage
