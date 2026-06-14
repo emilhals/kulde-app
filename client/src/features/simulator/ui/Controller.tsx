@@ -1,3 +1,4 @@
+import { controllerState, paramKeys } from '@/features/simulator/store/models'
 import { getTemperatureUnit } from '@/features/simulator/utils/getTemperatureUnit'
 import {
   CloudSnow,
@@ -9,14 +10,16 @@ import {
 } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useSnapshot } from 'valtio'
-import { controllerState, paramKeys } from '../store'
+import { SystemState } from '../types'
 
 type DisplayMode = {
   display: 'DEFAULT' | 'PARAMETERS' | 'ALARMS' | 'DEF. TEMP'
   mode: 'STATIC' | 'CHANGE'
 }
 
-export const Controller = ({ roomTemp }: { roomTemp: number }) => {
+type ControllerProps = { roomTemp: number; systemState: SystemState }
+
+export const Controller = ({ roomTemp, systemState }: ControllerProps) => {
   const [displayMode, setDisplayMode] = useState<DisplayMode>({
     display: 'DEFAULT',
     mode: 'STATIC',
@@ -33,7 +36,6 @@ export const Controller = ({ roomTemp }: { roomTemp: number }) => {
 
   const pressTimer = useRef<number>()
   const isLongPressRef = useRef<boolean>(false)
-  const [isLongPress, setIsLongPress] = useState<boolean>(false)
 
   const [blinkClass, setBlinkClass] = useState<string>('')
   const [blinkKey, setBlinkKey] = useState<number>(0)
@@ -44,6 +46,7 @@ export const Controller = ({ roomTemp }: { roomTemp: number }) => {
   }
 
   const controllerSnap = useSnapshot(controllerState)
+
   const [paramIndex, setParamIndex] = useState<number>(0)
   const currentKey = paramKeys[paramIndex]
   const currentParamSnap = controllerSnap.parameters[currentKey]
@@ -56,12 +59,10 @@ export const Controller = ({ roomTemp }: { roomTemp: number }) => {
     isLongPressRef.current = false
     pressTimer.current = window.setTimeout(() => {
       isLongPressRef.current = true
-      setIsLongPress(true)
     }, 500)
-    setIsLongPress(false)
   }
 
-  const handleInput = (buttonPlacement: string, isLongPress: boolean) => {
+  const handleInput = (buttonPlacement: string) => {
     if (editSetPoint) {
       if (buttonPlacement === 'center') {
         setDisplayMode((prev) => ({ ...prev, mode: 'STATIC' }))
@@ -160,7 +161,7 @@ export const Controller = ({ roomTemp }: { roomTemp: number }) => {
           break
       }
     } else {
-      handleInput(e.currentTarget.id, false)
+      handleInput(e.currentTarget.id)
     }
 
     if (showRoomTemp) {
@@ -178,9 +179,20 @@ export const Controller = ({ roomTemp }: { roomTemp: number }) => {
     <div className="flex flex-col">
       <div className="flex flex-row justify-center items-center w-96 h-32 text-white bg-black rounded-lg border-4 border-gray-500 shadow-md shadow-black">
         <div className="flex flex-col gap-y-3 justify-center px-3 text-gray-300">
-          <Snowflake size={18} />
-          <CloudSnow size={18} />
-          <Fan size={18} />
+          <Snowflake
+            className={systemState.isCooling ? 'text-white' : 'text-gray-600'}
+            size={18}
+          />
+          <CloudSnow
+            className={
+              systemState.isDefrosting ? 'text-white' : 'text-gray-600'
+            }
+            size={18}
+          />
+          <Fan
+            className={systemState.runningFans ? 'text-white' : 'text-gray-600'}
+            size={18}
+          />
         </div>
 
         <div className="flex justify-center items-center w-80 h-24 bg-gray-800 rounded-lg">
@@ -274,9 +286,6 @@ export const Controller = ({ roomTemp }: { roomTemp: number }) => {
             </span>
           </div>
         </div>
-      </div>
-      <div className="flex">
-        <span>{displayMode.mode + ' | ' + displayMode.display}</span>
       </div>
     </div>
   )
