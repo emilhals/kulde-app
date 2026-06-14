@@ -1,15 +1,14 @@
+import {
+    Box,
+    Connection,
+    Item,
+    ItemPreview,
+    Point,
+    Text,
+} from '@/features/diagram-drawer/types'
 import { proxy } from 'valtio'
 import { proxyWithHistory } from 'valtio-history'
 import { deepClone } from 'valtio/utils'
-
-import {
-    Box,
-    ComponentType,
-    ConnectionType,
-    ItemType,
-    PointType,
-    TextType,
-} from '@/features/diagram-drawer/types'
 
 type Interaction =
     | 'idle'
@@ -20,24 +19,29 @@ type Interaction =
     | 'pending-connect'
     | 'connecting'
 
+type InteractedNode = {
+    id: string
+    type: 'item' | 'text' | 'connection'
+}
+
 const initialDiagramState = {
-    items: [] as ItemType[],
-    connections: [] as ConnectionType[],
-    texts: [] as TextType[],
+    items: [] as Item[],
+    connections: [] as Connection[],
+    texts: [] as Text[],
 }
 
 export const initialUIState = {
-    activeId: null as string | null,
+    activeNode: null as InteractedNode | null,
     selectedIds: [] as string[],
+    hoveredNodeId: null as string | null,
     interaction: 'idle' as Interaction,
-    dragged: null as ComponentType | null,
+    dragged: null as ItemPreview | null,
     action: null as string | null,
     pointerDown: false as boolean,
-    pointerStart: { x: 0, y: 0 } as PointType,
+    pointerStart: { x: 0, y: 0 } as Point,
     selectionBox: null as Box | null,
-    dragOffset: { x: 0, y: 0 } as PointType,
+    dragOffset: { x: 0, y: 0 } as Point,
     dragStartPositions: {} as Record<string, { x: number; y: number }>,
-    shadowPosition: { x: 0, y: 0 } as PointType,
 }
 
 export const diagramHistory = proxyWithHistory(initialDiagramState)
