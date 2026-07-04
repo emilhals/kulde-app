@@ -12,24 +12,36 @@ import type {
   SystemState,
 } from '@/features/simulator/types'
 import { Controller } from '@/features/simulator/ui/Controller'
-import Konva from 'konva'
-import { useEffect, useRef, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { Layer, Line, Stage } from 'react-konva'
-import useWebSocket, { ReadyState } from 'react-use-websocket-lite'
-import { subscribe, useSnapshot } from 'valtio'
-import { flattenParams, resetControllerState } from './store/actions'
-import { SimulationControls } from './ui/SimulationControls'
 import {
   DEFAULT_COMPRESSOR,
   DEFAULT_CONDENSATOR,
   DEFAULT_EVAPORATOR,
-} from './utils/default.components'
+} from '@/features/simulator/utils/default.components'
+import { useCustomFont } from '@/shared/hooks/useCustomFont'
+import { useResponsiveStage } from '@/shared/hooks/useResponsiveStage'
+import Konva from 'konva'
+import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Layer, Stage } from 'react-konva'
+import useWebSocket, { ReadyState } from 'react-use-websocket-lite'
+import { subscribe, useSnapshot } from 'valtio'
+import { PipeNetwork } from './canvas/PipeNetwork'
+import { PressureGauge } from './canvas/PressureGauge'
+import {
+  compressorPosition,
+  condenserPosition,
+  evaporatorPosition,
+  pipes,
+  tevPosition,
+} from './physics/positions'
+import { flattenParams, resetControllerState } from './store/actions'
+import { SimulationControls } from './ui/SimulationControls'
 import { parseSimulationData } from './utils/parseSimulationData'
 
 export const SimulatorPage = () => {
   const { t } = useTranslation()
 
+  const [,] = useCustomFont('Inter')
   const url = import.meta.env.VITE_WS_URL
 
   const controllerSnap = useSnapshot(controllerState)
@@ -39,39 +51,7 @@ export const SimulatorPage = () => {
   const stageRef = useRef<Konva.Stage>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  const [stage, setStage] = useState({ width: 800, height: 600, scale: 1 })
-  const DESIGN_WIDTH = 900
-  const DESIGN_HEIGHT = 700
-
-  useEffect(() => {
-    if (!containerRef.current) return
-    const resize = () => {
-      const container = containerRef.current
-      if (!container) return
-      const { clientWidth, clientHeight } = containerRef.current
-
-      const scaleX = clientWidth / DESIGN_WIDTH
-      const scaleY = clientHeight / DESIGN_HEIGHT
-      const scale = Math.min(scaleX, scaleY)
-      console.count('resize observer fired')
-      setStage((prev) => {
-        if (
-          prev.width === clientWidth &&
-          prev.height === clientHeight &&
-          prev.scale === scale
-        ) {
-          return prev
-        }
-
-        return { width: clientWidth, height: clientHeight, scale }
-      })
-    }
-    resize()
-    const ro = new ResizeObserver(resize)
-    ro.observe(containerRef.current)
-    containerRef.current?.focus()
-    return () => ro.disconnect()
-  }, [])
+  const stage = useResponsiveStage(containerRef)
 
   const [systemState, setSystemState] = useState<SystemState>({
     isCooling: false,
@@ -95,7 +75,6 @@ export const SimulatorPage = () => {
       if (restartingRef.current) return
 
       const data = JSON.parse(event.data)
-      console.log(data)
 
       if (data.status === 'STOPPED') {
         setEvaporator({ ...evaporator, fan_speed: 0 })
@@ -185,91 +164,75 @@ export const SimulatorPage = () => {
   }
 
   return (
-    <div className="flex gap-2 py-2 px-2 w-full h-full min-h-0">
+    <div className="flex flex-col gap-2 py-2 px-2 w-full h-full min-h-0">
       <SimulationControls
         status={simulationStatus}
         onPlay={handlePlay}
         onRestart={handleRestart}
         onStop={handleStop}
       />
+
+      <div className="flex justify-end py-2 px-4 h-32">
+        <Controller roomTemp={roomTemp} systemState={systemState} />
+      </div>
+
       <div
         ref={containerRef}
         className="overflow-hidden relative flex-1 bg-gray-100 rounded-lg border border-gray-300 focus:outline-none"
       >
-        <Stage
-          width={stage.width}
-          height={stage.height}
-          scaleX={stage.scale}
-          scaleY={stage.scale}
-          ref={stageRef}
-        >
-          <Layer
-            x={(stage.width - DESIGN_WIDTH * stage.scale) / 2}
-            y={(stage.height - DESIGN_HEIGHT * stage.scale) / 2}
-          >
-            <HeatExchanger
-              type="Condensor"
-              data={condensator}
-              position={{ x: 270, y: 50 }}
-            />
+        <div ref={containerRef} className="h-full bg-slate-100">
+          {stage && (
+            <Stage width={stage.width} height={stage.height} ref={stageRef}>
+              <Layer>
+                <HeatExchanger
+                  label="Condensor"
+                  data={condensator}
+                  position={condenserPosition}
+                />
 
-            <Compressor data={compressor} position={{ x: 200, y: 320 }} />
+                <HeatExchanger
+                  label="Evaporator"
+                  data={condensator}
+                  position={evaporatorPosition}
+                />
+                <TEV position={tevPosition} />
 
-            {/* Line from compressor to condensor */}
-            <Line
-              strokeWidth={3}
-              stroke="red"
-              points={[
-                325, 400, 360, 400, 360, 270, 150, 270, 150, 80, 220, 80,
-              ]}
-            />
+                <PressureGauge
+                  type="HP"
+                  inlet={{ x: 400, y: 400 }}
+                  pressure={compressor.discharge_pressure}
+                />
+                <PressureGauge
+                  type="LP"
+                  inlet={{ x: 900, y: 420 }}
+                  pressure={compressor.suction_pressure}
+                />
+              </Layer>
 
-            {/* Line from condensor to TEV */}
-            <Line
-              strokeWidth={3}
-              stroke="#FFA276"
-              points={[550, 200, 800, 200, 800, 344]}
-            />
-
-            <TEV position={{ x: 800, y: 350 }} />
-
-            {/* Line from TEV to evaporator */}
-            <Line
-              strokeWidth={3}
-              stroke="#FFA276"
-              points={[800, 382, 800, 480, 750, 480]}
-            />
-
-            <HeatExchanger
-              type="Evaporator"
-              data={evaporator}
-              position={{ x: 500, y: 450 }}
-              flip={true}
-            />
-
-            {/* Line from evaporator to compressor */}
-            <Line
-              strokeWidth={3}
-              stroke="blue"
-              points={[480, 600, 100, 600, 100, 430, 200, 430]}
-            />
-          </Layer>
-        </Stage>
-      </div>
-
-      <div className="absolute right-0 py-2 px-4 h-32">
-        <Controller roomTemp={roomTemp} systemState={systemState} />
-      </div>
-
-      {readyState !== ReadyState.OPEN && (
-        <div className="flex absolute inset-0 z-40 justify-center items-center bg-white/70">
-          <div className="p-5 text-sm text-red-800 bg-red-50 rounded-md shadow">
-            {readyState === ReadyState.CONNECTING
-              ? 'Connecting to simulation server...'
-              : t('simulator.no-connection')}
-          </div>
+              <Layer>
+                <PipeNetwork
+                  animate={simulationStatus === 'RUNNING'}
+                  pressure={{ LP: 3, HP: 8 }}
+                  pipes={pipes}
+                />
+              </Layer>
+              <Layer>
+                <Compressor position={compressorPosition} />
+              </Layer>
+            </Stage>
+          )}
         </div>
-      )}
+
+        {readyState !== ReadyState.OPEN && (
+          <div className="flex absolute inset-0 z-40 justify-center items-center bg-white/70">
+            <div className="p-5 text-sm text-red-800 bg-red-50 rounded-md shadow">
+              {readyState === ReadyState.CONNECTING
+                ? 'Connecting to simulation server...'
+                : t('simulator.no-connection')}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

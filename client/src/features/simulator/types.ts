@@ -1,10 +1,43 @@
 import Konva from 'konva'
 
+export type Position = Point
+export type Vector = Point
+
 export type Point = { x: number; y: number }
 
 export type SimulationStatus = 'RUNNING' | 'STOPPING' | 'RESTARTING' | 'IDLE'
 
-export type Particle = Konva.Circle & { velocity: Point; direction: number }
+export type Pressure = { LP: number; HP: number }
+
+export type ParticleNode = Konva.Circle & Particle
+
+export type Particle = {
+  id: string
+  pipeId: string
+  x: number
+  y: number
+  segmentIndex: number
+  t: number
+  direction: Point
+  pressure: 'LP' | 'HP'
+}
+
+export type PipeSegment = {
+  id: string
+  start: Point
+  end: Point
+  radius: number
+  flowDirection: Point
+}
+
+export type Pipe = {
+  id: string
+  from: Point
+  to: Point
+  points: Point[]
+  pressure: 'LP' | 'HP'
+  nextPipeId?: string
+}
 
 export type Compressor = {
   power_state: string
