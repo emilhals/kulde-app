@@ -66,6 +66,9 @@ async def handler(ws: WebSocket):
                 await sim_service.restart(controller_params)
             elif command == "STOP":
                 await sim_service.stop()
+            elif command == "UPDATE_SPEED":
+                speed = event.get("speed")
+                await sim_service.update_speed(speed)
             else:
                 logger.error("Unsupported event: %s", event)
     except ConnectionClosed:
