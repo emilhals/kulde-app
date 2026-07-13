@@ -20,7 +20,7 @@ class SimulationService:
     system: System
 
     dt: float = 0.5
-    time_scale: float = 60
+    time_scale: float = 10
 
     _state: SimulationState = field(default=SimulationState.STOPPED, init=False)
     _sim_task: asyncio.Task[None] | None = field(default=None, init=False)
@@ -69,6 +69,9 @@ class SimulationService:
 
         await self.endpoint.broadcast({"status": "IDLE"})
 
+    async def update_speed(self, speed: float):
+        self.time_scale = speed
+
     async def simulation_loop(self) -> None:
         try:
             while self._state == SimulationState.RUNNING:
@@ -79,7 +82,7 @@ class SimulationService:
                     await self.stop()
                     return
 
-                await asyncio.sleep(2)
+                await asyncio.sleep(self.dt / self.time_scale)
         except asyncio.CancelledError:
             logger.error("Simulation loop cancelled")
             raise
@@ -97,7 +100,7 @@ class SimulationService:
                 values.update(await self.system.get_values())
 
                 await self.endpoint.broadcast(values)
-                await asyncio.sleep(2)
+                await asyncio.sleep(0.25)
         except asyncio.CancelledError:
             logger.error("get_values cancelled")
             raise

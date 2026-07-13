@@ -1,6 +1,19 @@
 import { Compressor } from '@/features/simulator/canvas/Compressor'
 import { HeatExchanger } from '@/features/simulator/canvas/HeatExchanger'
+import { PipeNetwork } from '@/features/simulator/canvas/PipeNetwork'
+import { PressureGauge } from '@/features/simulator/canvas/PressureGauge'
 import { TEV } from '@/features/simulator/canvas/TEV'
+import {
+  compressorPosition,
+  condenserPosition,
+  evaporatorPosition,
+  pipes,
+  tevPosition,
+} from '@/features/simulator/physics/positions'
+import {
+  flattenParams,
+  resetControllerState,
+} from '@/features/simulator/store/actions'
 import {
   controllerState,
   initialControllerState,
@@ -9,34 +22,26 @@ import type {
   Compressor as CompressorType,
   Condensator,
   Evaporator,
+  SimulationSpeed,
   SystemState,
 } from '@/features/simulator/types'
 import { Controller } from '@/features/simulator/ui/Controller'
+import { Toolbar } from '@/features/simulator/ui/Toolbar'
 import {
   DEFAULT_COMPRESSOR,
   DEFAULT_CONDENSATOR,
   DEFAULT_EVAPORATOR,
 } from '@/features/simulator/utils/default.components'
+import { parseSimulationData } from '@/features/simulator/utils/parseSimulationData'
 import { useCustomFont } from '@/shared/hooks/useCustomFont'
 import { useResponsiveStage } from '@/shared/hooks/useResponsiveStage'
 import Konva from 'konva'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Layer, Stage } from 'react-konva'
+import { Layer, Stage, Text } from 'react-konva'
 import useWebSocket, { ReadyState } from 'react-use-websocket-lite'
 import { subscribe, useSnapshot } from 'valtio'
-import { PipeNetwork } from './canvas/PipeNetwork'
-import { PressureGauge } from './canvas/PressureGauge'
-import {
-  compressorPosition,
-  condenserPosition,
-  evaporatorPosition,
-  pipes,
-  tevPosition,
-} from './physics/positions'
-import { flattenParams, resetControllerState } from './store/actions'
-import { SimulationControls } from './ui/SimulationControls'
-import { parseSimulationData } from './utils/parseSimulationData'
+import { PowerState, RunState } from './utils/enums'
 
 export const SimulatorPage = () => {
   const { t } = useTranslation()
@@ -53,12 +58,14 @@ export const SimulatorPage = () => {
 
   const stage = useResponsiveStage(containerRef)
 
+  const [simulationSpeed, setSimulationSpeed] =
+    useState<SimulationSpeed>('normal')
   const [systemState, setSystemState] = useState<SystemState>({
     isCooling: false,
     isDefrosting: false,
     runningFans: false,
   })
-  const [roomTemp, setRoomTemp] = useState<number>(24)
+  const [roomTemp, setRoomTemp] = useState<string>('24.2')
 
   const [compressor, setCompressor] =
     useState<CompressorType>(DEFAULT_COMPRESSOR)
@@ -69,7 +76,7 @@ export const SimulatorPage = () => {
   const { sendMessage, readyState } = useWebSocket({
     url: url,
     onClose() {
-      setSimulationStatus('IDLE')
+      setSimulationStatus('idle')
     },
     onMessage(event) {
       if (restartingRef.current) return
@@ -80,7 +87,7 @@ export const SimulatorPage = () => {
         setEvaporator({ ...evaporator, fan_speed: 0 })
         setCondensator({ ...condensator, fan_speed: 0 })
         restartingRef.current = false
-        setSimulationStatus('IDLE')
+        setSimulationStatus('idle')
         setSystemState({
           isCooling: false,
           isDefrosting: false,
@@ -90,8 +97,8 @@ export const SimulatorPage = () => {
         return
       }
 
-      if (data.status === 'RUNNING') {
-        setSimulationStatus('RUNNING')
+      if (data.status === 'running') {
+        setSimulationStatus('running')
       }
 
       const parsed = parseSimulationData(data)
@@ -102,15 +109,19 @@ export const SimulatorPage = () => {
       setCondensator(parsed.condensator)
       setCompressor(parsed.compressor)
 
-      if (compressor.run_state === 'RUNNING') {
-        setSystemState({ ...systemState, isCooling: true })
-      }
+      console.log(parsed.compressor)
+
+      setSystemState((prev) => ({
+        ...prev,
+        isCooling: parsed.compressor.run_state === RunState.RUNNING,
+        runningFans: parsed.compressor.power_state === PowerState.ON,
+      }))
     },
   })
 
   const [simulationStatus, setSimulationStatus] = useState<
-    'RUNNING' | 'STOPPING' | 'RESTARTING' | 'IDLE'
-  >('IDLE')
+    'running' | 'stopping' | 'restarting' | 'idle'
+  >('idle')
 
   useEffect(() => {
     const unsubscribe = subscribe(controllerState, () => {
@@ -126,7 +137,14 @@ export const SimulatorPage = () => {
     return () => unsubscribe()
   }, [readyState, sendMessage])
 
-  const handlePlay = () => {
+  const handleSpeedChange = (speed: SimulationSpeed) => {
+    const speedNum = speed === 'normal' ? 10 : 30
+    setSimulationSpeed(speed)
+
+    sendMessage(JSON.stringify({ command: 'UPDATE_SPEED', speed: speedNum }))
+  }
+
+  const handleStart = () => {
     if (readyState !== ReadyState.OPEN) return
 
     sendMessage(
@@ -136,7 +154,7 @@ export const SimulatorPage = () => {
       }),
     )
 
-    setSimulationStatus('RUNNING')
+    setSimulationStatus('running')
   }
 
   const handleStop = () => {
@@ -144,7 +162,7 @@ export const SimulatorPage = () => {
 
     sendMessage(JSON.stringify({ command: 'STOP' }))
 
-    setSimulationStatus('STOPPING')
+    setSimulationStatus('stopping')
   }
 
   const handleRestart = () => {
@@ -152,7 +170,7 @@ export const SimulatorPage = () => {
 
     resetControllerState()
 
-    setRoomTemp(24)
+    setRoomTemp('24.0')
     sendMessage(
       JSON.stringify({
         command: 'RESTART',
@@ -160,26 +178,25 @@ export const SimulatorPage = () => {
       }),
     )
 
-    setSimulationStatus('RESTARTING')
+    setSimulationStatus('restarting')
   }
 
   return (
-    <div className="flex flex-col gap-2 py-2 px-2 w-full h-full min-h-0">
-      <SimulationControls
+    <div className="flex h-full min-h-0 w-full flex-col gap-2 px-2 py-2">
+      <Toolbar
         status={simulationStatus}
-        onPlay={handlePlay}
+        speed={simulationSpeed}
+        onSpeedChange={handleSpeedChange}
+        onStart={handleStart}
         onRestart={handleRestart}
         onStop={handleStop}
       />
 
-      <div className="flex justify-end py-2 px-4 h-32">
+      <div className="flex h-32 justify-end px-4 py-2">
         <Controller roomTemp={roomTemp} systemState={systemState} />
       </div>
 
-      <div
-        ref={containerRef}
-        className="overflow-hidden relative flex-1 bg-gray-100 rounded-lg border border-gray-300 focus:outline-none"
-      >
+      <div className="relative flex-1 overflow-hidden rounded-lg border border-gray-300 bg-gray-100 focus:outline-none">
         <div ref={containerRef} className="h-full bg-slate-100">
           {stage && (
             <Stage width={stage.width} height={stage.height} ref={stageRef}>
@@ -211,12 +228,27 @@ export const SimulatorPage = () => {
 
               <Layer>
                 <PipeNetwork
-                  animate={simulationStatus === 'RUNNING'}
+                  animate={simulationStatus === 'running'}
                   pressure={{ LP: 3, HP: 8 }}
                   pipes={pipes}
                 />
               </Layer>
               <Layer>
+                <Text
+                  text={compressor.run_state}
+                  y={500}
+                  x={550}
+                  fontStyle="bold"
+                  align="center"
+                />
+
+                <Text
+                  text={compressor.power_state}
+                  y={520}
+                  x={550}
+                  fontStyle="bold"
+                  align="center"
+                />
                 <Compressor position={compressorPosition} />
               </Layer>
             </Stage>
@@ -224,8 +256,8 @@ export const SimulatorPage = () => {
         </div>
 
         {readyState !== ReadyState.OPEN && (
-          <div className="flex absolute inset-0 z-40 justify-center items-center bg-white/70">
-            <div className="p-5 text-sm text-red-800 bg-red-50 rounded-md shadow">
+          <div className="absolute inset-0 z-40 flex items-center justify-center bg-white/70">
+            <div className="rounded-md bg-red-50 p-5 text-sm text-red-800 shadow">
               {readyState === ReadyState.CONNECTING
                 ? 'Connecting to simulation server...'
                 : t('simulator.no-connection')}

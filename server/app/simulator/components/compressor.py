@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING
 
 from pyfluids import Fluid, FluidsList, Input
@@ -13,13 +13,13 @@ if TYPE_CHECKING:
     from app.simulator.core.system import System
 
 
-class RunStateEnum(str, Enum):
+class RunState(StrEnum):
     STARTING = "starting"
     RUNNING = "running"
     IDLE = "idle"
 
 
-class PowerStateEnum(str, Enum):
+class PowerState(StrEnum):
     ON = "on"
     OFF = "off"
 
@@ -29,18 +29,12 @@ class Compressor(Component):
     system: System | None = None
     component_name: str = "Compressor"
 
-    power_state: PowerStateEnum = field(default=PowerStateEnum.OFF)
-    run_state: RunStateEnum = field(default=RunStateEnum.IDLE)
+    power_state: PowerState = field(default=PowerState.OFF)
+    run_state: RunState = field(default=RunState.IDLE)
     isentropic_efficieny: float = 0.75
 
     inlet_state: AbstractFluid | None = None
     outlet_state: AbstractFluid | None = None
-
-    setpoint_delay: int = 10
-
-    _elapsed_time: int = 10
-    _current_time: int = 0
-    _setpoint_reached_time: int | None = None
 
     async def attach(self) -> None:
         await super().attach()
@@ -49,8 +43,8 @@ class Compressor(Component):
         await super().detach()
 
     async def initialize(self) -> None:
-        self.power_state = PowerStateEnum.ON
-        self.run_state = RunStateEnum.RUNNING
+        self.power_state = PowerState.ON
+        self.run_state = RunState.RUNNING
 
     async def simulate_step(self, dt: float, sim_time: float) -> None:
         if not self.system:
@@ -84,39 +78,24 @@ class Compressor(Component):
             Input.pressure(condensator.condensing_pressure), Input.enthalpy(h_out)
         )
 
-        # bytt til dt fra simulation_service senere
-        self._current_time += 3
-
         controller = self.system.controller
         room = self.system.room
 
         set_point = float(controller.parameters["setPoint"])
-        differential = float(controller.parameters["r03"])
+        differential = float(controller.parameters["r01"])
+        print(differential)
 
-        if self.power_state == PowerStateEnum.ON:
-            if room.room_temp > set_point:
-                self.run_state = RunStateEnum.RUNNING
-                self._reached_setpoint = None
-                await self.system.room.decrease_temperature()
-            elif room.room_temp == set_point:
-                if self._setpoint_reached_time is None:
-                    self._setpoint_reached_time = self._current_time
-                    self.run_state = RunStateEnum.IDLE
+        if self.power_state == PowerState.OFF:
+            self.run_state = RunState.IDLE
+            return
 
-                elapsed = self._current_time - self._setpoint_reached_time
-                if elapsed >= self.setpoint_delay:
-                    await self.system.room.increase_temperature()
+        if self.run_state == RunState.RUNNING:
+            if room.room_temp <= set_point:
+                self.run_state = RunState.IDLE
 
-            if room.room_temp < set_point:
-                self.run_state = RunStateEnum.IDLE
-                self.power_state = PowerStateEnum.ON
-                self._setpoint_reached_time = None
-
-        if self.power_state == PowerStateEnum.OFF:
-            if room.room_temp == set_point + differential:
-                self.run_state = RunStateEnum.RUNNING
-                self.power_state = PowerStateEnum.ON
-                self._setpoint_reached_time = None
+        elif self.run_state == RunState.IDLE:
+            if room.room_temp >= set_point + differential:
+                self.run_state = RunState.RUNNING
 
     async def get_values(self) -> dict[str, str | int | float]:
         values: dict[str, str | int | float] = {

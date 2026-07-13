@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 
 from app.models.simulator import ControllerParams
-from app.simulator.components.compressor import Compressor
+from app.simulator.components.compressor import Compressor, PowerState, RunState
 from app.simulator.components.condensator import Condensator
 from app.simulator.components.evaporator import Evaporator
 from app.simulator.components.txv import TXV
@@ -57,6 +57,13 @@ class System:
         for name in ["Evaporator", "Condensator", "Compressor", "TXV"]:
             component = next(c for c in self.components if c.component_name == name)
             await component.simulate_step(dt=dt, sim_time=sim_time)
+
+        compressor = next((c for c in self.components if isinstance(c, Compressor)))
+        should_cool = (
+            compressor.run_state == RunState.RUNNING
+            and compressor.power_state == PowerState.ON
+        )
+        await self.room.simulate_step(dt=dt, cooling=should_cool)
 
     async def add_component(self, component: Component) -> None:
         self.components.append(component)

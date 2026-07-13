@@ -1,4 +1,5 @@
 import { controllerState, paramKeys } from '@/features/simulator/store/models'
+import { SystemState } from '@/features/simulator/types'
 import { getTemperatureUnit } from '@/features/simulator/utils/getTemperatureUnit'
 import {
   CloudSnow,
@@ -10,14 +11,13 @@ import {
 } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useSnapshot } from 'valtio'
-import { SystemState } from '../types'
 
 type DisplayMode = {
   display: 'DEFAULT' | 'PARAMETERS' | 'ALARMS' | 'DEF. TEMP'
   mode: 'STATIC' | 'CHANGE'
 }
 
-type ControllerProps = { roomTemp: number; systemState: SystemState }
+type ControllerProps = { roomTemp: string; systemState: SystemState }
 
 export const Controller = ({ roomTemp, systemState }: ControllerProps) => {
   const [displayMode, setDisplayMode] = useState<DisplayMode>({
@@ -177,8 +177,8 @@ export const Controller = ({ roomTemp, systemState }: ControllerProps) => {
 
   return (
     <div className="flex flex-col">
-      <div className="flex flex-row justify-center items-center w-96 h-32 text-white bg-black rounded-lg border-4 border-gray-500 shadow-md shadow-black">
-        <div className="flex flex-col gap-y-3 justify-center px-3 text-gray-300">
+      <div className="flex h-32 w-96 flex-row items-center justify-center rounded-lg border-4 border-gray-500 bg-black text-white shadow-md shadow-black">
+        <div className="flex flex-col justify-center gap-y-3 px-3 text-gray-300">
           <Snowflake
             className={systemState.isCooling ? 'text-white' : 'text-gray-600'}
             size={18}
@@ -195,8 +195,8 @@ export const Controller = ({ roomTemp, systemState }: ControllerProps) => {
           />
         </div>
 
-        <div className="flex justify-center items-center w-80 h-24 bg-gray-800 rounded-lg">
-          <div className="flex py-2 text-5xl font-lubrifont">
+        <div className="flex h-24 w-80 items-center justify-center rounded-lg bg-gray-800">
+          <div className="flex py-2 font-lubrifont text-5xl">
             <span
               className={'absolute text-5xl blur-xl font-bold text-red-800'}
             >
@@ -210,9 +210,9 @@ export const Controller = ({ roomTemp, systemState }: ControllerProps) => {
             </h3>
           </div>
         </div>
-        <div className="flex flex-col gap-y-3 justify-center items-center px-2 w-36">
-          <div className="flex justify-between items-center w-full">
-            <span className="flex justify-center w-4">
+        <div className="flex w-36 flex-col items-center justify-center gap-y-3 px-2">
+          <div className="flex w-full items-center justify-between">
+            <span className="flex w-4 justify-center">
               <svg
                 version="1.1"
                 xmlns="http://www.w3.org/2000/svg"
@@ -242,18 +242,18 @@ export const Controller = ({ roomTemp, systemState }: ControllerProps) => {
               onMouseDown={handleMouseDown}
               onClick={handleClick}
               onMouseUp={handleMouseUp}
-              className="flex-1 mx-2 h-6 bg-gray-800 rounded-lg border-gray-700 shadow-md transition-all duration-150 active:border-gray-700 [box-shadow:0_4px_0_0_#202020,0_3px_0_0_#1b404040] border-[1px] active:translate-y-[1px] active:[box-shadow:0_1px_0_0_#404040,0_1px_0_0_#404040] active:border-b-[0px]"
+              className="mx-2 h-6 flex-1 rounded-lg border-[1px] border-gray-700 bg-gray-800 shadow-md transition-all duration-150 [box-shadow:0_4px_0_0_#202020,0_3px_0_0_#1b404040] active:translate-y-[1px] active:border-b-[0px] active:border-gray-700 active:[box-shadow:0_1px_0_0_#404040,0_1px_0_0_#404040]"
             />
             <span>
               <Wrench
-                className="flex justify-center w-4 -rotate-90"
+                className="flex w-4 -rotate-90 justify-center"
                 size={16}
               />
             </span>
           </div>
 
-          <div className="flex justify-between items-center w-full tracking-wider">
-            <span className="flex justify-center w-4 text-xs tracking-tight">
+          <div className="flex w-full items-center justify-between tracking-wider">
+            <span className="flex w-4 justify-center text-xs tracking-tight">
               SET
             </span>
             <button
@@ -261,13 +261,13 @@ export const Controller = ({ roomTemp, systemState }: ControllerProps) => {
               onMouseDown={handleMouseDown}
               onClick={handleClick}
               onMouseUp={handleMouseUp}
-              className="flex-1 mx-2 h-6 bg-gray-800 rounded-lg border-gray-700 shadow-md transition-all duration-150 active:border-gray-700 [box-shadow:0_4px_0_0_#202020,0_3px_0_0_#1b404040] border-[1px] active:translate-y-[1px] active:[box-shadow:0_1px_0_0_#404040,0_1px_0_0_#404040] active:border-b-[0px]"
+              className="mx-2 h-6 flex-1 rounded-lg border-[1px] border-gray-700 bg-gray-800 shadow-md transition-all duration-150 [box-shadow:0_4px_0_0_#202020,0_3px_0_0_#1b404040] active:translate-y-[1px] active:border-b-[0px] active:border-gray-700 active:[box-shadow:0_1px_0_0_#404040,0_1px_0_0_#404040]"
             />
             <span className="w-4" />
           </div>
 
-          <div className="flex justify-between items-center w-full">
-            <span className="flex justify-center w-4">
+          <div className="flex w-full items-center justify-between">
+            <span className="flex w-4 justify-center">
               <ThermometerSnowflake size={16} />
             </span>
             <button
@@ -275,12 +275,12 @@ export const Controller = ({ roomTemp, systemState }: ControllerProps) => {
               onMouseDown={handleMouseDown}
               onClick={handleClick}
               onMouseUp={handleMouseUp}
-              className="flex-1 mx-2 h-6 bg-gray-800 rounded-lg border-gray-700 shadow-md transition-all duration-150 active:border-gray-700 [box-shadow:0_4px_0_0_#202020,0_3px_0_0_#1b404040] border-[1px] active:translate-y-[1px] active:[box-shadow:0_1px_0_0_#404040,0_1px_0_0_#404040] active:border-b-[0px]"
+              className="mx-2 h-6 flex-1 rounded-lg border-[1px] border-gray-700 bg-gray-800 shadow-md transition-all duration-150 [box-shadow:0_4px_0_0_#202020,0_3px_0_0_#1b404040] active:translate-y-[1px] active:border-b-[0px] active:border-gray-700 active:[box-shadow:0_1px_0_0_#404040,0_1px_0_0_#404040]"
             />
 
             <span>
               <SunSnow
-                className="flex justify-center w-4 -rotate-90"
+                className="flex w-4 -rotate-90 justify-center"
                 size={16}
               />
             </span>
