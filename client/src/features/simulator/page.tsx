@@ -3,6 +3,7 @@ import { HeatExchanger } from '@/features/simulator/canvas/HeatExchanger'
 import { PipeNetwork } from '@/features/simulator/canvas/PipeNetwork'
 import { PressureGauge } from '@/features/simulator/canvas/PressureGauge'
 import { TEV } from '@/features/simulator/canvas/TEV'
+import { PowerState, RunState } from '@/features/simulator/constants/enums'
 import {
   compressorPosition,
   condenserPosition,
@@ -26,7 +27,7 @@ import type {
   SystemState,
 } from '@/features/simulator/types'
 import { Controller } from '@/features/simulator/ui/Controller'
-import { Toolbar } from '@/features/simulator/ui/Toolbar'
+import { SimulationControls } from '@/features/simulator/ui/SimulationControls'
 import {
   DEFAULT_COMPRESSOR,
   DEFAULT_CONDENSATOR,
@@ -41,7 +42,6 @@ import { useTranslation } from 'react-i18next'
 import { Layer, Stage, Text } from 'react-konva'
 import useWebSocket, { ReadyState } from 'react-use-websocket-lite'
 import { subscribe, useSnapshot } from 'valtio'
-import { PowerState, RunState } from './utils/enums'
 
 export const SimulatorPage = () => {
   const { t } = useTranslation()
@@ -138,7 +138,21 @@ export const SimulatorPage = () => {
   }, [readyState, sendMessage])
 
   const handleSpeedChange = (speed: SimulationSpeed) => {
-    const speedNum = speed === 'normal' ? 10 : 30
+    let speedNum = 10
+
+    switch (speed) {
+      case 'slow':
+        speedNum = 5
+        break
+      case 'normal':
+        speedNum = 10
+        break
+      case 'fast':
+        speedNum = 30
+        break
+      default:
+        speedNum = 10
+    }
     setSimulationSpeed(speed)
 
     sendMessage(JSON.stringify({ command: 'UPDATE_SPEED', speed: speedNum }))
@@ -182,21 +196,25 @@ export const SimulatorPage = () => {
   }
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col gap-2 px-2 py-2">
-      <Toolbar
-        status={simulationStatus}
-        speed={simulationSpeed}
-        onSpeedChange={handleSpeedChange}
-        onStart={handleStart}
-        onRestart={handleRestart}
-        onStop={handleStop}
-      />
+    <div className="flex flex-col gap-2 w-full h-full min-h-0">
+      <div className="flex justify-between">
+        <div className="flex px-8">
+          <SimulationControls
+            simulationStatus={simulationStatus}
+            speed={simulationSpeed}
+            onSpeedChange={handleSpeedChange}
+            onStart={handleStart}
+            onRestart={handleRestart}
+            onStop={handleStop}
+          />
+        </div>
 
-      <div className="flex h-32 justify-end px-4 py-2">
-        <Controller roomTemp={roomTemp} systemState={systemState} />
+        <div className="flex justify-end h-32">
+          <Controller roomTemp={roomTemp} systemState={systemState} />
+        </div>
       </div>
 
-      <div className="relative flex-1 overflow-hidden rounded-lg border border-gray-300 bg-gray-100 focus:outline-none">
+      <div className="overflow-hidden relative flex-1 bg-gray-100 rounded-lg border border-gray-300 focus:outline-none">
         <div ref={containerRef} className="h-full bg-slate-100">
           {stage && (
             <Stage width={stage.width} height={stage.height} ref={stageRef}>
@@ -256,8 +274,8 @@ export const SimulatorPage = () => {
         </div>
 
         {readyState !== ReadyState.OPEN && (
-          <div className="absolute inset-0 z-40 flex items-center justify-center bg-white/70">
-            <div className="rounded-md bg-red-50 p-5 text-sm text-red-800 shadow">
+          <div className="flex absolute inset-0 z-40 justify-center items-center bg-white/70">
+            <div className="p-5 text-sm text-red-800 bg-red-50 rounded-md shadow">
               {readyState === ReadyState.CONNECTING
                 ? 'Connecting to simulation server...'
                 : t('simulator.no-connection')}
