@@ -6,6 +6,7 @@ import { TextNode } from '@/features/diagram-drawer/canvas/TextNode'
 import { useConnectionPreview } from '@/features/diagram-drawer/hooks/useConnectionPreview'
 import { useCustomFont } from '@/features/diagram-drawer/hooks/useCustomFont'
 import { useSnapToItem } from '@/features/diagram-drawer/hooks/useSnapToItem'
+//import { buildLines } from '@/features/diagram-drawer/routing/routing'
 import {
   addToStore,
   getAnyFromStore,
@@ -28,22 +29,16 @@ import { intersected } from '@/features/diagram-drawer/utils/konva'
 import Konva from 'konva'
 import { KonvaPointerEvent } from 'konva/lib/PointerEvents'
 import React, { useEffect, useRef, useState } from 'react'
-import {
-  Group,
-  Line as KonvaLine,
-  Layer,
-  Stage,
-  Transformer,
-} from 'react-konva'
-import { useOutletContext } from 'react-router'
+import { Group, Layer, Stage, Transformer } from 'react-konva'
+//import { useOutletContext } from 'react-router'
 import { useSnapshot } from 'valtio'
 
 type SnapState = { x: SnapPoint | null; y: SnapPoint | null }
 
 const DiagramPage = () => {
-  const { setNavContent } = useOutletContext<{
+  /*const { setNavContent } = useOutletContext<{
     setNavContent: (value: unknown) => void
-  }>()
+  }>()*/
 
   const stageRef = useRef<Konva.Stage>(null)
   const selectionRef = useRef<Konva.Transformer>(null)
@@ -96,7 +91,7 @@ const DiagramPage = () => {
     setNavContent({
       right: (
         <ExportCanvas>
-          <span className="rounded-md border px-3 py-1 font-bold">Export</span>
+          <span className="py-1 px-3 font-bold rounded-md border">Export</span>
         </ExportCanvas>
       ),
     })
@@ -400,8 +395,6 @@ const DiagramPage = () => {
           const guidesX = [0, stage.width() / 2, stage.width()]
           const guidesY = [0, stage.height() / 2, stage.height()]
 
-          const weight = { start: 1, center: 0, end: 1 }
-
           diagramHistory.value.items
             .filter((i) => i.id !== itemProxy.id)
             .forEach((item) => {
@@ -451,12 +444,10 @@ const DiagramPage = () => {
           }
 
           if (!snapStateRef.current.x) {
-            const snapX: SnapPoint | null = snap(
-              geometryX,
-              guidesX,
-              { in: 5, out: 8 },
-              weight,
-            )
+            const snapX: SnapPoint | null = snap(geometryX, guidesX, {
+              in: 5,
+              out: 8,
+            })
             if (snapX) {
               itemProxy.x = snapX.position
               snapStateRef.current.x = snapX
@@ -498,12 +489,10 @@ const DiagramPage = () => {
           }
 
           if (!snapStateRef.current.y) {
-            const snapY: SnapPoint | null = snap(
-              geometryY,
-              guidesY,
-              { in: 5, out: 8 },
-              weight,
-            )
+            const snapY: SnapPoint | null = snap(geometryY, guidesY, {
+              in: 5,
+              out: 8,
+            })
             if (snapY) {
               itemProxy.y = snapY.position
               snapStateRef.current.y = snapY
@@ -578,7 +567,7 @@ const DiagramPage = () => {
 
   return (
     <div
-      className="flex h-full min-h-0 w-full gap-2 px-2 py-2"
+      className="flex gap-2 px-2 w-full h-full min-h-0"
       onAuxClick={handleMove}
       onContextMenu={(e) => {
         e.preventDefault()
@@ -592,7 +581,7 @@ const DiagramPage = () => {
 
       <div
         ref={containerRef}
-        className="relative flex-1 overflow-hidden rounded-lg border border-gray-300 bg-gray-100 bg-[radial-gradient(#D9D9D9_1px,transparent_1px)] bg-[length:16px_16px] focus:outline-none dark:bg-[radial-gradient(#2a2a2a_1px,transparent_1px)]"
+        className="overflow-hidden relative flex-1 bg-gray-100 rounded-lg border border-gray-300 focus:outline-none bg-[radial-gradient(#D9D9D9_1px,transparent_1px)] bg-[length:16px_16px] dark:bg-[radial-gradient(#2a2a2a_1px,transparent_1px)]"
         tabIndex={0}
         onKeyDown={handleKeyDown}
         onKeyUp={handleKeyUp}
@@ -620,9 +609,10 @@ const DiagramPage = () => {
             </Group>
 
             <Group>
-              {diagramSnap.value.connections.map((connection: Connection) => (
-                <Line key={connection.id} connection={connection} />
-              ))}
+              {diagramSnap.value.connections.map((connection: Connection) => {
+                //buildLines(stageRef, connection.from, connection.to)
+                return <Line key={connection.id} connection={connection} />
+              })}
             </Group>
             <Group>
               {diagramSnap.value.items.map((item) => {
