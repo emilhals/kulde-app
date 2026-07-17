@@ -1,8 +1,9 @@
 import { SimulatorPage } from '@/features/simulator/page'
+import Layout from '@/shared/Layout'
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router'
 import DiagramPage from './pages/Diagram'
-import Layout from './shared/Layout'
 import './i18n'
+import { ThemeProvider } from '@/shared/contexts/theme-provider'
 
 const router = createBrowserRouter([
   {
@@ -17,7 +18,11 @@ const router = createBrowserRouter([
 ])
 
 function App() {
-  return <RouterProvider router={router} />
+  return (
+    <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+      <RouterProvider router={router} />
+    </ThemeProvider>
+  )
 }
 
 export default App
