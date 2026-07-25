@@ -1,153 +1,84 @@
 import { Connector } from '@/features/diagram-drawer/canvas/Connector'
 import { ItemNode } from '@/features/diagram-drawer/canvas/ItemNode'
-import { Line } from '@/features/diagram-drawer/canvas/Line'
+import { Connection } from '@/features/diagram-drawer/canvas/Connection'
 import { Selection } from '@/features/diagram-drawer/canvas/Selection'
 import { TextNode } from '@/features/diagram-drawer/canvas/TextNode'
 import { useConnectionPreview } from '@/features/diagram-drawer/hooks/useConnectionPreview'
-import { useCustomFont } from '@/features/diagram-drawer/hooks/useCustomFont'
+import { useCustomFont } from '@/shared/hooks/useCustomFont'
 import { useSnapToItem } from '@/features/diagram-drawer/hooks/useSnapToItem'
-//import { buildLines } from '@/features/diagram-drawer/routing/routing'
-import {
-  addToStore,
-  getAnyFromStore,
-  removeFromStore,
-} from '@/features/diagram-drawer/store/actions'
-import { diagramHistory, uiState } from '@/features/diagram-drawer/store/models'
+import { getAnyFromStore } from '@/features/diagram-drawer/store/actions'
+import { diagramHistory } from '@/features/diagram-drawer/store/diagram-state'
+import { uiState } from '@/features/diagram-drawer/store/ui-state'
+
+import { canvasSettings } from '@/features/diagram-drawer/store/canvas-settings'
+
 import type {
-  Connection,
-  Geometry,
-  Item,
+  ConnectionData,
   Point,
   Rect,
-  SnapPoint,
-  WithoutId,
 } from '@/features/diagram-drawer/types'
-import ComponentPanel from '@/features/diagram-drawer/ui/ComponentPanel'
+import { ComponentPanel } from '@/features/diagram-drawer/ui/ComponentPanel'
 import ContextMenu from '@/features/diagram-drawer/ui/ContextMenu'
-import { Toolbar } from '@/features/diagram-drawer/ui/Toolbar'
 import { intersected } from '@/features/diagram-drawer/utils/konva'
 import Konva from 'konva'
 import { KonvaPointerEvent } from 'konva/lib/PointerEvents'
-import React, { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { Group, Layer, Stage, Transformer } from 'react-konva'
-//import { useOutletContext } from 'react-router'
 import { useSnapshot } from 'valtio'
+import { UndoRedo } from './ui/UndoRedo'
+import { useTheme } from '@/shared/contexts/theme-provider'
+import { CanvasMenu } from './ui/CanvasMenu'
+import { useResponsiveStage } from '@/shared/hooks/useResponsiveStage'
+import { useCanvasDrop } from './hooks/useCanvasDrop'
+import {
+  CANVAS_COLORS,
+  DRAG_THRESHOLD,
+} from '@/features/diagram-drawer/constants/canvas'
+import { useCanvasKeyboard } from './hooks/useCanvasKeyboard'
+import { useGridLayer } from './hooks/useGridLayer'
+import { useSnapToGrid } from './hooks/useSnapToGrid'
+import { ExportButton } from './ui/ExportButton'
 
-type SnapState = { x: SnapPoint | null; y: SnapPoint | null }
+export const DiagramPage = () => {
+  const { resolvedTheme } = useTheme()
 
-const DiagramPage = () => {
-  /*const { setNavContent } = useOutletContext<{
-    setNavContent: (value: unknown) => void
-  }>()*/
+  const diagramSnap = useSnapshot(diagramHistory)
+  const uiSnap = useSnapshot(uiState)
+  const canvasSettingsSnap = useSnapshot(canvasSettings)
 
   const stageRef = useRef<Konva.Stage>(null)
   const selectionRef = useRef<Konva.Transformer>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  const itemLayer = useRef<Konva.Layer>(null)
+  const gridLayer = useRef<Konva.Layer>(null)
 
   const [,] = useCustomFont('Inter')
-
-  const [stage, setStage] = useState({ width: 0, height: 0, scale: 1 })
-
-  const [isPanning, setIsPanning] = useState(false)
-  const [isSnapping, setIsSnapping] = useState(false)
-
-  const DRAG_THRESHOLD = 4
 
   const [contextMenuPosition, setContextMenuPosition] = useState<Point | null>(
     null,
   )
 
-  const diagramSnap = useSnapshot(diagramHistory)
+  console.log(resolvedTheme)
+  const colors = CANVAS_COLORS[resolvedTheme]
+
+  const stage = useResponsiveStage(containerRef)
+  const { handleDrop } = useCanvasDrop(stageRef, containerRef)
+  const { isPanning, isSnapping, handleKeyUp, handleKeyDown } =
+    useCanvasKeyboard(stageRef)
+  const { applyItemSnap, resetItemSnap } = useSnapToItem(
+    isSnapping,
+    colors.guide,
+  )
+  const { previewGridSnap, applyGridSnap } = useSnapToGrid(isSnapping)
+
   const { connectionPreview, updatePreview, clearPreview } =
     useConnectionPreview()
-
-  const snapStateRef = useRef<SnapState>({ x: null, y: null })
-  const lineXRef = useRef<Konva.Line | null>(null)
-  const lineYRef = useRef<Konva.Line | null>(null)
-
-  const SNAP_RANGE = { in: 5, out: 8 }
-  const { snap } = useSnapToItem()
-
-  const uiSnap = useSnapshot(uiState)
-
-  /* set stage size and ensure responsiveness  */
-  useEffect(() => {
-    const resize = () => {
-      if (!containerRef.current) return
-      const { clientWidth, clientHeight } = containerRef.current
-      setStage({ scale: 1, width: clientWidth, height: clientHeight })
-    }
-
-    containerRef.current?.focus()
-
-    resize()
-    window.addEventListener('resize', resize)
-    return () => window.removeEventListener('resize', resize)
-  }, [])
-
-  /*
-  useEffect(() => {
-    setNavContent({
-      right: (
-        <ExportCanvas>
-          <span className="py-1 px-3 font-bold rounded-md border">Export</span>
-        </ExportCanvas>
-      ),
-    })
-
-    return () => {
-      setNavContent({ right: null })
-    }
-  }, [setNavContent])
-
-*/
-
-  const handleMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.button === 1) {
-      e.preventDefault()
-    }
-  }
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-
-    if (!stageRef.current) return
-
-    const stage = stageRef.current
-    stage.setPointersPositions(e)
-
-    const position = stage.getRelativePointerPosition()
-    const dragged = uiState.dragged
-
-    if (!position || !dragged) return
-
-    const newItem: WithoutId<Item> = {
-      type: 'items',
-      component: dragged.component,
-      height: dragged.height,
-      width: dragged.width,
-      x: position.x - dragged.width / 2,
-      y: position.y - dragged.height / 2,
-      locked: false,
-      anchors: dragged.anchors,
-    }
-
-    const addedItem = addToStore(newItem)
-    if (!addedItem) return
-
-    addToStore({
-      type: 'texts',
-      content: '',
-      position: { x: newItem.x + newItem.width / 2, y: newItem.y - 20 },
-      color: '#000000',
-      size: 14,
-      attributes: [],
-      anchor: { type: 'item', itemId: addedItem.id, offset: { x: 0, y: -20 } },
-    })
-
-    uiState.dragged = null
-  }
+  useGridLayer(
+    stage,
+    gridLayer,
+    canvasSettingsSnap.showGrid,
+    colors.grid,
+    isPanning,
+  )
 
   const handleContextMenu = (e: KonvaPointerEvent) => {
     e.evt.preventDefault()
@@ -156,99 +87,18 @@ const DiagramPage = () => {
     const stage = e.target.getStage()
     if (!stage) return
 
-    const containerRect = stage.container().getBoundingClientRect()
     const pointerPosition = stage.getPointerPosition()
-    if (!containerRect || !pointerPosition) return
+    if (!pointerPosition) return
 
-    const offset = 4
+    const offset = 0
     setContextMenuPosition({
-      x: containerRect.left + pointerPosition.x + offset,
-      y: containerRect.top + pointerPosition.y + offset,
+      x: pointerPosition.x + offset,
+      y: pointerPosition.y + offset,
     })
 
+    uiState.interaction = 'idle'
+
     e.cancelBubble = true
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    const activeElement = document.activeElement
-
-    if (activeElement?.tagName === 'INPUT') {
-      return
-    }
-
-    if (e.metaKey && e.key === 'Backspace') {
-      for (const selectedId of uiState.selectedIds) {
-        removeFromStore(selectedId)
-      }
-    }
-
-    /* This was to not cause issues with the context menu, maybe take deeper look at it later */
-    if (
-      [
-        ' ',
-        'Shift',
-        'ArrowRight',
-        'ArrowLeft',
-        'ArrowUp',
-        'ArrowDown',
-        'Escape',
-      ].includes(e.key)
-    ) {
-      e.preventDefault()
-    } else {
-      return
-    }
-
-    const activeNode = uiState.activeNode
-    const itemProxy = activeNode
-      ? diagramHistory.value.items.find((i) => i.id === activeNode.id)
-      : null
-
-    const container = stageRef.current?.container()
-    if (!container) return
-
-    switch (e.key) {
-      case ' ':
-        setIsPanning(true)
-        container.style.cursor = 'grab'
-        break
-      case 'Shift':
-        setIsSnapping(true)
-        break
-      case 'ArrowRight':
-        if (itemProxy) itemProxy.x += 4
-        break
-      case 'ArrowLeft':
-        if (itemProxy) itemProxy.x -= 4
-        break
-      case 'ArrowUp':
-        if (itemProxy) itemProxy.y -= 4
-        break
-      case 'ArrowDown':
-        if (itemProxy) itemProxy.y += 4
-        break
-      case 'Escape':
-        uiState.activeNode = null
-        uiState.action = null
-        setContextMenuPosition(null)
-        break
-      case 'Return':
-        uiState.action = null
-        break
-      default:
-        break
-    }
-  }
-
-  const handleKeyUp = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === ' ') {
-      setIsPanning(false)
-      const container = stageRef.current?.container()
-      if (container) container.style.cursor = 'default'
-    }
-    if (e.key === 'Shift') {
-      setIsSnapping(false)
-    }
   }
 
   const handlePointerDown = (e: Konva.KonvaEventObject<PointerEvent>) => {
@@ -269,8 +119,7 @@ const DiagramPage = () => {
     }
 
     if (itemNode) {
-      if (uiState.selectedIds.includes(itemNode.id())) {
-      } else {
+      if (!uiState.selectedIds.includes(itemNode.id())) {
         uiState.activeNode = { id: itemNode.id(), type: 'item' }
         uiState.selectedIds = [itemNode.id()]
       }
@@ -332,184 +181,24 @@ const DiagramPage = () => {
           (i) => i.id === activeNode.id,
         )
         if (itemProxy) {
-          itemProxy.x = pointer.x - uiState.dragOffset.x
-          itemProxy.y = pointer.y - uiState.dragOffset.y
-        }
-
-        if (isSnapping && itemProxy) {
           const stage = e.target.getStage()
           if (!stage) return
 
-          const layer = stage
-            .getLayers()
-            .find((l) => l.id() === 'preview-layer')
-          if (!layer) return
-
-          if (!lineXRef.current) {
-            const lineX = new Konva.Line({
-              points: [0, -6000, 0, 6000],
-              stroke: 'rgb(0, 161, 255)',
-              strokeWidth: 1,
-              name: 'guide-line',
-              dash: [4, 6],
-            })
-            layer.add(lineX)
-            lineXRef.current = lineX
-            lineXRef.current.visible(false)
+          const newPosition = {
+            x: pointer.x - uiSnap.dragOffset.x,
+            y: pointer.y - uiSnap.dragOffset.y,
           }
 
-          if (!lineYRef.current) {
-            const lineY = new Konva.Line({
-              points: [-6000, 0, 6000, 0],
-              stroke: 'rgb(0, 161, 255)',
-              strokeWidth: 1,
-              name: 'guide-line',
-              dash: [4, 6],
-            })
-            layer.add(lineY)
-            lineYRef.current = lineY
-            lineYRef.current.visible(false)
-          }
+          previewGridSnap(newPosition)
+          applyItemSnap(stage, itemProxy)
 
-          const geometryX: Geometry = {
-            edges: [
-              { alignment: 'start', value: itemProxy.x },
-              { alignment: 'center', value: itemProxy.x + itemProxy.width / 2 },
-              { alignment: 'end', value: itemProxy.x + itemProxy.width },
-            ],
-            position: itemProxy.x,
-          }
-
-          const geometryY: Geometry = {
-            edges: [
-              { alignment: 'start', value: itemProxy.y },
-              {
-                alignment: 'center',
-                value: itemProxy.y + itemProxy.height / 2,
-              },
-              { alignment: 'end', value: itemProxy.y + itemProxy.height },
-            ],
-            position: itemProxy.y,
-          }
-
-          const guidesX = [0, stage.width() / 2, stage.width()]
-          const guidesY = [0, stage.height() / 2, stage.height()]
-
-          diagramHistory.value.items
-            .filter((i) => i.id !== itemProxy.id)
-            .forEach((item) => {
-              const guideX = [
-                item.x,
-                item.x + item.width / 2,
-                item.x + item.width,
-              ]
-              guidesX.push(...guideX)
-
-              const guideY = [
-                item.y,
-                item.y + item.height / 2,
-                item.y + item.height,
-              ]
-              guidesY.push(...guideY)
-            })
-
-          if (snapStateRef.current.x) {
-            let edge = 0
-            switch (snapStateRef.current.x.alignment) {
-              case 'start':
-                edge = itemProxy.x
-                break
-              case 'center':
-                edge = itemProxy.x + itemProxy.width / 2
-                break
-              case 'end':
-                edge = itemProxy.x + itemProxy.width
-                break
-            }
-
-            const distance = Math.abs(edge - snapStateRef.current.x.guide)
-
-            if (distance <= SNAP_RANGE.out) {
-              itemProxy.x = snapStateRef.current.x.position
-
-              lineXRef.current.visible(true)
-              lineXRef.current.absolutePosition({
-                x: snapStateRef.current.x.guide,
-                y: 0,
-              })
-            } else {
-              snapStateRef.current.x = null
-              lineXRef.current.visible(false)
-            }
-          }
-
-          if (!snapStateRef.current.x) {
-            const snapX: SnapPoint | null = snap(geometryX, guidesX, {
-              in: 5,
-              out: 8,
-            })
-            if (snapX) {
-              itemProxy.x = snapX.position
-              snapStateRef.current.x = snapX
-
-              lineXRef.current.visible(true)
-              lineXRef.current.absolutePosition({ x: snapX.guide, y: 0 })
-            } else {
-              lineXRef.current.visible(false)
-            }
-          }
-
-          if (snapStateRef.current.y) {
-            let edge = 0
-            switch (snapStateRef.current.y.alignment) {
-              case 'start':
-                edge = itemProxy.y
-                break
-              case 'center':
-                edge = itemProxy.y + itemProxy.height / 2
-                break
-              case 'end':
-                edge = itemProxy.y + itemProxy.height
-                break
-            }
-            const distance = Math.abs(edge - snapStateRef.current.y.guide)
-
-            if (distance <= SNAP_RANGE.out) {
-              itemProxy.y = snapStateRef.current.y.position
-
-              lineYRef.current.visible(true)
-              lineYRef.current.absolutePosition({
-                x: 0,
-                y: snapStateRef.current.y.guide,
-              })
-            } else {
-              snapStateRef.current.y = null
-              lineYRef.current.visible(false)
-            }
-          }
-
-          if (!snapStateRef.current.y) {
-            const snapY: SnapPoint | null = snap(geometryY, guidesY, {
-              in: 5,
-              out: 8,
-            })
-            if (snapY) {
-              itemProxy.y = snapY.position
-              snapStateRef.current.y = snapY
-
-              lineYRef.current.visible(true)
-              lineYRef.current.absolutePosition({ x: 0, y: snapY.guide })
-            } else {
-              lineYRef.current.visible(false)
-            }
-          }
+          itemProxy.x = newPosition.x
+          itemProxy.y = newPosition.y
         }
       }
 
       if (uiState.selectedIds.length > 1) {
         uiState.activeNode = null
-        const dx = pointer.x - uiState.pointerStart.x
-        const dy = pointer.y - uiState.pointerStart.y
         diagramHistory.value.items.forEach((item) => {
           if (!(item.id in uiState.dragStartPositions)) return
 
@@ -557,18 +246,36 @@ const DiagramPage = () => {
 
   const handlePointerUp = () => {
     uiState.pointerDown = false
+    uiState.dragStartPositions = {}
     uiState.selectionBox = null
     uiState.interaction = 'pending-select'
 
-    snapStateRef.current = { x: null, y: null }
-    lineXRef.current?.visible(false)
-    lineYRef.current?.visible(false)
+    resetItemSnap()
+
+    if (canvasSettings.snapToGrid) {
+      const activeNode = uiState.activeNode
+      if (!activeNode) return
+
+      const itemProxy = diagramHistory.value.items.find(
+        (i) => i.id === activeNode.id,
+      )
+      if (!itemProxy) return
+
+      console.log('Heeelo')
+      applyGridSnap(itemProxy)
+    }
+
+    diagramHistory.saveHistory()
   }
 
   return (
     <div
-      className="flex gap-2 px-2 w-full h-full min-h-0"
-      onAuxClick={handleMove}
+      className="flex gap-2 py-2 px-2 w-full h-full min-h-0"
+      onAuxClick={(e) => {
+        if (e.button === 1) {
+          e.preventDefault()
+        }
+      }}
       onContextMenu={(e) => {
         e.preventDefault()
       }}
@@ -577,68 +284,86 @@ const DiagramPage = () => {
       }}
       onDrop={handleDrop}
     >
-      <ComponentPanel />
-
       <div
         ref={containerRef}
-        className="overflow-hidden relative flex-1 bg-gray-100 rounded-lg border border-gray-300 focus:outline-none bg-[radial-gradient(#D9D9D9_1px,transparent_1px)] bg-[length:16px_16px] dark:bg-[radial-gradient(#2a2a2a_1px,transparent_1px)]"
+        className={`relative flex-1 overflow-hidden rounded-lg border border-gray-300 bg-zinc-100 bg-[length:16px_16px] focus:outline-none dark:border-slate-600 dark:bg-slate-800 ${!canvasSettingsSnap.showGrid && 'bg-[radial-gradient(#D9D9D9_1px,transparent_1px)] dark:bg-[radial-gradient(#3a3a3a_1px,transparent_1px)]'}`}
         tabIndex={0}
         onKeyDown={handleKeyDown}
         onKeyUp={handleKeyUp}
       >
-        <Toolbar stageRef={stageRef} />
+        <div className="absolute top-6 left-6 z-50">
+          <UndoRedo />
+        </div>
 
-        <Stage
-          ref={stageRef}
-          width={stage.width}
-          height={stage.height}
-          scaleX={stage.scale}
-          scaleY={stage.scale}
-          onContextMenu={handleContextMenu}
-          //onWheel={handleWheel}
-          draggable={isPanning}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-        >
-          <Layer ref={itemLayer}>
-            <Group>
-              {diagramSnap.value.texts.map((text) => {
-                return <TextNode key={text.id} text={text} />
-              })}
-            </Group>
+        <div className="flex absolute top-6 right-6 z-50 gap-3 items-center">
+          <ExportButton />
+          <CanvasMenu />
+        </div>
 
-            <Group>
-              {diagramSnap.value.connections.map((connection: Connection) => {
-                //buildLines(stageRef, connection.from, connection.to)
-                return <Line key={connection.id} connection={connection} />
-              })}
-            </Group>
-            <Group>
-              {diagramSnap.value.items.map((item) => {
-                return <ItemNode key={item.id} item={item} />
-              })}
-            </Group>
-          </Layer>
+        {stage && (
+          <Stage
+            ref={stageRef}
+            width={stage.width}
+            height={stage.height}
+            scaleX={stage.scale}
+            scaleY={stage.scale}
+            onContextMenu={handleContextMenu}
+            draggable={isPanning}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+          >
+            <Layer ref={gridLayer}></Layer>
+            <Layer>
+              <Group>
+                {diagramSnap.value.texts.map((text) => {
+                  return <TextNode key={text.id} text={text} />
+                })}
+              </Group>
 
-          <Layer>
-            <Connector
-              stageRef={stageRef}
-              updatePreview={updatePreview}
-              clearPreview={clearPreview}
-            />
-          </Layer>
+              <Group>
+                {diagramSnap.value.connections.map(
+                  (connection: ConnectionData) => {
+                    return (
+                      <Connection
+                        key={connection.id}
+                        connection={connection}
+                        foregroundColor={colors.foreground}
+                        backgroundColor={colors.background}
+                        lineColor={colors.connection}
+                      />
+                    )
+                  },
+                )}
+              </Group>
+              <Group>
+                {diagramSnap.value.items.map((item) => {
+                  return <ItemNode key={item.id} item={item} />
+                })}
+              </Group>
+            </Layer>
 
-          <Layer id="preview-layer" listening={false}>
-            {connectionPreview}
-          </Layer>
+            <Layer>
+              <Connector
+                stageRef={stageRef}
+                updatePreview={updatePreview}
+                clearPreview={clearPreview}
+              />
+            </Layer>
 
-          <Layer>
-            <Selection selection={uiSnap.selectionBox} />
-            <Transformer ref={selectionRef} />
-          </Layer>
-        </Stage>
+            <Layer id="preview-layer" listening={false}>
+              {connectionPreview}
+            </Layer>
+
+            <Layer>
+              <Selection selection={uiSnap.selectionBox} />
+              <Transformer ref={selectionRef} />
+            </Layer>
+          </Stage>
+        )}
       </div>
+
+      <ComponentPanel show={canvasSettingsSnap.componentPanelOpen} />
 
       {contextMenuPosition && (
         <ContextMenu
@@ -649,5 +374,3 @@ const DiagramPage = () => {
     </div>
   )
 }
-
-export default DiagramPage
