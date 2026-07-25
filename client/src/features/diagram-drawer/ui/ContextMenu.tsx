@@ -1,6 +1,10 @@
 import { removeFromStore } from '@/features/diagram-drawer/store/actions'
 import { diagramHistory, uiState } from '@/features/diagram-drawer/store/models'
-import { Connection, Point } from '@/features/diagram-drawer/types'
+import {
+  Attribute,
+  ConnectionData,
+  Point,
+} from '@/features/diagram-drawer/types'
 import { Button } from '@/shared/ui/button'
 import {
   Collapsible,
@@ -17,22 +21,17 @@ import {
   SelectValue,
 } from '@/shared/ui/select'
 import { ToggleGroup, ToggleGroupItem } from '@/shared/ui/toggle-group'
-import {
-  Bold,
-  ChevronDown,
-  ChevronUp,
-  Italic,
-  Trash2,
-  Underline,
-  X,
-} from 'lucide-react'
-import { useRef, useState } from 'react'
+import { Bold, ChevronDown, Italic, Trash2, Underline, X } from 'lucide-react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { CirclePicker } from 'react-color'
 import { useTranslation } from 'react-i18next'
 import { useSnapshot } from 'valtio'
-import { ShowConnection } from './ShowConnection'
+import { EditConnection } from '@/features/diagram-drawer/ui/ShowConnection'
+import { cn } from '@/lib/utils'
+import { Input } from '@/shared/ui/input'
+import { ScrollArea } from '@/shared/ui/scroll-area'
 
-const hasConnections = (conn: Connection) => {
+const hasConnections = (conn: ConnectionData) => {
   const activeNode = uiState.activeNode
   if (!activeNode) return null
 
@@ -46,21 +45,53 @@ export const ContextMenu = ({
   position,
   onClose,
 }: {
-  position: Point | null
+  position: Point
   onClose: () => void
 }) => {
   const { t } = useTranslation()
+  const diagramSnap = useSnapshot(diagramHistory)
 
-  const [newAttachedText, setNewAttachedText] = useState<string>('')
+  const [newAttachedText, setNewAttachedText] = useState('')
 
-  const [textContentOpen, setTextContentOpen] = useState<boolean>(true)
-  const [connectionsContentOpen, setConnectionsContentOpen] =
-    useState<boolean>(true)
+  const [textContentOpen, setTextContentOpen] = useState(true)
+  const [connectionsContentOpen, setConnectionsContentOpen] = useState(true)
 
   const inputRef = useRef<HTMLInputElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
 
-  const diagramSnap = useSnapshot(diagramHistory)
-  if (!diagramSnap) return null
+  const [clampedPosition, setClampedPosition] = useState(position)
+
+  useLayoutEffect(() => {
+    const panel = panelRef.current
+    if (!panel) return
+
+    const container = panel.parentElement
+    if (!container) return
+
+    const clamp = () => {
+      const padding = 8
+
+      setClampedPosition({
+        x: Math.min(
+          Math.max(position.x, padding),
+          container.clientWidth - panel.offsetWidth - padding,
+        ),
+        y: Math.min(
+          Math.max(position.y, padding),
+          container.clientHeight - panel.offsetHeight - padding,
+        ),
+      })
+    }
+
+    clamp()
+
+    const observer = new ResizeObserver(clamp)
+    observer.observe(panel)
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [position])
 
   const activeNode = uiState.activeNode
   if (!activeNode) return null
@@ -74,12 +105,14 @@ export const ContextMenu = ({
   const attachedText = diagramSnap.value.texts.find(
     (text) => text.anchor?.type === 'item' && text.anchor.itemId === item.id,
   )
-  const attachedTextProxy = diagramHistory.value.texts.find(
-    (text) => text.anchor?.type === 'item' && text.anchor.itemId === item.id,
-  )
-  if (!attachedText || !attachedTextProxy) return null
+  const attachedTextProxy = attachedText
+    ? diagramHistory.value.texts.find(
+        (text) =>
+          text.anchor?.type === 'item' && text.anchor.itemId === item.id,
+      )
+    : undefined
 
-  const connections = diagramHistory.value.connections.filter((conn) =>
+  const connections = diagramSnap.value.connections.filter((conn) =>
     hasConnections(conn),
   )
 
@@ -101,187 +134,205 @@ export const ContextMenu = ({
 
   return (
     <div
-      onClick={(e) => e.stopPropagation()}
+      ref={panelRef}
+      onClick={(e) => {
+        e.stopPropagation()
+      }}
       id="contextmenu"
-      className={`z-50 relative shrink-0 top-0 right-0 h-full w-56  bg-white border border-gray-300 rounded-lg
-        ${position ? '' : 'hidden'}
-      `}
+      className={
+        'absolute z-50 flex w-60 flex-col overflow-hidden rounded-lg border border-gray-300 bg-white shadow-lg dark:border-slate-600 dark:bg-slate-800 dark:shadow-slate-900'
+      }
+      style={{
+        left: clampedPosition.x,
+        top: clampedPosition.y,
+        maxHeight: `calc(100% - 16px)`,
+      }}
     >
-      <button
-        className="absolute top-0 left-0 py-2 px-2 text-gray-500 bg-transparent hover:text-gray-900"
+      <Button
+        variant="ghost"
+        size="icon"
+        className="absolute top-2 right-2 w-7 h-7 hover:bg-transparent text-muted-foreground dark:hover:bg-transparent hover:text-foreground"
         onClick={onClose}
       >
-        <X className="bg-transparent" size={12} />
-      </button>
+        <X size={12} />
+      </Button>
 
-      <div className="flex flex-col py-4 px-2 w-full h-full rounded-lg">
+      <div className="py-2 px-2 pt-2 border-b shrink-0">
         <div className="flex flex-col justify-center items-center">
-          <h3 className="text-lg font-semibold">
-            <div>{t('cm.header')}</div>
-          </h3>
-          <span className="text-sm italic text-gray-400">{item.component}</span>
+          <h2 className="font-sans text-lg font-semibold">{t('cm.header')}</h2>
+          <p className="font-mono text-sm text-muted-foreground">
+            {t(`symbols.${item.component}`)}
+          </p>
         </div>
-
-        <div className="py-3"></div>
-
-        <Collapsible
-          open={textContentOpen}
-          onOpenChange={setTextContentOpen}
-          className="flex flex-col gap-2"
-        >
-          <CollapsibleTrigger className="flex flex-row gap-x-2 items-center">
-            <span>
-              {textContentOpen ? (
-                <ChevronUp size={16} />
-              ) : (
-                <ChevronDown size={16} />
-              )}
-            </span>
-            <h3 className="font-medium text-md">{t('cm.text')}</h3>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="flex flex-col gap-2 justify-center items-center">
-            {attachedText ? (
-              <div className="flex flex-col gap-2">
-                <div>
-                  <input
-                    className="flex py-2 px-2 w-48 text-sm text-gray-900 bg-white rounded-sm shadow-inner focus:outline-black outline outline-1 outline-offset-1 outline-gray-300 shadow-gray-100 focus:outline-1"
-                    placeholder={t('cm.enter-label')}
-                    value={attachedText?.content ?? ''}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      const value = e.target.value
-
-                      if (!attachedTextProxy) return
-                      attachedTextProxy.content = value
-                    }}
-                    type="text"
-                    ref={inputRef}
-                  />
-                </div>
-                <div className="flex flex-col gap-2 max-w-48">
-                  <h3 className="text-sm font-semibold">{t('cm.color')}</h3>
-                  <div className="flex justify-center px-2">
-                    <CirclePicker
-                      color={attachedText.color}
-                      colors={[
-                        '#000000',
-                        '#FF0000',
-                        '#FFA500',
-                        '#FFFF00',
-                        '#008000',
-                        '#0000FF',
-                        '#800080',
-                        '#808080',
-                      ]}
-                      onChangeComplete={(color) =>
-                        (attachedTextProxy.color = color.hex)
-                      }
-                    />
-                  </div>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <h3 className="text-sm font-semibold">
-                    {t('cm.attributes')}
-                  </h3>
-                  <ToggleGroup
-                    variant="outline"
-                    type="multiple"
-                    size="sm"
-                    value={[...attachedTextProxy.attributes]}
-                    onValueChange={(value) =>
-                      (attachedTextProxy.attributes = [...value])
-                    }
-                  >
-                    <ToggleGroupItem value="bold" aria-label="Toggle bold">
-                      <Bold size={12} />
-                    </ToggleGroupItem>
-                    <ToggleGroupItem value="italic" aria-label="Toggle italic">
-                      <Italic size={12} />
-                    </ToggleGroupItem>
-                    <ToggleGroupItem
-                      value="underline"
-                      aria-label="Toggle italic"
-                    >
-                      <Underline size={12} />
-                    </ToggleGroupItem>
-                  </ToggleGroup>
-                </div>
-              </div>
-            ) : (
-              <>
-                <Select
-                  value={newAttachedText}
-                  onValueChange={setNewAttachedText}
-                >
-                  <SelectTrigger className="w-full max-w-48">
-                    <SelectValue placeholder="Attach text" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectLabel>Texts</SelectLabel>
-                      {diagramSnap.value.texts.map((text) => (
-                        <SelectItem key={text.content} value={text.id}>
-                          {text.content}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-                <Button onClick={handleAttachText}>{t('cm.attach')}</Button>
-              </>
-            )}
-          </CollapsibleContent>
-        </Collapsible>
-
-        <Collapsible
-          open={connectionsContentOpen}
-          onOpenChange={setConnectionsContentOpen}
-          className="flex flex-col gap-2 py-2"
-        >
-          <CollapsibleTrigger className="flex flex-row gap-x-2 items-center">
-            <span>
-              {connectionsContentOpen ? (
-                <ChevronUp size={16} />
-              ) : (
-                <ChevronDown size={16} />
-              )}
-            </span>
-            <h3 className="font-medium text-md">{t('cm.connections')}</h3>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            {connections.length >= 1 ? (
-              <>
-                {connections.map((conn) => (
-                  <ShowConnection
-                    key={conn.id}
-                    connection={conn}
-                    source={item.id}
-                  />
-                ))}
-              </>
-            ) : (
-              <p className="text-sm italic text-center text-gray-400">
-                {t('cm.no-connections')}.
-              </p>
-            )}
-          </CollapsibleContent>
-        </Collapsible>
       </div>
 
-      <div className="absolute bottom-0 py-4 px-4 w-full">
-        <div className="flex flex-row justify-center items-center">
-          <button
-            className="py-2 px-4 w-56 text-white bg-rose-500 rounded-md hover:bg-rose-600"
+      <div className="flex-1 min-h-0">
+        <ScrollArea className="w-full h-full">
+          <div className="py-1 pr-3 pl-2 space-y-2 w-full min-w-0">
+            <Collapsible
+              open={textContentOpen}
+              onOpenChange={setTextContentOpen}
+              className="flex flex-col gap-2"
+            >
+              <CollapsibleTrigger className="flex gap-2 items-center w-full transition-colors text-muted-foreground hover:text-foreground">
+                <h3 className="font-medium">{t('cm.text')}</h3>
+                <ChevronDown
+                  size={16}
+                  className={cn(
+                    'ml-auto shrink-0 transition-transform',
+                    textContentOpen && 'rotate-180',
+                  )}
+                />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="flex flex-col gap-2 justify-center items-center">
+                {attachedText && attachedTextProxy ? (
+                  <div className="flex flex-col gap-2">
+                    <Input
+                      className="dark:border-slate-700"
+                      placeholder={t('cm.enter-label')}
+                      value={attachedTextProxy.content}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                        const value = e.target.value
+
+                        attachedTextProxy.content = value
+                      }}
+                      ref={inputRef}
+                    />
+                    <div className="flex flex-col gap-2">
+                      <p className="text-sm font-semibold text-foreground">
+                        {t('cm.color')}
+                      </p>
+                      <div className="flex justify-center w-full">
+                        <CirclePicker
+                          width="80%"
+                          circleSize={28}
+                          circleSpacing={12}
+                          color={attachedText.color}
+                          colors={[
+                            '#000000',
+                            '#FF0000',
+                            '#FFA500',
+                            '#FFFF00',
+                            '#008000',
+                            '#0000FF',
+                            '#800080',
+                            '#808080',
+                          ]}
+                          onChangeComplete={(color) =>
+                            (attachedTextProxy.color = color.hex)
+                          }
+                        />
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <p className="text-sm font-semibold">
+                        {t('cm.attributes')}
+                      </p>
+                      <ToggleGroup
+                        variant="outline"
+                        type="multiple"
+                        size="sm"
+                        value={[...attachedTextProxy.attributes]}
+                        onValueChange={(value) =>
+                          (attachedTextProxy.attributes = [
+                            ...value,
+                          ] as Attribute[])
+                        }
+                      >
+                        <ToggleGroupItem value="bold" aria-label="Toggle bold">
+                          <Bold size={12} />
+                        </ToggleGroupItem>
+                        <ToggleGroupItem
+                          value="italic"
+                          aria-label="Toggle italic"
+                        >
+                          <Italic size={12} />
+                        </ToggleGroupItem>
+                        <ToggleGroupItem
+                          value="underline"
+                          aria-label="Toggle underline"
+                        >
+                          <Underline size={12} />
+                        </ToggleGroupItem>
+                      </ToggleGroup>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <Select
+                      value={newAttachedText}
+                      onValueChange={setNewAttachedText}
+                    >
+                      <SelectTrigger className="w-full max-w-48">
+                        <SelectValue placeholder="Attach text" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectLabel>Texts</SelectLabel>
+                          {diagramSnap.value.texts.map((text) => (
+                            <SelectItem key={text.id} value={text.id}>
+                              {text.content || t('cm.untitled-text')}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                    <Button onClick={handleAttachText}>{t('cm.attach')}</Button>
+                  </>
+                )}
+              </CollapsibleContent>
+            </Collapsible>
+
+            <Collapsible
+              open={connectionsContentOpen}
+              onOpenChange={setConnectionsContentOpen}
+              className="flex flex-col gap-2 py-2"
+            >
+              <CollapsibleTrigger className="flex gap-2 items-center w-full transition-colors text-muted-foreground hover:text-foreground">
+                <h3 className="text-base font-medium">{t('cm.connections')}</h3>
+                <ChevronDown
+                  size={16}
+                  className={cn(
+                    'ml-auto shrink-0 transition-transform',
+                    connectionsContentOpen && 'rotate-180',
+                  )}
+                />
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                {connections.length >= 1 ? (
+                  <div className="pr-1 space-y-1">
+                    {connections.map((conn) => (
+                      <EditConnection
+                        key={conn.id}
+                        connection={conn}
+                        source={item.id}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm italic text-center text-gray-400">
+                    {t('cm.no-connections')}.
+                  </p>
+                )}
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
+        </ScrollArea>
+      </div>
+
+      <div className="py-2 px-4 border-t shrink-0">
+        <div className="flex justify-center">
+          <Button
+            variant="destructive"
             onClick={() => {
               removeFromStore(itemProxy.id)
               uiState.activeNode = null
               onClose()
             }}
           >
-            <span className="flex gap-x-2 justify-center items-center">
-              <Trash2 size={12} />
-              {t('cm.delete')}
-            </span>
-          </button>
+            <Trash2 size={12} />
+            {t('cm.delete')}
+          </Button>
         </div>
       </div>
     </div>
