@@ -1,53 +1,80 @@
 import {
-    SYMBOL_MAP,
-    SymbolComponent,
+  SYMBOL_MAP,
+  SymbolComponent,
 } from '@/features/diagram-drawer/constants/SymbolMap'
-import { uiState } from '@/features/diagram-drawer/store/models'
+import { uiState } from '@/features/diagram-drawer/store/ui-state'
+
 import type { Item } from '@/features/diagram-drawer/types'
 import Konva from 'konva'
 import { useRef } from 'react'
 import { Group, Rect } from 'react-konva'
+import { useSnapshot } from 'valtio'
+import { canvasSettings } from '@/features/diagram-drawer/store/canvas-settings'
 
 export const ItemNode = ({ item }: { item: Item }) => {
-    const groupRef = useRef<Konva.Group>(null)
+  const canvasSettingsSnap = useSnapshot(canvasSettings)
+  const uiSnap = useSnapshot(uiState)
 
-    const isDragging =
-        uiState.interaction === 'dragging-item' &&
-        uiState.activeNode?.id === item.id
+  const groupRef = useRef<Konva.Group>(null)
 
-    const Symbol: SymbolComponent = SYMBOL_MAP[item.component]
+  const isDragging =
+    uiState.interaction === 'dragging-item' &&
+    uiState.activeNode?.id === item.id
 
-    return (
-        <Group
-            ref={groupRef}
-            id={item.id}
-            name="item"
-            x={item.x}
-            y={item.y}
-            opacity={isDragging ? 0.3 : 1}
-            onContextMenu={(e) => {
-                e.evt.preventDefault()
-            }}
-            onMouseEnter={(e) => {
-                const container = e.target.getStage()?.container()
-                if (!container) return
+  const Symbol: SymbolComponent = SYMBOL_MAP[item.component]
 
-                container.style.cursor = 'grab'
-            }}
-            onMouseLeave={(e) => {
-                const container = e.target.getStage()?.container()
-                if (!container) return
+  const showShadow =
+    isDragging && canvasSettingsSnap.snapToGrid && uiSnap.gridSnapPreview
 
-                container.style.cursor = 'default'
-            }}
-        >
-            <Symbol item={item} />
-            <Rect
-                id={item.id}
-                width={item.width}
-                height={item.height}
-                fill="transparent"
-            />
-        </Group>
-    )
+  return (
+    <Group>
+      <Group
+        ref={groupRef}
+        id={item.id}
+        name="item"
+        x={item.x}
+        y={item.y}
+        onContextMenu={(e) => {
+          e.evt.preventDefault()
+        }}
+        onMouseEnter={(e) => {
+          const container = e.target.getStage()?.container()
+          if (!container) return
+
+          container.style.cursor = 'grab'
+        }}
+        onMouseLeave={(e) => {
+          const container = e.target.getStage()?.container()
+          if (!container) return
+
+          container.style.cursor = 'default'
+        }}
+      >
+        <Symbol item={item} />
+
+        {/* Hitbox for non-rectangle symbols */}
+        <Rect
+          id={item.id}
+          width={item.width}
+          height={item.height}
+          fill="transparent"
+        />
+      </Group>
+
+      {showShadow && (
+        <Rect
+          id={`${item.id}-shadow`}
+          width={item.width}
+          height={item.height}
+          x={uiSnap.gridSnapPreview.x}
+          y={uiSnap.gridSnapPreview.y}
+          opacity={0.4}
+          stroke="#404040"
+          strokeWidth={2}
+          dash={[20, 2]}
+          fill="#202020"
+        />
+      )}
+    </Group>
+  )
 }
