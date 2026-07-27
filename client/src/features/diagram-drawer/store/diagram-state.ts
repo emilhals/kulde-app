@@ -7,4 +7,6 @@ const initialDiagramState = {
   texts: [] as Text[],
 }
 
-export const diagramHistory = proxyWithHistory(initialDiagramState)
+export const diagramHistory = proxyWithHistory(initialDiagramState, {
+  skipSubscribe: true,
+})
