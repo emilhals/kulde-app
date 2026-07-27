@@ -1,67 +1,73 @@
 import { Item, ItemPreview } from '@/features/diagram-drawer/types'
 import { Circle, Group, Path, Rect } from 'react-konva'
 
-const HeatExchanger = ({ item }: { item: Item | ItemPreview }) => {
-    const centerX = item.width / 2
-    const centerY = item.height / 2
+const HeatExchanger = ({
+  item,
+  strokeColor,
+}: {
+  item: Item | ItemPreview
+  strokeColor: string
+}) => {
+  const centerX = item.width / 2
+  const centerY = item.height / 2
 
-    const radius = Math.max(item.height, item.width) / 4
+  const radius = Math.max(item.height, item.width) / 4
 
-    const numBlades = 6
-    const bladeRadius = radius * 0.9
+  const numBlades = 6
+  const bladeRadius = radius * 0.9
 
-    const createFanBlades = () => {
-        const blades = []
+  const createFanBlades = () => {
+    const blades = []
 
-        for (let i = 0; i < numBlades; i++) {
-            const angle = (360 / numBlades) * i
-            const bladeLength = bladeRadius * 0.9
+    for (let i = 0; i < numBlades; i++) {
+      const angle = (360 / numBlades) * i
+      const bladeLength = bladeRadius * 0.9
 
-            const pathData = `M 0,0 Q ${bladeLength * 0.6},${-bladeLength * 0.4} ${bladeLength},0 Q ${bladeLength * 0.1},${bladeLength * 0.2} 0,0`
+      const pathData = `M 0,0 Q ${bladeLength * 0.6},${-bladeLength * 0.4} ${bladeLength},0 Q ${bladeLength * 0.1},${bladeLength * 0.2} 0,0`
 
-            blades.push(
-                <Path
-                    key={i}
-                    data={pathData}
-                    stroke="black"
-                    strokeWidth={2}
-                    rotation={angle}
-                    opacity={1}
-                />,
-            )
-        }
-
-        return blades
+      blades.push(
+        <Path
+          key={i}
+          data={pathData}
+          stroke={strokeColor}
+          strokeWidth={2}
+          rotation={angle}
+          opacity={1}
+        />,
+      )
     }
 
-    const itemId = 'id' in item ? item.id : ''
+    return blades
+  }
 
-    return (
-        <Group id={itemId}>
-            <Rect
-                name="object"
-                y={0}
-                x={0}
-                width={item.width}
-                height={item.height}
-                stroke="black"
-                strokeWidth={2}
-            />
+  const itemId = 'id' in item ? item.id : ''
 
-            <Circle
-                name="object"
-                x={centerX}
-                y={centerY}
-                radius={radius}
-                stroke="black"
-                strokeWidth={2}
-            />
+  return (
+    <Group id={itemId}>
+      <Rect
+        name="object"
+        y={0}
+        x={0}
+        width={item.width}
+        height={item.height}
+        stroke={strokeColor}
+        strokeWidth={2}
+      />
 
-            <Group x={centerX} y={centerY}>
-                {createFanBlades()}
-            </Group>
-        </Group>
-    )
+      <Circle
+        name="object"
+        x={centerX}
+        y={centerY}
+        radius={radius}
+        stroke={strokeColor}
+        strokeWidth={2}
+      />
+
+      <Group x={centerX} y={centerY}>
+        {createFanBlades()}
+      </Group>
+    </Group>
+  )
 }
 
 export default HeatExchanger

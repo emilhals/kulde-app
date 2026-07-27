@@ -4,18 +4,25 @@ import {
 } from '@/features/diagram-drawer/constants/SymbolMap'
 import { uiState } from '@/features/diagram-drawer/store/ui-state'
 
+import { canvasSettings } from '@/features/diagram-drawer/store/canvas-settings'
 import type { Item } from '@/features/diagram-drawer/types'
 import Konva from 'konva'
 import { useRef } from 'react'
 import { Group, Rect } from 'react-konva'
 import { useSnapshot } from 'valtio'
-import { canvasSettings } from '@/features/diagram-drawer/store/canvas-settings'
+import { CANVAS_COLORS } from '../constants/canvas'
+import { useCanvasTheme } from '../hooks/useCanvasTheme'
 
 export const ItemNode = ({ item }: { item: Item }) => {
   const canvasSettingsSnap = useSnapshot(canvasSettings)
   const uiSnap = useSnapshot(uiState)
 
+  const canvasTheme = useCanvasTheme()
+
   const groupRef = useRef<Konva.Group>(null)
+
+  console.log(canvasTheme)
+  const colors = CANVAS_COLORS[canvasTheme]
 
   const isDragging =
     uiState.interaction === 'dragging-item' &&
@@ -50,7 +57,11 @@ export const ItemNode = ({ item }: { item: Item }) => {
           container.style.cursor = 'default'
         }}
       >
-        <Symbol item={item} />
+        <Symbol
+          item={item}
+          strokeColor={colors.foreground}
+          fillColor={colors.background}
+        />
 
         {/* Hitbox for non-rectangle symbols */}
         <Rect

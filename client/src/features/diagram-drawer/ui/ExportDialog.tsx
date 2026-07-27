@@ -1,4 +1,3 @@
-import { ExportBackground } from '@/features/diagram-drawer/types'
 import { cn } from '@/lib/utils'
 import { Button } from '@/shared/ui/button'
 import {
@@ -21,6 +20,8 @@ import { ToggleGroup, ToggleGroupItem } from '@/shared/ui/toggle-group'
 import { Download } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { canvasSettings } from '../store/canvas-settings'
+import { ExportBackground } from '../types'
 
 // Function from https://stackoverflow.com/a/15832662/512042
 const downloadURI = (uri: string, name: string) => {
@@ -45,20 +46,23 @@ const getFormattedDateTime = () => {
   return `${hours}-${minutes}-${day}-${month}-${year}`
 }
 
+type ExportDialogProps = {
+  canvasPreviewURL: string
+  background: ExportBackground
+  onBackgroundChange: (value: ExportBackground) => void
+}
+
 export const ExportDialog = ({
   canvasPreviewURL,
-  updateCanvasPreview,
-}: {
-  canvasPreviewURL: string
-  updateCanvasPreview: (background: ExportBackground) => void
-}) => {
+  background,
+  onBackgroundChange,
+}: ExportDialogProps) => {
   const { t } = useTranslation('translation', { keyPrefix: 'export-dialog' })
 
   const cancelButtonRef = useRef<HTMLButtonElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
 
   const [fileName, setFileName] = useState<string>(getFormattedDateTime)
-  const [background, setBackground] = useState<ExportBackground>('transparent')
 
   const handleExport = () => {
     const trimmedFileName = fileName.trim() || getFormattedDateTime()
@@ -67,22 +71,15 @@ export const ExportDialog = ({
   }
 
   const handleBackgroundChange = (value: ExportBackground) => {
-    if (!value) return
-
-    setBackground(value)
-    updateCanvasPreview(value)
+    canvasSettings.exportBackground = value
+    onBackgroundChange(value)
   }
 
   return (
     <Dialog>
       <form>
         <DialogTrigger asChild>
-          <Button
-            onClick={() => {
-              updateCanvasPreview(background)
-            }}
-            variant="outline"
-          >
+          <Button variant="outline">
             <Download />
             {t('export')}
           </Button>
@@ -119,7 +116,7 @@ export const ExportDialog = ({
 
           <FieldGroup>
             <Field>
-              <FieldLabel>Bakgrunn</FieldLabel>
+              <FieldLabel>{t('background')}</FieldLabel>
               <ToggleGroup
                 type="single"
                 value={background}
@@ -171,6 +168,7 @@ export const ExportDialog = ({
               </InputGroup>
             </Field>
           </FieldGroup>
+
           <DialogFooter>
             <DialogClose asChild>
               <Button ref={cancelButtonRef} variant="ghost">
