@@ -6,6 +6,7 @@
   "editor.insertSpaces": false,
   "objectWrap": "collapse",
   "plugins": [
-    "prettier-plugin-imports"
+    "prettier-plugin-imports",
+    "prettier-plugin-tailwindcss"
   ]
 }
