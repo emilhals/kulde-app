@@ -1,13 +1,10 @@
-import { Snowflake } from 'lucide-react'
-import { useRef, useState } from 'react'
-import type { Dispatch, SetStateAction } from 'react'
-import { NavLink } from 'react-router'
-import { motion } from 'motion/react'
 import { cn } from '@/lib/utils'
-import { useTheme } from '@/shared/contexts/theme-provider'
-import { Moon, Sun } from 'lucide-react'
-import { Button } from './ui/button'
+import { Snowflake } from 'lucide-react'
+import { motion } from 'motion/react'
+import type { Dispatch, SetStateAction } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { NavLink } from 'react-router'
 
 type Position = { left: number; width: number; opacity: number }
 type TabProps = {
@@ -25,13 +22,12 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     'after:invisible after:content-[attr(data-label)]',
     isActive
       ? cn(
-        'bg-white font-semibold text-zinc-900 dark:text-neutral-100 shadow-sm dark:bg-neutral-900 dark:text-neutral-100 dark:shadow-none',
-      )
-      : cn('text-zinc-500 dark:text-neutral-400'),
+          'bg-white font-semibold text-zinc-900 dark:text-slate-100 shadow-sm dark:bg-slate-900 dark:text-neutral-100 dark:shadow-none',
+        )
+      : cn('text-zinc-500 dark:text-slate-400'),
   )
 
 export const Navigation = () => {
-  const { theme, setTheme } = useTheme()
   const { t } = useTranslation('translation', { keyPrefix: 'navbar' })
 
   const links = [
@@ -46,20 +42,20 @@ export const Navigation = () => {
   })
 
   return (
-    <header className="grid grid-cols-3 items-center w-full h-16">
+    <header className="grid h-16 w-full grid-cols-3 items-center">
       <span
         aria-hidden="true"
-        className="justify-self-start px-8 text-zinc-500 dark:text-neutral-500"
+        className="justify-self-start px-8 text-zinc-500 dark:text-slate-500"
       >
         <Snowflake />
       </span>
 
-      <nav className="justify-self-center h-10 text-sm rounded-full bg-zinc-100 dark:bg-neutral-800/80">
+      <nav className="h-10 justify-self-center rounded-full bg-zinc-100 text-sm dark:bg-slate-800">
         <ul
           onMouseLeave={() => {
             setPosition((prev) => ({ ...prev, opacity: 0 }))
           }}
-          className="flex relative p-1 mx-auto rounded-full cursor-pointer w-fit focus-outline-0"
+          className="focus-outline-0 relative mx-auto flex w-fit cursor-pointer rounded-full p-1"
         >
           {links.map((link) => (
             <Tab
@@ -72,23 +68,6 @@ export const Navigation = () => {
           <Cursor position={position} />
         </ul>
       </nav>
-
-      <div className="justify-self-end px-8">
-        <Button
-          size="icon"
-          variant="ghost"
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          aria-label={
-            theme === 'dark' ? t('switch-to-light') : t('switch-to-dark')
-          }
-        >
-          {theme === 'dark' ? (
-            <Sun aria-hidden="true" />
-          ) : (
-            <Moon aria-hidden="true" />
-          )}
-        </Button>
-      </div>
     </header>
   )
 }
@@ -107,7 +86,7 @@ const Tab = ({ to, label, setPosition }: TabProps) => {
     <li
       ref={liRef}
       onMouseEnter={updatePosition}
-      className="block relative z-10"
+      className="relative z-10 block"
     >
       <NavLink to={to} data-label={label} className={navLinkClass}>
         <span className="col-start-1 row-start-1">{label}</span>
@@ -120,7 +99,7 @@ const Cursor = ({ position }: { position: Position }) => {
   return (
     <motion.div
       animate={{ ...position }}
-      className="absolute z-0 h-8 rounded-full shadow-inner bg-zinc-200 dark:bg-neutral-700"
+      className="absolute z-0 h-8 rounded-full bg-zinc-200 shadow-inner dark:bg-slate-700"
       aria-hidden="true"
     />
   )
