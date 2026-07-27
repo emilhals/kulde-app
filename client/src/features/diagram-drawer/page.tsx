@@ -1,43 +1,46 @@
+import { Connection } from '@/features/diagram-drawer/canvas/Connection'
 import { Connector } from '@/features/diagram-drawer/canvas/Connector'
 import { ItemNode } from '@/features/diagram-drawer/canvas/ItemNode'
-import { Connection } from '@/features/diagram-drawer/canvas/Connection'
 import { Selection } from '@/features/diagram-drawer/canvas/Selection'
 import { TextNode } from '@/features/diagram-drawer/canvas/TextNode'
 import { useConnectionPreview } from '@/features/diagram-drawer/hooks/useConnectionPreview'
-import { useCustomFont } from '@/shared/hooks/useCustomFont'
-import { useSnapToItem } from '@/features/diagram-drawer/hooks/useSnapToItem'
-import { getAnyFromStore } from '@/features/diagram-drawer/store/actions'
 import { diagramHistory } from '@/features/diagram-drawer/store/diagram-state'
 import { uiState } from '@/features/diagram-drawer/store/ui-state'
+import { useCustomFont } from '@/shared/hooks/useCustomFont'
 
 import { canvasSettings } from '@/features/diagram-drawer/store/canvas-settings'
 
+import { CANVAS_COLORS } from '@/features/diagram-drawer/constants/canvas'
 import type {
   ConnectionData,
+  ExportBackground,
   Point,
-  Rect,
 } from '@/features/diagram-drawer/types'
 import { ComponentPanel } from '@/features/diagram-drawer/ui/ComponentPanel'
 import ContextMenu from '@/features/diagram-drawer/ui/ContextMenu'
-import { intersected } from '@/features/diagram-drawer/utils/konva'
+import { ResolvedTheme, useTheme } from '@/shared/contexts/theme-provider'
+import { useResponsiveStage } from '@/shared/hooks/useResponsiveStage'
 import Konva from 'konva'
 import { KonvaPointerEvent } from 'konva/lib/PointerEvents'
 import { useRef, useState } from 'react'
-import { Group, Layer, Stage, Transformer } from 'react-konva'
-import { useSnapshot } from 'valtio'
-import { UndoRedo } from './ui/UndoRedo'
-import { useTheme } from '@/shared/contexts/theme-provider'
-import { CanvasMenu } from './ui/CanvasMenu'
-import { useResponsiveStage } from '@/shared/hooks/useResponsiveStage'
-import { useCanvasDrop } from './hooks/useCanvasDrop'
 import {
-  CANVAS_COLORS,
-  DRAG_THRESHOLD,
-} from '@/features/diagram-drawer/constants/canvas'
+  Group,
+  Rect as KonvaRect,
+  Layer,
+  Stage,
+  Transformer,
+} from 'react-konva'
+import { useSnapshot } from 'valtio'
+import { useCanvasDrop } from './hooks/useCanvasDrop'
 import { useCanvasKeyboard } from './hooks/useCanvasKeyboard'
+import { useCanvasPointer } from './hooks/useCanvasPointer'
 import { useGridLayer } from './hooks/useGridLayer'
 import { useSnapToGrid } from './hooks/useSnapToGrid'
-import { ExportButton } from './ui/ExportButton'
+import { useSnapToItem } from './hooks/useSnapToItem'
+import { CanvasMenu } from './ui/CanvasMenu'
+import { ExportDialog } from './ui/ExportDialog'
+import { ShortcutsDialog } from './ui/ShortcutsDialog'
+import { UndoRedo } from './ui/UndoRedo'
 
 export const DiagramPage = () => {
   const { resolvedTheme } = useTheme()
@@ -50,28 +53,39 @@ export const DiagramPage = () => {
   const selectionRef = useRef<Konva.Transformer>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const gridLayer = useRef<Konva.Layer>(null)
+  const backgroundRef = useRef<Konva.Rect>(null)
+  const connectorLayerRef = useRef<Konva.Layer>(null)
 
-  const [,] = useCustomFont('Inter')
-
+  const [canvasPreviewURL, setCanvasPreviewUrl] = useState('')
   const [contextMenuPosition, setContextMenuPosition] = useState<Point | null>(
     null,
   )
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false)
 
-  console.log(resolvedTheme)
   const colors = CANVAS_COLORS[resolvedTheme]
+
+  const [,] = useCustomFont('Inter')
 
   const stage = useResponsiveStage(containerRef)
   const { handleDrop } = useCanvasDrop(stageRef, containerRef)
   const { isPanning, isSnapping, handleKeyUp, handleKeyDown } =
-    useCanvasKeyboard(stageRef)
+    useCanvasKeyboard()
   const { applyItemSnap, resetItemSnap } = useSnapToItem(
     isSnapping,
     colors.guide,
   )
   const { previewGridSnap, applyGridSnap } = useSnapToGrid(isSnapping)
+  const { handlePointerDown, handlePointerMove, handlePointerUp } =
+    useCanvasPointer({
+      previewGridSnap,
+      applyGridSnap,
+      applyItemSnap,
+      resetItemSnap,
+    })
 
   const { connectionPreview, updatePreview, clearPreview } =
     useConnectionPreview()
+
   useGridLayer(
     stage,
     gridLayer,
@@ -79,6 +93,32 @@ export const DiagramPage = () => {
     colors.grid,
     isPanning,
   )
+
+  const updateCanvasPreview = (color: ExportBackground) => {
+    const stage = stageRef.current
+    const background = backgroundRef.current
+    if (!stage || !background) return
+
+    gridLayer.current?.hide()
+    connectorLayerRef.current?.hide()
+
+    if (color !== 'transparent') {
+      const backgroundColor = CANVAS_COLORS[color as ResolvedTheme].background
+
+      background.fill(backgroundColor)
+    }
+
+    const activeNode = uiState.activeNode
+    uiState.activeNode = null
+
+    const url = stage.toDataURL({ pixelRatio: 2 })
+    setCanvasPreviewUrl(url)
+
+    uiState.activeNode = activeNode
+    background.fill('')
+    gridLayer.current?.show()
+    connectorLayerRef.current?.show()
+  }
 
   const handleContextMenu = (e: KonvaPointerEvent) => {
     e.evt.preventDefault()
@@ -101,176 +141,39 @@ export const DiagramPage = () => {
     e.cancelBubble = true
   }
 
-  const handlePointerDown = (e: Konva.KonvaEventObject<PointerEvent>) => {
-    const stage = e.target.getStage()
+  const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
+    e.evt.preventDefault()
+
+    const scaleBy = 1.05
+
+    const stage = stageRef.current
     if (!stage) return
 
-    if (e.target === stage) {
-      setContextMenuPosition(null)
-    }
-    const pointer = stage.getRelativePointerPosition()
+    const oldScale = stage.scaleX()
+    const pointer = stage.getPointerPosition()
     if (!pointer) return
 
-    const itemNode = e.target.findAncestor('.item')
-
-    const node = getAnyFromStore(e.target.id())
-    if (node && node.type === 'connections') {
-      uiState.activeNode = { id: node.id, type: 'connection' }
+    const mousePointTo = {
+      x: (pointer.x - stage.x()) / oldScale,
+      y: (pointer.y - stage.y()) / oldScale,
     }
 
-    if (itemNode) {
-      if (!uiState.selectedIds.includes(itemNode.id())) {
-        uiState.activeNode = { id: itemNode.id(), type: 'item' }
-        uiState.selectedIds = [itemNode.id()]
-      }
-
-      const item = diagramHistory.value.items.find(
-        (i) => i.id === itemNode.id(),
-      )
-      if (!item) return
-
-      uiState.interaction = 'pending-drag'
-      uiState.dragOffset = { x: pointer.x - item.x, y: pointer.y - item.y }
-      uiState.selectedIds.forEach((id) => {
-        const item = diagramHistory.value.items.find((i) => i.id === id)
-        if (!item) return
-
-        uiState.dragStartPositions[id] = { x: item.x, y: item.y }
-      })
-    } else {
-      uiState.activeNode = null
-      uiState.selectedIds = []
-      uiState.interaction = 'pending-select'
+    let direction = e.evt.deltaY > 0 ? -1 : 1
+    if (e.evt.ctrlKey) {
+      direction = -direction
     }
 
-    uiState.pointerDown = true
-    uiState.pointerStart = pointer
-    uiState.selectionBox = { start: pointer, end: pointer }
-  }
+    let newScale = direction > 0 ? oldScale * scaleBy : oldScale / scaleBy
+    newScale = Math.max(0.1, Math.min(10, newScale))
 
-  const handlePointerMove = (e: Konva.KonvaEventObject<PointerEvent>) => {
-    if (!uiState.pointerDown) return
-
-    if (
-      uiState.interaction === 'connecting' ||
-      uiState.interaction === 'pending-connect'
-    )
-      return
-
-    const pointer = stageRef.current?.getRelativePointerPosition()
-    if (!pointer) return
-
-    const dx = pointer.x - uiState.pointerStart.x
-    const dy = pointer.y - uiState.pointerStart.y
-
-    const distance = Math.sqrt(dx * dx + dy * dy)
-
-    if (uiState.interaction === 'pending-drag' && distance > DRAG_THRESHOLD) {
-      uiState.interaction = 'dragging-item'
-    } else if (
-      distance > DRAG_THRESHOLD &&
-      uiState.interaction === 'pending-select'
-    ) {
-      uiState.interaction = 'selecting'
-    }
-
-    const activeNode = uiState.activeNode
-    if (uiState.interaction === 'dragging-item') {
-      if (activeNode && uiState.selectedIds.length <= 1) {
-        const itemProxy = diagramHistory.value.items.find(
-          (i) => i.id === activeNode.id,
-        )
-        if (itemProxy) {
-          const stage = e.target.getStage()
-          if (!stage) return
-
-          const newPosition = {
-            x: pointer.x - uiSnap.dragOffset.x,
-            y: pointer.y - uiSnap.dragOffset.y,
-          }
-
-          previewGridSnap(newPosition)
-          applyItemSnap(stage, itemProxy)
-
-          itemProxy.x = newPosition.x
-          itemProxy.y = newPosition.y
-        }
-      }
-
-      if (uiState.selectedIds.length > 1) {
-        uiState.activeNode = null
-        diagramHistory.value.items.forEach((item) => {
-          if (!(item.id in uiState.dragStartPositions)) return
-
-          const start = uiState.dragStartPositions[item.id]
-
-          item.x = start.x + dx
-          item.y = start.y + dy
-        })
-      }
-    }
-
-    if (uiState.interaction === 'selecting') {
-      const selectionBox = uiState.selectionBox
-      if (!selectionBox) return
-
-      selectionBox.end = pointer
-      const selectionRect: Rect = {
-        left: Math.min(selectionBox.start.x, selectionBox.end.x),
-        right: Math.max(selectionBox.start.x, selectionBox.end.x),
-        top: Math.min(selectionBox.start.y, selectionBox.end.y),
-        bottom: Math.max(selectionBox.start.y, selectionBox.end.y),
-      }
-
-      const items = stageRef.current?.find('.item')
-      if (!items) return
-
-      const intersectedItems = diagramHistory.value.items
-        .filter((item) =>
-          intersected(selectionRect, {
-            left: item.x,
-            right: item.x + item.width,
-            top: item.y,
-            bottom: item.y + item.height,
-          }),
-        )
-        .map((item) => item.id)
-
-      if (intersectedItems.length === 1) {
-        uiState.activeNode = { id: items[0].id(), type: 'item' }
-      } else {
-        uiState.selectedIds = intersectedItems
-      }
-    }
-  }
-
-  const handlePointerUp = () => {
-    uiState.pointerDown = false
-    uiState.dragStartPositions = {}
-    uiState.selectionBox = null
-    uiState.interaction = 'pending-select'
-
-    resetItemSnap()
-
-    if (canvasSettings.snapToGrid) {
-      const activeNode = uiState.activeNode
-      if (!activeNode) return
-
-      const itemProxy = diagramHistory.value.items.find(
-        (i) => i.id === activeNode.id,
-      )
-      if (!itemProxy) return
-
-      console.log('Heeelo')
-      applyGridSnap(itemProxy)
-    }
-
-    diagramHistory.saveHistory()
+    canvasSettings.stageView.scale = newScale
+    canvasSettings.stageView.x = pointer.x - mousePointTo.x * newScale
+    canvasSettings.stageView.y = pointer.y - mousePointTo.y * newScale
   }
 
   return (
     <div
-      className="flex gap-2 py-2 px-2 w-full h-full min-h-0"
+      className="flex h-full min-h-0 w-full gap-2 px-2 py-2"
       onAuxClick={(e) => {
         if (e.button === 1) {
           e.preventDefault()
@@ -291,28 +194,49 @@ export const DiagramPage = () => {
         onKeyDown={handleKeyDown}
         onKeyUp={handleKeyUp}
       >
-        <div className="absolute top-6 left-6 z-50">
+        <div className="absolute left-6 top-6 z-50">
           <UndoRedo />
         </div>
 
-        <div className="flex absolute top-6 right-6 z-50 gap-3 items-center">
-          <ExportButton />
-          <CanvasMenu />
+        <div className="absolute right-6 top-6 z-50 flex items-center gap-3">
+          <ExportDialog
+            canvasPreviewURL={canvasPreviewURL}
+            updateCanvasPreview={updateCanvasPreview}
+          />
+          <CanvasMenu onOpenShortcuts={() => setIsShortcutsOpen(true)} />
         </div>
+
+        <ShortcutsDialog
+          isOpen={isShortcutsOpen}
+          onOpenChange={setIsShortcutsOpen}
+        />
 
         {stage && (
           <Stage
             ref={stageRef}
             width={stage.width}
             height={stage.height}
-            scaleX={stage.scale}
-            scaleY={stage.scale}
+            x={canvasSettingsSnap.stageView.x}
+            y={canvasSettingsSnap.stageView.y}
+            scaleX={canvasSettingsSnap.stageView.scale}
+            scaleY={canvasSettingsSnap.stageView.scale}
             onContextMenu={handleContextMenu}
+            onWheel={handleWheel}
             draggable={isPanning}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
           >
+            <Layer>
+              <KonvaRect
+                ref={backgroundRef}
+                width={stage.width}
+                height={stage.height}
+                x={canvasSettingsSnap.stageView.x}
+                y={canvasSettingsSnap.stageView.y}
+                listening={false}
+              />
+            </Layer>
             <Layer ref={gridLayer}></Layer>
             <Layer>
               <Group>
@@ -343,7 +267,7 @@ export const DiagramPage = () => {
               </Group>
             </Layer>
 
-            <Layer>
+            <Layer ref={connectorLayerRef}>
               <Connector
                 stageRef={stageRef}
                 updatePreview={updatePreview}
