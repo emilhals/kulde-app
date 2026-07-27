@@ -1,12 +1,11 @@
 {
   "navbar": {
     "simulator": "Simulator",
-    "diagram-drawer": "Diagram Drawer"
+    "diagram-drawer": "Diagram Drawer",
+    "switch-to-light": "Switch to light mode",
+    "switch-to-dark": "Switch to dark mode"
   },
-  "routes": {
-    "simulator": "simulator",
-    "diagram-drawer": "diagram-drawer"
-  },
+  "routes": { "simulator": "simulator", "diagram-drawer": "diagram-drawer" },
   "cm": {
     "header": "Properties",
     "text": "Attached text",
@@ -15,26 +14,107 @@
     "attach": "Attach",
     "connections": "Connections",
     "no-connections": "No connections",
-    "delete": "Delete",
-    "enter-label": "Enter label"
+    "delete": "Delete component",
+    "delete-connection": "Delete connection",
+    "enter-label": "Enter label",
+    "arrowheads": "Arrowheads",
+    "arrow-none": "No arrowheads",
+    "arrow-start": "Arrowhead at start",
+    "arrow-end": "Arrowhead at end",
+    "arrow-both": "Arrowheads at both ends",
+    "connection-label": "Connection label",
+    "connection-label-placeholder": "Enter a label",
+    "connection-label-description": "Text displayed on the connection"
   },
   "symbols": {
-    "Compressor": "Compressor",
-    "Condensor": "Condensor",
-    "Evaporator": "Evaporator",
-    "Heat Exchanger": "Heat Exchanger",
-    "Thermostatic Expansion Valve": "Termostatisk ekspansjonsventil",
-    "Oil Separator": "Oil Seperator",
-    "Receiver": "Receiver",
-    "Liquid Filter": "Liquid Filter",
-    "Sight Glass": "Sight Glass",
-    "Solenoid valve": "Solenoid Valve"
+    "compressor": "Compressor",
+    "condensor": "Condensor",
+    "evaporator": "Evaporator",
+    "heatexchanger": "Heat Exchanger",
+    "tev": "Thermostatic expansion valve",
+    "oilseparator": "Oil Seperator",
+    "receiver": "Receiver",
+    "liquidfilter": "Liquid Filter",
+    "sightglass": "Sight Glass",
+    "solenoidvalve": "Solenoid Valve"
   },
   "diagram-drawer": {
-    "export": "Export"
+    "export": "Export",
+    "add": "Add",
+    "enter-text": "Enter text"
   },
   "simulator": {
     "connecting": "Connecting to simulator server.",
-    "no-connection": "Failed to connect to simulator server."
+    "no-connection": "Failed to connect to simulator server.",
+    "start-simulation": "Start simulation",
+    "stop-simulation": "Stop simulation",
+    "restart-simulation": "Restart simulation",
+    "change-speed": "Change simulation speed"
+  },
+  "menu": {
+    "view": "View",
+    "component-panel": "Component panel",
+    "grid": "Grid",
+    "snap-to-grid": "Snap to grid",
+    "preferences": "Preferences",
+    "theme": "Theme",
+    "appearance": "Appearance",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "language": "Language",
+    "select-language": "Select language",
+    "keyboard-shortcuts": "Keyboard shortcuts",
+    "reset-view": "Reset view"
+  },
+  "export-dialog": {
+    "export-diagram": "Export diagram",
+    "cancel": "Cancel",
+    "export": "Export",
+    "save-as": "Save as",
+    "no-preview": "No preview",
+    "background": "Background",
+    "transparent": "Transparent",
+    "light": "Light",
+    "dark": "Dark",
+    "current": "Current",
+    "diagram-color": "Diagram color"
+  },
+  "keyboard-shortcuts": {
+    "title": "Keyboard shortcuts",
+    "description": "Use these shortcuts to work faster in the diagram editor.",
+    "categories": {
+      "general": "General",
+      "selection": "Selection",
+      "movement": "Movement",
+      "view": "View"
+    },
+    "actions": {
+      "pan-canvas": "Pan around the canvas",
+      "cancel-current-action": "Cancel the current action",
+      "delete-selected-items": "Delete selected items",
+      "move-selected-item": "Move selected item",
+      "temporarily-enable-snapping": "Temporarily enable snapping",
+      "open-keyboard-shortcuts": "Open keyboard shortcuts",
+      "toggle-grid": "Toggle grid",
+      "zoom-canvas": "Zoom in or out",
+      "toggle-snap-to-grid": "Toggle snap to grid",
+      "reset-view": "Reset view",
+      "fit-diagram-to-view": "Fit diagram to view",
+      "toggle-component-panel": "Toggle component panel"
+    },
+    "keys": {
+      "space": "Space",
+      "escape": "Escape",
+      "backspace": "Backspace",
+      "shift": "Shift",
+      "arrow": "Arrow",
+      "question-mark": "Question mark",
+      "g": "G",
+      "shift-g": "Shift + G",
+      "zero": "0",
+      "f": "F",
+      "p": "P"
+    }
   }
 }

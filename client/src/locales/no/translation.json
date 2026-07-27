@@ -1,12 +1,11 @@
 {
   "navbar": {
     "simulator": "Simulator",
-    "diagram-drawer": "Rørskjema-tegner"
+    "diagram-drawer": "Rørskjema-tegner",
+    "switch-to-light": "Bytt til lyst tema",
+    "switch-to-dark": "Bytt til mørkt tema"
   },
-  "routes": {
-    "simulator": "simulator",
-    "diagram-drawer": "rørskjema-tegner"
-  },
+  "routes": { "simulator": "simulator", "diagram-drawer": "rørskjema-tegner" },
   "cm": {
     "header": "Egenskaper",
     "text": "Tilhørende tekst",
@@ -15,26 +14,110 @@
     "attach": "Legg til",
     "connections": "Koblinger",
     "no-connections": "Ingen koblinger",
-    "delete": "Slett",
-    "enter-label": "Skriv inn tekst"
+    "delete": "Slett komponent",
+    "delete-connection": "Slett kobling",
+    "enter-label": "Skriv inn tekst",
+    "arrowheads": "Pilspisser",
+    "arrow-none": "Ingen pilspisser",
+    "arrow-start": "Pilspiss i starten",
+    "arrow-end": "Pilspiss på slutten",
+    "arrow-both": "Pilspisser i begge ender",
+    "connection-label": "Koblingstekst",
+    "connection-label-placeholder": "Skriv inn tekst",
+    "connection-label-description": "Tekst som vises på koblingen"
   },
   "symbols": {
-    "Compressor": "Kompressor",
-    "Condensor": "Kondensator",
-    "Evaporator": "Fordamper",
-    "Heat Exchanger": "Varmeveksler",
-    "Thermostatic Expansion Valve": "Termostatisk ekspansjonsventil",
-    "Oil Separator": "Oljeutskiller",
-    "Receiver": "",
-    "Liquid Filter": "Væskefilter",
-    "Sight Glass": "Seglass",
-    "Solenoid valve": "Magnetventil"
+    "compressor": "Kompressor",
+    "condensor": "Kondensator",
+    "evaporator": "Fordamper",
+    "heatexchanger": "Varmeveksler",
+    "tev": "Termostatisk ekspansjonsventil",
+    "oilseparator": "Oljeutskiller",
+    "receiver": "",
+    "liquidfilter": "Væskefilter",
+    "sightglass": "Seglass",
+    "solenoidvalve": "Magnetventil"
   },
   "diagram-drawer": {
-    "export": "Eksporter"
+    "export": "Eksporter",
+    "add": "Legg til",
+    "enter-text": "Skriv inn tekst"
   },
   "simulator": {
     "connecting": "Kobler til simulator serveren.",
-    "no-connection": "Klarte ikke å koble til simulator serveren."
+    "no-connection": "Klarte ikke å koble til simulator serveren.",
+    "start-simulation": "Start simuleringen",
+    "stop-simulation": "Stopp simuleringen",
+    "restart-simulation": "Start simuleringen på nytt",
+    "change-speed": "Endre simuleringshastighet"
+  },
+  "menu": {
+    "view": "Visning",
+    "component-panel": "Komponentpanel",
+    "grid": "Rutenett",
+    "snap-to-grid": "Fest til rutenett",
+    "preferences": "Innstillinger",
+    "theme": "Tema",
+    "appearance": "Utseende",
+    "light": "Lyst",
+    "dark": "Mørkt",
+    "system": "System",
+    "language": "Språk",
+    "select-language": "Velg språk",
+    "keyboard-shortcuts": "Tastatursnarveier",
+    "reset-view": "Tilbakestill visning"
+  },
+  "export-dialog": {
+    "export-diagram": "Eksporter rørskjema",
+    "cancel": "Avbryt",
+    "export": "Eksporter",
+    "save-as": "Lagre som",
+    "no-preview": "Ingen forhåndsvisning",
+    "background": "Bakgrunn",
+    "transparent": "Gjennomsiktig",
+    "light": "Lys",
+    "dark": "Mørk",
+    "current": "Aktiv",
+    "diagram-color": "Rørskjema-farge"
+  },
+  "keyboard-shortcuts": {
+    "title": "Tastatursnarveier",
+    "description": "Bruk disse snarveiene for å arbeide raskere.",
+    "categories": {
+      "general": "Generelt",
+      "selection": "Markering",
+      "movement": "Flytting",
+      "view": "Visning"
+    },
+    "actions": {
+      "pan-canvas": "Flytt rundt på arbeidsflaten",
+      "cancel-current-action": "Avbryt gjeldende handling",
+      "delete-selected-items": "Slett markerte elementer",
+      "move-selected-item": "Flytt markert element",
+      "temporarily-enable-snapping": "Aktiver festing midlertidig",
+      "open-keyboard-shortcuts": "Åpne tastatursnarveier",
+      "zoom-canvas": "Zoom inn eller ut",
+      "toggle-grid": "Vis eller skjul rutenett",
+      "toggle-snap-to-grid": "Slå festing til rutenett av eller på",
+      "reset-view": "Tilbakestill visning",
+      "fit-diagram-to-view": "Tilpass diagrammet til visningen",
+      "toggle-component-panel": "Vis eller skjul komponentpanelet"
+    },
+    "keys": {
+      "space": "Mellomrom",
+      "escape": "Escape",
+      "backspace": "Slett bakover",
+      "shift": "Shift",
+      "arrow-up": "Pil opp",
+      "arrow-down": "Pil ned",
+      "arrow-left": "Pil venstre",
+      "arrow-right": "Pil høyre",
+      "question-mark": "Spørsmålstegn",
+      "g": "G",
+      "shift-g": "Shift + G",
+      "zero": "0",
+      "f": "F",
+      "p": "P"
+    }
   }
 }
