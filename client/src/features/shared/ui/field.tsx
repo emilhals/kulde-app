@@ -1,9 +1,9 @@
-import { useMemo } from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
+import { useMemo } from 'react'
 
+import { Label } from '@/features/shared/ui/label'
+import { Separator } from '@/features/shared/ui/separator'
 import { cn } from '@/lib/utils'
-import { Label } from '@/shared/ui/label'
-import { Separator } from '@/shared/ui/separator'
 
 function FieldSet({ className, ...props }: React.ComponentProps<'fieldset'>) {
   return (
@@ -167,7 +167,7 @@ function FieldSeparator({
       <Separator className="absolute inset-0 top-1/2" />
       {children && (
         <span
-          className="block relative px-2 mx-auto w-fit bg-background text-muted-foreground"
+          className="relative mx-auto block w-fit bg-background px-2 text-muted-foreground"
           data-slot="field-separator-content"
         >
           {children}
@@ -199,7 +199,7 @@ function FieldError({
     }
 
     return (
-      <ul className="flex flex-col gap-1 ml-4 list-disc">
+      <ul className="ml-4 flex list-disc flex-col gap-1">
         {errors.map(
           (error, index) =>
             error?.message && <li key={index}>{error.message}</li>,
@@ -226,13 +226,13 @@ function FieldError({
 
 export {
   Field,
-  FieldLabel,
+  FieldContent,
   FieldDescription,
   FieldError,
   FieldGroup,
+  FieldLabel,
   FieldLegend,
   FieldSeparator,
   FieldSet,
-  FieldContent,
   FieldTitle,
 }

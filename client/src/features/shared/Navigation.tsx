@@ -88,7 +88,12 @@ const Tab = ({ to, label, setPosition }: TabProps) => {
       onMouseEnter={updatePosition}
       className="relative z-10 block"
     >
-      <NavLink to={to} data-label={label} className={navLinkClass}>
+      <NavLink
+        viewTransition
+        to={to}
+        data-label={label}
+        className={navLinkClass}
+      >
         <span className="col-start-1 row-start-1">{label}</span>
       </NavLink>
     </li>
