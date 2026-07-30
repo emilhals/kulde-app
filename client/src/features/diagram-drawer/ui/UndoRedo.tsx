@@ -1,8 +1,8 @@
-import { Undo2, Redo2 } from 'lucide-react'
+import { Redo2, Undo2 } from 'lucide-react'
 
 import { diagramHistory } from '@/features/diagram-drawer/store/diagram-state'
+import { Button } from '@/features/shared/ui/button'
 import { useSnapshot } from 'valtio/react'
-import { Button } from '@/shared/ui/button'
 
 export const UndoRedo = () => {
   const diagramSnap = useSnapshot(diagramHistory)

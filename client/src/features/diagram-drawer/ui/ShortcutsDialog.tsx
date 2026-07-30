@@ -4,18 +4,20 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/shared/ui/dialog'
-import { Kbd, KbdGroup } from '@/shared/ui/kbd'
+} from '@/features/shared/ui/dialog'
+import { Kbd, KbdGroup } from '@/features/shared/ui/kbd'
 import {
   LucideIcon,
   Move,
   Settings,
   SquareDashedMousePointer,
+  View,
 } from 'lucide-react'
+import { Dispatch, SetStateAction } from 'react'
 import { useTranslation } from 'react-i18next'
 import { SHORTCUTS } from '../constants/shortcuts'
 
-type ShortcutCategory = 'general' | 'selection' | 'movement'
+type ShortcutCategory = 'general' | 'selection' | 'movement' | 'view'
 
 export const ShortcutsDialog = ({
   isOpen,
@@ -31,11 +33,12 @@ export const ShortcutsDialog = ({
   const isMac = navigator.userAgent.toLowerCase().includes('mac')
   const modKey = isMac ? '⌘' : 'Ctrl'
 
-  const CATEGORY_ORDER = ['general', 'selection', 'movement'] as const
+  const CATEGORY_ORDER = ['general', 'selection', 'movement', 'view'] as const
   const CATEGORY_ICONS = {
     general: { icon: Settings },
     selection: { icon: SquareDashedMousePointer },
     movement: { icon: Move },
+    view: { icon: View },
   } satisfies Record<ShortcutCategory, { icon: LucideIcon }>
 
   return (
