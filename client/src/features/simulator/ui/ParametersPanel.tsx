@@ -12,30 +12,36 @@ import { useSnapshot } from 'valtio'
 import { controllerState } from '../stores/controller'
 import { uiState } from '../stores/ui'
 import { FloatingPanelHeader } from './FloatingPanelHeader'
+import {
+  resizePanel,
+  setActivePanel,
+  setPanelPosition,
+  togglePin,
+} from '../stores/ui.actions'
 
 export const ParametersPanel = () => {
   const controllerSnap = useSnapshot(controllerState)
-  const nodeRef = useRef<HTMLDivElement>({} as any)
+  const uiSnap = useSnapshot(uiState)
 
-  const property = uiState.parametersPanel
+  const panel = uiSnap.panels.parameters
+
+  const nodeRef = useRef<HTMLDivElement>({} as any)
 
   return (
     <Rnd
-      default={{
-        x: property.x,
-        y: property.y,
-        width: property.width,
-        height: property.height,
-      }}
+      size={{ width: panel.width, height: panel.height }}
+      position={{ x: panel.x, y: panel.y }}
       onDragStop={(_, d) => {
-        property.x = d.x
-        property.y = d.y
+        setPanelPosition('parameters', { x: d.x, y: d.y })
       }}
       onResizeStop={(_, __, ref, ___, position) => {
-        property.width = ref.style.width
-        property.height = ref.style.height
-        property.x = position.x
-        property.y = position.y
+        const { width, height } = ref.style
+
+        resizePanel(
+          'parameters',
+          { width: width, height: height },
+          { x: position.x, y: position.y },
+        )
       }}
       bounds="#container"
       dragHandleClassName="parameters-drag-handle"
@@ -47,8 +53,13 @@ export const ParametersPanel = () => {
       >
         <FloatingPanelHeader
           dragHandleClassName="parameters-drag-handle"
+          title="parameters"
+          isPinned={uiSnap.panels.parameters.isPinned}
+          onPin={() => {
+            togglePin('parameters')
+          }}
           onClose={() => {
-            uiState.activePanel = null
+            setActivePanel(null)
           }}
         />
 

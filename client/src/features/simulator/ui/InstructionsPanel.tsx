@@ -4,31 +4,37 @@ import { useTranslation } from 'react-i18next'
 import { Rnd } from 'react-rnd'
 import { uiState } from '../stores/ui'
 import { FloatingPanelHeader } from './FloatingPanelHeader'
+import { useSnapshot } from 'valtio'
+import {
+  resizePanel,
+  setActivePanel,
+  setPanelPosition,
+  togglePin,
+} from '../stores/ui.actions'
 
 export const InstructionsPanel = () => {
   const { t } = useTranslation('simulator', { keyPrefix: 'instructions' })
 
-  const nodeRef = useRef<HTMLDivElement>({} as any)
+  const uiSnap = useSnapshot(uiState)
+  const panel = uiSnap.panels.instructions
 
-  const property = uiState.instructionsPanel
+  const nodeRef = useRef<HTMLDivElement>({} as any)
 
   return (
     <Rnd
-      default={{
-        x: property.x,
-        y: property.y,
-        width: property.width,
-        height: property.height,
-      }}
+      size={{ width: panel.width, height: panel.height }}
+      position={{ x: panel.x, y: panel.y }}
       onDragStop={(_, d) => {
-        property.x = d.x
-        property.y = d.y
+        setPanelPosition('instructions', { x: d.x, y: d.y })
       }}
       onResizeStop={(_, __, ref, ___, position) => {
-        property.width = ref.style.width
-        property.height = ref.style.height
-        property.x = position.x
-        property.y = position.y
+        const { width, height } = ref.style
+
+        resizePanel(
+          'instructions',
+          { width: width, height: height },
+          { x: position.x, y: position.y },
+        )
       }}
       bounds="#container"
       dragHandleClassName="instructions-drag-handle"
@@ -40,8 +46,13 @@ export const InstructionsPanel = () => {
       >
         <FloatingPanelHeader
           dragHandleClassName="instructions-drag-handle"
+          title="instructions"
+          isPinned={uiSnap.panels.instructions.isPinned}
+          onPin={() => {
+            togglePin('instructions')
+          }}
           onClose={() => {
-            uiState.activePanel = null
+            setActivePanel(null)
           }}
         />
 
