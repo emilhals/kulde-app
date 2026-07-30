@@ -7,15 +7,17 @@ from pyfluids import Fluid, FluidsList, Input
 from pyfluids.fluids.fluid import AbstractFluid
 
 from app.simulator.core.component import Component
+from app.utils.helpers import adjust_fan_speed
 
 if TYPE_CHECKING:
+    from app.services.simulation_service import SimulationState
     from app.simulator.core.system import System
 
 
 @dataclass
-class Condensator(Component):
+class Condensor(Component):
     system: System | None = None
-    component_name: str = "Condensator"
+    component_name: str = "Condensor"
 
     inlet_state: AbstractFluid | None = None
     outlet_state: AbstractFluid | None = None
@@ -25,7 +27,8 @@ class Condensator(Component):
 
     delta_temp: int = 15
     subcooling: int = 12
-    fan_speed: int = 0
+    fan_speed: float = 12
+    _fan_speed_ramp = 10
 
     async def attach(self) -> None:
         await super().attach()
@@ -36,14 +39,21 @@ class Condensator(Component):
     async def initialize(self) -> None:
         pass
 
-    async def simulate_step(self, dt: float, sim_time: float) -> None:
+    async def simulate_step(
+        self, dt: float, sim_time: float, sim_state: SimulationState
+    ) -> None:
         if not self.system:
             raise RuntimeError(
                 f"{self.component_name} class does not have a controller!"
             )
 
-        ambient_temp = self.system.room.ambient_temp
-        self.condensing_temp = ambient_temp + self.delta_temp
+        target = 100 if sim_state == "running" else 0
+        self.fan_speed = adjust_fan_speed(
+            current=self.fan_speed, target=target, delta=dt * self._fan_speed_ramp
+        )
+
+        outside_temp = self.system.room.outside_temp
+        self.condensing_temp = outside_temp + self.delta_temp
 
         saturated_liquid = Fluid(FluidsList.R404A)
         saturated_liquid.update(
