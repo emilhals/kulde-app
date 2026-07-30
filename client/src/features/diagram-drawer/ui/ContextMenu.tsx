@@ -1,35 +1,27 @@
 import { removeFromStore } from '@/features/diagram-drawer/store/actions'
-import { diagramHistory, uiState } from '@/features/diagram-drawer/store/models'
+import { diagramHistory } from '@/features/diagram-drawer/store/diagram-state'
+import { uiState } from '@/features/diagram-drawer/store/ui-state'
 import {
   Attribute,
   ConnectionData,
   Point,
 } from '@/features/diagram-drawer/types'
-import { Button } from '@/shared/ui/button'
+import { EditConnection } from '@/features/diagram-drawer/ui/EditConnection'
+import { Button } from '@/features/shared/ui/button'
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@/shared/ui/collapsible'
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from '@/shared/ui/select'
-import { ToggleGroup, ToggleGroupItem } from '@/shared/ui/toggle-group'
+} from '@/features/shared/ui/collapsible'
+import { Input } from '@/features/shared/ui/input'
+import { ScrollArea } from '@/features/shared/ui/scroll-area'
+import { ToggleGroup, ToggleGroupItem } from '@/features/shared/ui/toggle-group'
+import { cn } from '@/lib/utils'
 import { Bold, ChevronDown, Italic, Trash2, Underline, X } from 'lucide-react'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { CirclePicker } from 'react-color'
 import { useTranslation } from 'react-i18next'
 import { useSnapshot } from 'valtio'
-import { EditConnection } from '@/features/diagram-drawer/ui/ShowConnection'
-import { cn } from '@/lib/utils'
-import { Input } from '@/shared/ui/input'
-import { ScrollArea } from '@/shared/ui/scroll-area'
 
 const hasConnections = (conn: ConnectionData) => {
   const activeNode = uiState.activeNode
@@ -50,8 +42,6 @@ export const ContextMenu = ({
 }) => {
   const { t } = useTranslation()
   const diagramSnap = useSnapshot(diagramHistory)
-
-  const [newAttachedText, setNewAttachedText] = useState('')
 
   const [textContentOpen, setTextContentOpen] = useState(true)
   const [connectionsContentOpen, setConnectionsContentOpen] = useState(true)
@@ -116,22 +106,6 @@ export const ContextMenu = ({
     hasConnections(conn),
   )
 
-  const handleAttachText = () => {
-    const textProxy = diagramHistory.value.texts.find(
-      (t) => t.id === newAttachedText,
-    )
-    if (!textProxy) return
-
-    textProxy.anchor = {
-      itemId: item.id,
-      type: 'item',
-      offset: {
-        x: textProxy.position.x - itemProxy.x,
-        y: textProxy.position.y - itemProxy.y,
-      },
-    }
-  }
-
   return (
     <div
       ref={panelRef}
@@ -151,30 +125,32 @@ export const ContextMenu = ({
       <Button
         variant="ghost"
         size="icon"
-        className="absolute top-2 right-2 w-7 h-7 hover:bg-transparent text-muted-foreground dark:hover:bg-transparent hover:text-foreground"
+        className="absolute right-2 top-2 h-7 w-7 text-muted-foreground hover:bg-transparent hover:text-foreground dark:hover:bg-transparent"
         onClick={onClose}
       >
         <X size={12} />
       </Button>
 
-      <div className="py-2 px-2 pt-2 border-b shrink-0">
-        <div className="flex flex-col justify-center items-center">
-          <h2 className="font-sans text-lg font-semibold">{t('cm.header')}</h2>
-          <p className="font-mono text-sm text-muted-foreground">
+      <div className="shrink-0 border-b px-2 py-2 pt-2">
+        <div className="flex flex-col items-center justify-center">
+          <h2 className="font-sans text-base font-semibold">
+            {t('cm.header')}
+          </h2>
+          <p className="font-mono text-xs text-muted-foreground">
             {t(`symbols.${item.component}`)}
           </p>
         </div>
       </div>
 
-      <div className="flex-1 min-h-0">
-        <ScrollArea className="w-full h-full">
-          <div className="py-1 pr-3 pl-2 space-y-2 w-full min-w-0">
+      <div className="min-h-0 flex-1">
+        <ScrollArea className="h-full w-full">
+          <div className="w-full min-w-0 space-y-2 py-1 pl-2 pr-3">
             <Collapsible
               open={textContentOpen}
               onOpenChange={setTextContentOpen}
               className="flex flex-col gap-2"
             >
-              <CollapsibleTrigger className="flex gap-2 items-center w-full transition-colors text-muted-foreground hover:text-foreground">
+              <CollapsibleTrigger className="flex w-full items-center gap-2 text-muted-foreground transition-colors hover:text-foreground">
                 <h3 className="font-medium">{t('cm.text')}</h3>
                 <ChevronDown
                   size={16}
@@ -184,8 +160,8 @@ export const ContextMenu = ({
                   )}
                 />
               </CollapsibleTrigger>
-              <CollapsibleContent className="flex flex-col gap-2 justify-center items-center">
-                {attachedText && attachedTextProxy ? (
+              <CollapsibleContent className="flex flex-col items-center justify-center gap-2">
+                {attachedText && attachedTextProxy && (
                   <div className="flex flex-col gap-2">
                     <Input
                       className="dark:border-slate-700"
@@ -202,7 +178,7 @@ export const ContextMenu = ({
                       <p className="text-sm font-semibold text-foreground">
                         {t('cm.color')}
                       </p>
-                      <div className="flex justify-center w-full">
+                      <div className="flex w-full justify-center">
                         <CirclePicker
                           width="80%"
                           circleSize={28}
@@ -257,28 +233,6 @@ export const ContextMenu = ({
                       </ToggleGroup>
                     </div>
                   </div>
-                ) : (
-                  <>
-                    <Select
-                      value={newAttachedText}
-                      onValueChange={setNewAttachedText}
-                    >
-                      <SelectTrigger className="w-full max-w-48">
-                        <SelectValue placeholder="Attach text" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          <SelectLabel>Texts</SelectLabel>
-                          {diagramSnap.value.texts.map((text) => (
-                            <SelectItem key={text.id} value={text.id}>
-                              {text.content || t('cm.untitled-text')}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                    <Button onClick={handleAttachText}>{t('cm.attach')}</Button>
-                  </>
                 )}
               </CollapsibleContent>
             </Collapsible>
@@ -288,7 +242,7 @@ export const ContextMenu = ({
               onOpenChange={setConnectionsContentOpen}
               className="flex flex-col gap-2 py-2"
             >
-              <CollapsibleTrigger className="flex gap-2 items-center w-full transition-colors text-muted-foreground hover:text-foreground">
+              <CollapsibleTrigger className="flex w-full items-center gap-2 text-muted-foreground transition-colors hover:text-foreground">
                 <h3 className="text-base font-medium">{t('cm.connections')}</h3>
                 <ChevronDown
                   size={16}
@@ -300,7 +254,7 @@ export const ContextMenu = ({
               </CollapsibleTrigger>
               <CollapsibleContent>
                 {connections.length >= 1 ? (
-                  <div className="pr-1 space-y-1">
+                  <div className="space-y-1 pr-1">
                     {connections.map((conn) => (
                       <EditConnection
                         key={conn.id}
@@ -310,7 +264,7 @@ export const ContextMenu = ({
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm italic text-center text-gray-400">
+                  <p className="text-center text-sm italic text-gray-400">
                     {t('cm.no-connections')}.
                   </p>
                 )}
@@ -320,7 +274,7 @@ export const ContextMenu = ({
         </ScrollArea>
       </div>
 
-      <div className="py-2 px-4 border-t shrink-0">
+      <div className="shrink-0 border-t px-4 py-2">
         <div className="flex justify-center">
           <Button
             variant="destructive"
