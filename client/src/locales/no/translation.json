@@ -33,23 +33,23 @@
     "heatexchanger": "Varmeveksler",
     "tev": "Termostatisk ekspansjonsventil",
     "oilseparator": "Oljeutskiller",
-    "receiver": "",
+    "accumulator": "Væskeutskiller",
+    "receiver": "Væsketank",
     "liquidfilter": "Væskefilter",
     "sightglass": "Seglass",
-    "solenoidvalve": "Magnetventil"
+    "solenoidvalve": "Magnetventil",
+    "checkvalve": "Tilbakeslagsventil",
+    "ballvalve": "Kuleventil",
+    "pressuregauge": "Manometer",
+    "thermometer": "Termometer",
+    "levelindicator": "Nivåindikator",
+    "flowmeter": "Strømningsmåler",
+    "pressureswitch": "Pressostat"
   },
   "diagram-drawer": {
     "export": "Eksporter",
     "add": "Legg til",
     "enter-text": "Skriv inn tekst"
-  },
-  "simulator": {
-    "connecting": "Kobler til simulator serveren.",
-    "no-connection": "Klarte ikke å koble til simulator serveren.",
-    "start-simulation": "Start simuleringen",
-    "stop-simulation": "Stopp simuleringen",
-    "restart-simulation": "Start simuleringen på nytt",
-    "change-speed": "Endre simuleringshastighet"
   },
   "menu": {
     "view": "Visning",
@@ -108,16 +108,26 @@
       "escape": "Escape",
       "backspace": "Slett bakover",
       "shift": "Shift",
-      "arrow-up": "Pil opp",
-      "arrow-down": "Pil ned",
-      "arrow-left": "Pil venstre",
-      "arrow-right": "Pil høyre",
+      "scroll": "Scroll",
+      "arrows": "Piler",
       "question-mark": "Spørsmålstegn",
       "g": "G",
       "shift-g": "Shift + G",
       "zero": "0",
       "f": "F",
       "p": "P"
+    }
+  },
+  "not-found": {
+    "title": "Fant ikke siden",
+    "description": "Siden du leter etter finnes ikke. Velg et av verktøyene nedenfor for å fortsette.",
+    "simulator": {
+      "title": "Kuldesimulator",
+      "description": "Utforsk hvordan et kuldeanlegg fungerer, og følg temperaturer, trykk og komponenter."
+    },
+    "diagram-drawer": {
+      "title": "Rørskjemategner",
+      "description": "Opprett og rediger rørskjemaer med komponenter, rør, koblinger og tekst."
     }
   }
 }

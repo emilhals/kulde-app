@@ -36,20 +36,20 @@
     "receiver": "Receiver",
     "liquidfilter": "Liquid Filter",
     "sightglass": "Sight Glass",
-    "solenoidvalve": "Solenoid Valve"
+    "solenoidvalve": "Solenoid Valve",
+    "accumulator": "Accumulator",
+    "checkvalve": "Check valve",
+    "ballvalve": "Ball valve",
+    "pressuregauge": "Pressure gauge",
+    "thermometer": "Thermometer",
+    "levelindicator": "Level indicator",
+    "flowmeter": "Flow meter",
+    "pressureswitch": "Pressure switch"
   },
   "diagram-drawer": {
     "export": "Export",
     "add": "Add",
     "enter-text": "Enter text"
-  },
-  "simulator": {
-    "connecting": "Connecting to simulator server.",
-    "no-connection": "Failed to connect to simulator server.",
-    "start-simulation": "Start simulation",
-    "stop-simulation": "Stop simulation",
-    "restart-simulation": "Restart simulation",
-    "change-speed": "Change simulation speed"
   },
   "menu": {
     "view": "View",
@@ -108,13 +108,26 @@
       "escape": "Escape",
       "backspace": "Backspace",
       "shift": "Shift",
-      "arrow": "Arrow",
+      "scroll": "Scroll",
+      "arrows": "Arrows",
       "question-mark": "Question mark",
       "g": "G",
       "shift-g": "Shift + G",
       "zero": "0",
       "f": "F",
       "p": "P"
+    }
+  },
+  "not-found": {
+    "title": "Page not found",
+    "description": "The page you were looking for does not exist. Choose one of the tools below to continue.",
+    "simulator": {
+      "title": "Refrigeration simulator",
+      "description": "Explore how a refrigeration system operates and monitor its temperatures, pressures, and components."
+    },
+    "diagram-drawer": {
+      "title": "Diagram drawer",
+      "description": "Create and edit refrigeration diagrams using components, pipes, connections, and labels."
     }
   }
 }

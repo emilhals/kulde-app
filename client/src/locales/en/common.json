@@ -1,0 +1,12 @@
+{
+  "preferences": "Preferences",
+  "theme": "Theme",
+  "appearance": "Appearance",
+  "light": "Light",
+  "dark": "Dark",
+  "system": "System",
+  "language": "Language",
+  "select-language": "Select language",
+  "keyboard-shortcuts": "Keyboard shortcuts",
+  "reset-view": "Reset view"
+}

@@ -1,0 +1,71 @@
+{
+  "simulation": "Simulering",
+  "connecting": "Kobler til simulator serveren.",
+  "no-connection": "Klarte ikke å koble til simulator serveren.",
+  "start-simulation": "Start simulering",
+  "stop-simulation": "Stopp simulering",
+  "menu": {
+    "reset-simulation": "Tilbakestill simulering",
+    "speed": "Simuleringshastighet",
+    "set-speed": "Velg hastighet",
+    "slow": "Sakte",
+    "normal": "Normal",
+    "fast": "Rask",
+    "units": "Enheter",
+    "set-units": "Velg enheter",
+    "temperature": "Temperatur",
+    "pressure": "Trykk"
+  },
+  "controller": {
+    "title": "Regulator",
+    "instructions": "Hvordan bruke",
+    "parameters": "Parameterliste",
+    "reset-parameters": "Tilbakestill parametere"
+  },
+  "instructions": {
+    "symbols": {
+      "title": "Symboler",
+      "cooling": "Kjøling",
+      "defrosting": "Avriming",
+      "fan-running": "Viften går"
+    },
+    "setpoint": {
+      "title": "Endre settpunkt",
+      "steps": {
+        "open": "Trykk kort på den midterste knappen.",
+        "adjust": "Bruk den øvre eller nedre knappen for å endre temperaturen.",
+        "save": "Hold inne den midterste knappen i minst fire sekunder for å lagre."
+      }
+    },
+    "parameters": {
+      "title": "Endre parametere",
+      "steps": {
+        "open": "Hold inne den øvre knappen for å åpne parametermenyen.",
+        "navigate": "Bruk den øvre og nedre knappen for å bla mellom parameterkodene.",
+        "edit": "Trykk på den midterste knappen for å vise og redigere verdien.",
+        "adjust": "Bruk den øvre eller nedre knappen for å endre verdien.",
+        "save": "Trykk på den midterste knappen igjen for å lagre."
+      }
+    },
+    "other-functions": {
+      "title": "Andre funksjoner",
+      "defrost-sensor": {
+        "title": "Vis temperaturen ved avrimingsføleren",
+        "instruction": "Trykk kort på den nedre knappen."
+      },
+      "manual-defrost": {
+        "title": "Start eller stopp avriming manuelt",
+        "instruction": "Hold inne den nedre knappen i fire sekunder."
+      }
+    },
+    "close": "Lukk bruksanvisningen"
+  },
+  "panel": {
+    "instructions": "Hvordan bruke regulatoren",
+    "parameters": "Parameterliste",
+    "move-panel": "Flytt panel",
+    "pin-panel": "Fest panel",
+    "unpin-panel": "Løsne panel",
+    "close-panel": "Lukk panel"
+  }
+}

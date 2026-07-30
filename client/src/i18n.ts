@@ -19,7 +19,7 @@ i18n
   .init({
     fallbackLng: 'en',
     supportedLngs: supportedLanguages,
-    ns: [defaultNS],
+    ns: [defaultNS, 'common', 'simulator'],
     defaultNS,
     load: 'languageOnly', // strips region, e.g. "en-US" -> "en"
     debug: false,

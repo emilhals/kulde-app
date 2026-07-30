@@ -1,0 +1,71 @@
+{
+  "simulation": "Simulation",
+  "connecting": "Connecting to simulator server.",
+  "no-connection": "Failed to connect to simulator server.",
+  "start-simulation": "Start simulation",
+  "stop-simulation": "Stop simulation",
+  "menu": {
+    "reset-simulation": "Reset simulation",
+    "speed": "Simulation speed",
+    "set-speed": "Set speed",
+    "slow": "Slow",
+    "normal": "Normal",
+    "fast": "Fast",
+    "units": "Units",
+    "set-units": "Set units",
+    "temperature": "Temperature",
+    "pressure": "Pressure"
+  },
+  "controller": {
+    "title": "Controller",
+    "instructions": "How to use",
+    "parameters": "Parameters",
+    "reset-parameters": "Reset parameters"
+  },
+  "instructions": {
+    "symbols": {
+      "title": "Symbols",
+      "cooling": "Refrigeration",
+      "defrosting": "Defrosting",
+      "fan-running": "Fan running"
+    },
+    "setpoint": {
+      "title": "Change setpoint",
+      "steps": {
+        "open": "Briefly press the middle button.",
+        "adjust": "Use the upper or lower button to change the temperature.",
+        "save": "Press and hold the middle button for at least four seconds to save."
+      }
+    },
+    "parameters": {
+      "title": "Change parameters",
+      "steps": {
+        "open": "Press and hold the upper button to open the parameter menu.",
+        "navigate": "Use the upper and lower buttons to browse the parameter codes.",
+        "edit": "Press the middle button to display and edit the value.",
+        "adjust": "Use the upper or lower button to change the value.",
+        "save": "Press the middle button again to save."
+      }
+    },
+    "other-functions": {
+      "title": "Other functions",
+      "defrost-sensor": {
+        "title": "View the defrost sensor temperature",
+        "instruction": "Briefly press the lower button."
+      },
+      "manual-defrost": {
+        "title": "Manually start or stop defrosting",
+        "instruction": "Press and hold the lower button for four seconds."
+      }
+    },
+    "close": "Close instructions"
+  },
+  "panel": {
+    "instructions": "How to use the controller",
+    "parameters": "Parameter list",
+    "move-panel": "Move panel",
+    "pin-panel": "Pin panel",
+    "unpin-panel": "Unpin panel",
+    "close-panel": "Close panel"
+  }
+}
