@@ -1,4 +1,17 @@
+import { removeFromStore } from '@/features/diagram-drawer/store/actions'
+import { diagramHistory } from '@/features/diagram-drawer/store/diagram-state'
 import { ArrowMode, ConnectionData } from '@/features/diagram-drawer/types'
+import { getAttachmentId } from '@/features/diagram-drawer/utils/attachments'
+import { Button } from '@/features/shared/ui/button'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/features/shared/ui/collapsible'
+import { Input } from '@/features/shared/ui/input'
+import { Label } from '@/features/shared/ui/label'
+import { ToggleGroup, ToggleGroupItem } from '@/features/shared/ui/toggle-group'
+import { cn } from '@/lib/utils'
 import {
   ArrowLeftRight,
   ChevronDown,
@@ -7,21 +20,8 @@ import {
   MoveRight,
   Trash2,
 } from 'lucide-react'
-import { diagramHistory } from '@/features/diagram-drawer/store/models'
-import { getAttachmentId } from '@/features/diagram-drawer/utils/attachments'
 import { useState } from 'react'
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/shared/ui/collapsible'
-import { cn } from '@/lib/utils'
-import { ToggleGroup, ToggleGroupItem } from '@/shared/ui/toggle-group'
 import { useTranslation } from 'react-i18next'
-import { Button } from '@/shared/ui/button'
-import { removeFromStore } from '../store/actions'
-import { Label } from '@/shared/ui/label'
-import { Input } from '@/shared/ui/input'
 
 export const EditConnection = ({
   connection,
@@ -70,18 +70,18 @@ export const EditConnection = ({
     <Collapsible
       open={open}
       onOpenChange={setOpen}
-      className="overflow-hidden w-full min-w-0 rounded-md border"
+      className="w-full min-w-0 overflow-hidden rounded-md border"
     >
-      <CollapsibleTrigger className="flex gap-2 items-center py-2 px-2 w-full min-w-0 max-w-full text-left">
-        <div className="flex flex-1 gap-1 items-center min-w-0 font-mono text-xs">
-          <span className="flex-1 min-w-0 truncate">{leftLabel}</span>
+      <CollapsibleTrigger className="flex w-full min-w-0 max-w-full items-center gap-2 px-2 py-2 text-left">
+        <div className="flex min-w-0 flex-1 items-center gap-1 font-mono text-xs">
+          <span className="min-w-0 flex-1 truncate">{leftLabel}</span>
 
           <MoveRight
             size={14}
             className={cn('shrink-0', !sourceIsFrom && 'rotate-180')}
           />
 
-          <span className="flex-1 min-w-0 truncate">{rightLabel}</span>
+          <span className="min-w-0 flex-1 truncate">{rightLabel}</span>
         </div>
 
         <ChevronDown
@@ -94,7 +94,7 @@ export const EditConnection = ({
       </CollapsibleTrigger>
 
       <CollapsibleContent className="data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up min-w-0 max-w-full overflow-hidden border-t px-2 py-2">
-        <div className="flex flex-col gap-2 w-full min-w-0 max-w-full">
+        <div className="flex w-full min-w-0 max-w-full flex-col gap-2">
           <div>
             <p className="text-sm font-medium text-foreground">
               {t('cm.arrowheads')}
@@ -106,13 +106,12 @@ export const EditConnection = ({
               size="sm"
               value={connectionProxy.arrowMode}
               onValueChange={(value: ArrowMode) => {
-                if (!value) return
                 connectionProxy.arrowMode = value
               }}
-              className="grid grid-cols-4 gap-1 w-full"
+              className="grid w-full grid-cols-4 gap-1"
             >
               <ToggleGroupItem
-                className="px-0 w-full min-w-0"
+                className="w-full min-w-0 px-0"
                 value="none"
                 aria-label={t('cm.arrow-none')}
               >
@@ -120,7 +119,7 @@ export const EditConnection = ({
               </ToggleGroupItem>
 
               <ToggleGroupItem
-                className="px-0 w-full min-w-0"
+                className="w-full min-w-0 px-0"
                 value="start"
                 aria-label={t('cm.arrow-start')}
               >
@@ -128,7 +127,7 @@ export const EditConnection = ({
               </ToggleGroupItem>
 
               <ToggleGroupItem
-                className="px-0 w-full min-w-0"
+                className="w-full min-w-0 px-0"
                 value="end"
                 aria-label={t('cm.arrow-end')}
               >
@@ -136,7 +135,7 @@ export const EditConnection = ({
               </ToggleGroupItem>
 
               <ToggleGroupItem
-                className="px-0 w-full min-w-0"
+                className="w-full min-w-0 px-0"
                 value="both"
                 aria-label={t('cm.arrow-both')}
               >
@@ -160,7 +159,7 @@ export const EditConnection = ({
             />
           </div>
 
-          <div className="flex justify-start mt-2">
+          <div className="mt-2 flex justify-start">
             <Button
               variant="ghost"
               size="sm"

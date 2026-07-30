@@ -16,23 +16,27 @@ import CheckValve from '@/features/diagram-drawer/canvas/symbols/valves/CheckVal
 import SolenoidValve from '@/features/diagram-drawer/canvas/symbols/valves/SolenoidValve'
 import { Item, ItemPreview, SymbolName } from '@/features/diagram-drawer/types'
 
-export type SymbolComponent = React.ComponentType<{ item: Item | ItemPreview }>
+export type SymbolComponent = React.ComponentType<{
+  item: Item | ItemPreview
+  strokeColor: string
+  fillColor: string
+}>
 
 export const SYMBOL_MAP: Record<SymbolName, SymbolComponent> = {
-    compressor: Compressor,
-    heatexchanger: HeatExchanger,
-    tev: TEV,
-    pressureswitch: PressureSwitch,
-    sightglass: SightGlass,
-    liquidfilter: LiquidFilter,
-    oilseparator: OilSeparator,
-    accumulator: Accumulator,
-    receiver: Receiver,
-    solenoidvalve: SolenoidValve,
-    checkvalve: CheckValve,
-    ballvalve: BallValve,
-    pressuregauge: PressureGauge,
-    thermometer: Thermometer,
-    levelindicator: LevelIndicator,
-    flowmeter: FlowMeter,
+  compressor: Compressor,
+  heatexchanger: HeatExchanger,
+  tev: TEV,
+  pressureswitch: PressureSwitch,
+  sightglass: SightGlass,
+  liquidfilter: LiquidFilter,
+  oilseparator: OilSeparator,
+  accumulator: Accumulator,
+  receiver: Receiver,
+  solenoidvalve: SolenoidValve,
+  checkvalve: CheckValve,
+  ballvalve: BallValve,
+  pressuregauge: PressureGauge,
+  thermometer: Thermometer,
+  levelindicator: LevelIndicator,
+  flowmeter: FlowMeter,
 }

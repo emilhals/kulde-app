@@ -44,20 +44,26 @@ import {
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useSnapshot } from 'valtio'
-import { useSimulationSocket } from '../hooks/useSimulationSocket'
+import { setSimulationSpeed } from '../stores/simulation.actions'
 import {
-  setSimulationSpeed,
-  setSimulationStatus,
-  stopSimulationState,
-} from '../stores/simulation.actions'
-import { setPressureUnit, setTemperatureUnit } from '../stores/ui.actions'
+  setActivePanel,
+  setPressureUnit,
+  setTemperatureUnit,
+} from '../stores/ui.actions'
 
-export const SimulationMenu = () => {
+type SimulationMenuProps = {
+  onStart: () => void
+  onStop: () => void
+  onRestart: () => void
+}
+
+export const SimulationMenu = ({
+  onStart,
+  onRestart,
+  onStop,
+}: SimulationMenuProps) => {
   const { t } = useTranslation(['simulator', 'common'])
   const { theme, setTheme } = useTheme()
-
-  const { startSimulation, stopSimulation, restartSimulation } =
-    useSimulationSocket()
 
   const controls = useSnapshot(simulationState.controls)
   const ui = useSnapshot(uiState)
@@ -74,9 +80,7 @@ export const SimulationMenu = () => {
         <DropdownMenuGroup>
           <DropdownMenuLabel>{t('simulation')}</DropdownMenuLabel>
           <DropdownMenuItem
-            onSelect={() => {
-              startSimulation()
-            }}
+            onSelect={onStart}
             disabled={controls.status === 'running'}
           >
             <Play size={5} />
@@ -84,10 +88,7 @@ export const SimulationMenu = () => {
           </DropdownMenuItem>
 
           <DropdownMenuItem
-            onSelect={() => {
-              stopSimulationState()
-              stopSimulation()
-            }}
+            onSelect={onStop}
             disabled={controls.status === 'idle'}
           >
             <Square />
@@ -123,12 +124,7 @@ export const SimulationMenu = () => {
             </DropdownMenuPortal>
           </DropdownMenuSub>
 
-          <DropdownMenuItem
-            onSelect={() => {
-              setSimulationStatus('restarting')
-              restartSimulation()
-            }}
-          >
+          <DropdownMenuItem onSelect={onRestart}>
             <RotateCcw />
             {t('menu.reset-simulation')}
           </DropdownMenuItem>
@@ -139,7 +135,7 @@ export const SimulationMenu = () => {
           <DropdownMenuLabel>{t('controller.title')}</DropdownMenuLabel>
           <DropdownMenuItem
             onSelect={() => {
-              uiState.activePanel = 'instructions'
+              setActivePanel('instructions')
             }}
           >
             <CircleQuestionMark />
@@ -147,7 +143,7 @@ export const SimulationMenu = () => {
           </DropdownMenuItem>
           <DropdownMenuItem
             onSelect={() => {
-              uiState.activePanel = 'parameters'
+              setActivePanel('parameters')
             }}
           >
             <TableProperties />

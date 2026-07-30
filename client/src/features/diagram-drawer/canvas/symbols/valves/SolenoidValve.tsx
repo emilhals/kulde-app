@@ -49,7 +49,7 @@ const SolenoidValve = ({
         y={valveY}
         stroke={strokeColor}
         strokeWidth={2}
-        fill="white"
+        fill={fillColor}
       />
       {/* Right triangle (pointing left) */}
       <RegularPolygon

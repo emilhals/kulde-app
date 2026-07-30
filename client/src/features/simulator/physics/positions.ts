@@ -2,13 +2,13 @@ import { getCompressorPorts } from '../geometry/compressor'
 import { generateCoilPoints } from '../geometry/heatexchanger'
 import { Pipe } from '../types'
 
-export const compressorPosition = { x: 600, y: 400 }
-export const condenserPosition = { x: 100, y: 50 }
-export const evaporatorPosition = { x: 900, y: 100 }
+export const compressorPosition = { x: 150, y: 400 }
+export const condenserPosition = { x: 100, y: 100 }
+export const evaporatorPosition = { x: 700, y: 200 }
 export const tevPosition = {
-  inlet: { x: 600, y: 200 },
-  outlet: { x: 660, y: 250 },
-  Bulb: { x: 1230, y: 150 },
+  inlet: { x: 600, y: 250 },
+  outlet: { x: 660, y: 350 },
+  Bulb: { x: 1030, y: 250 },
 }
 
 export const compressorPorts = getCompressorPorts(compressorPosition)
@@ -37,8 +37,8 @@ export const pipes: Pipe[] = [
     to: condenserPorts.inlet,
     points: [
       compressorPorts.outlet,
-      { x: condenserPorts.inlet.x - 40, y: compressorPorts.outlet.y },
-      { x: condenserPorts.inlet.x - 40, y: condenserPorts.inlet.y },
+      { x: condenserPorts.inlet.x - 100, y: compressorPorts.outlet.y },
+      { x: condenserPorts.inlet.x - 100, y: condenserPorts.inlet.y },
       condenserPorts.inlet,
     ],
     nextPipeId: 'condenser-coil',

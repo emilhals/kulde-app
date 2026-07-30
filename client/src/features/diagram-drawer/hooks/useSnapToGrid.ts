@@ -1,5 +1,5 @@
-import type { Item, Point } from '@/features/diagram-drawer/types'
 import { uiState } from '@/features/diagram-drawer/store/ui-state'
+import type { Item, Point } from '@/features/diagram-drawer/types'
 import { snapToGrid } from '@/features/diagram-drawer/utils/grid'
 
 export const useSnapToGrid = (isSnapping: boolean) => {

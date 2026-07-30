@@ -1,5 +1,4 @@
-import { cn } from '@/lib/utils'
-import { Button } from '@/shared/ui/button'
+import { Button } from '@/features/shared/ui/button'
 import {
   Dialog,
   DialogClose,
@@ -9,15 +8,15 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/shared/ui/dialog'
-import { Field, FieldGroup, FieldLabel } from '@/shared/ui/field'
+} from '@/features/shared/ui/dialog'
+import { Field, FieldGroup, FieldLabel } from '@/features/shared/ui/field'
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
-} from '@/shared/ui/input-group'
-import { ToggleGroup, ToggleGroupItem } from '@/shared/ui/toggle-group'
-import { Download } from 'lucide-react'
+} from '@/features/shared/ui/input-group'
+import { ToggleGroup, ToggleGroupItem } from '@/features/shared/ui/toggle-group'
+import { cn } from '@/lib/utils'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { canvasSettings } from '../store/canvas-settings'
@@ -79,10 +78,7 @@ export const ExportDialog = ({
     <Dialog>
       <form>
         <DialogTrigger asChild>
-          <Button variant="outline">
-            <Download />
-            {t('export')}
-          </Button>
+          <Button variant="outline">{t('export')}</Button>
         </DialogTrigger>
 
         <DialogContent

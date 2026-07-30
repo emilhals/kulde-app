@@ -1,7 +1,8 @@
 import { canvasSettings } from '@/features/diagram-drawer/store/canvas-settings'
-import i18n from '@/i18n'
-import { Theme, useTheme } from '@/shared/contexts/theme-provider'
-import { Button } from '@/shared/ui/button'
+import { useTheme } from '@/features/shared/contexts/theme-provider'
+import { isLanguage, isTheme } from '@/features/shared/stores/settings'
+import { setLanguage } from '@/features/shared/stores/settings.actions'
+import { Button } from '@/features/shared/ui/button'
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -17,27 +18,29 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from '@/shared/ui/dropdown-menu'
+} from '@/features/shared/ui/dropdown-menu'
 import {
-  CircleQuestionMark,
   Globe,
   Grid2x2,
   Keyboard,
   Magnet,
+  Menu,
   Monitor,
   Moon,
   Palette,
   PanelRight,
-  Settings,
   Sun,
   View,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useSnapshot } from 'valtio'
+import { toggleComponentPanel } from '../store/canvas-settings.actions'
 
-type Language = 'en' | 'no'
-
-export const CanvasMenu = ({ onOpenShortcuts }) => {
+export const CanvasMenu = ({
+  onOpenShortcuts,
+}: {
+  onOpenShortcuts: () => void
+}) => {
   const { t } = useTranslation('translation', { keyPrefix: 'menu' })
   const { theme, setTheme } = useTheme()
 
@@ -57,16 +60,16 @@ export const CanvasMenu = ({ onOpenShortcuts }) => {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="icon">
-          <Settings />
+          <Menu />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-48" align="end">
+      <DropdownMenuContent className="w-58" align="end">
         <DropdownMenuGroup>
           <DropdownMenuLabel>{t('view')}</DropdownMenuLabel>
           <DropdownMenuCheckboxItem
             checked={settings.componentPanelOpen}
-            onCheckedChange={(value) => {
-              canvasSettings.componentPanelOpen = value
+            onCheckedChange={() => {
+              toggleComponentPanel()
             }}
           >
             <PanelRight />
@@ -115,8 +118,9 @@ export const CanvasMenu = ({ onOpenShortcuts }) => {
                 <DropdownMenuLabel>{t('appearance')}</DropdownMenuLabel>
                 <DropdownMenuRadioGroup
                   value={theme}
-                  onValueChange={(theme) => {
-                    setTheme(theme as Theme)
+                  onValueChange={(value) => {
+                    if (!isTheme(value)) return
+                    setTheme(value)
                   }}
                 >
                   <DropdownMenuRadioItem value="light">
@@ -146,9 +150,9 @@ export const CanvasMenu = ({ onOpenShortcuts }) => {
                 <DropdownMenuLabel>{t('select-language')}</DropdownMenuLabel>
                 <DropdownMenuRadioGroup
                   value={settings.language}
-                  onValueChange={(language) => {
-                    canvasSettings.language = language as Language
-                    i18n.changeLanguage(language)
+                  onValueChange={(value) => {
+                    if (!isLanguage(value)) return
+                    setLanguage(value)
                   }}
                 >
                   <DropdownMenuRadioItem value="en">
@@ -165,15 +169,6 @@ export const CanvasMenu = ({ onOpenShortcuts }) => {
           <DropdownMenuItem onSelect={onOpenShortcuts}>
             <Keyboard />
             {t('keyboard-shortcuts')}
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-
-        <DropdownMenuSeparator />
-
-        <DropdownMenuGroup>
-          <DropdownMenuItem>
-            <CircleQuestionMark />
-            Hjelp og støtte
           </DropdownMenuItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>

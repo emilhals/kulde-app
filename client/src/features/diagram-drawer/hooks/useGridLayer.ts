@@ -1,7 +1,7 @@
-import type { Stage } from '@/shared/hooks/useResponsiveStage'
+import { GRID_BLOCK_SIZE } from '@/features/diagram-drawer/constants/canvas'
+import type { Stage } from '@/features/shared/hooks/useResponsiveStage'
 import Konva from 'konva'
 import { RefObject, useEffect } from 'react'
-import { GRID_BLOCK_SIZE } from '@/features/diagram-drawer/constants/canvas'
 
 export const useGridLayer = (
   stage: Stage | undefined, // This is only kept to retrigger once canvas is loaded

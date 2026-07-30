@@ -2,22 +2,18 @@
 export type WithId<T> = T & { id: string }
 export type WithoutId<T> = Omit<T, 'id'>
 
-export type Point = {
-    x: number
-    y: number
-}
+export type Point = { x: number; y: number }
+
+export type ExportBackground = 'transparent' | 'light' | 'dark'
 
 /* Used for snapping */
 export type Alignment = 'start' | 'center' | 'end'
 export type Edge = { alignment: Alignment; value: number }
-export type Geometry = {
-    edges: Edge[]
-    position: number
-}
+export type Geometry = { edges: Edge[]; position: number }
 export type SnapPoint = {
-    alignment: 'start' | 'center' | 'end'
-    guide: number
-    position: number
+  alignment: 'start' | 'center' | 'end'
+  guide: number
+  position: number
 }
 
 /* Used for component panel/item */
@@ -25,103 +21,93 @@ export type Placement = 'Top' | 'Bottom' | 'Right' | 'Left'
 export type ComponentContext = 'Panel' | 'Diagram'
 
 export type SymbolName =
-    | 'compressor'
-    | 'heatexchanger'
-    | 'tev'
-    | 'liquidfilter'
-    | 'pressureswitch'
-    | 'sightglass'
-    | 'oilseparator'
-    | 'accumulator'
-    | 'receiver'
-    | 'solenoidvalve'
-    | 'checkvalve'
-    | 'ballvalve'
-    | 'pressuregauge'
-    | 'thermometer'
-    | 'levelindicator'
-    | 'flowmeter'
+  | 'compressor'
+  | 'heatexchanger'
+  | 'tev'
+  | 'liquidfilter'
+  | 'pressureswitch'
+  | 'sightglass'
+  | 'oilseparator'
+  | 'accumulator'
+  | 'receiver'
+  | 'solenoidvalve'
+  | 'checkvalve'
+  | 'ballvalve'
+  | 'pressuregauge'
+  | 'thermometer'
+  | 'levelindicator'
+  | 'flowmeter'
 
 export type Attachment = ItemAttachment | ConnectionAttachment | FreeAttachment
 
 export type ItemAttachment = {
-    type: 'item'
-    itemId: string
-    placement: Placement
-    t: number
+  type: 'item'
+  itemId: string
+  placement: Placement
+  t: number
 }
 
 export type ConnectionAttachment = {
-    type: 'connection'
-    connectionId: string
-    segmentIndex: number
-    t: number
+  type: 'connection'
+  connectionId: string
+  segmentIndex: number
+  t: number
 }
 
-export type FreeAttachment = {
-    type: 'free'
-    position: Point
+export type FreeAttachment = { type: 'free'; position: Point }
+
+export type ArrowMode = 'none' | 'start' | 'end' | 'both'
+export type ConnectionData = {
+  readonly type: 'connections'
+  readonly id: string
+
+  arrowMode: ArrowMode
+  label: string
+
+  from: Attachment
+  to: Attachment
 }
 
-export type Connection = {
-    readonly type: 'connections'
-    readonly id: string
+export type Box = { start: Point; end: Point }
 
-    from: Attachment
-    to: Attachment
-}
-
-export type Box = {
-    start: Point
-    end: Point
-}
-
-export type Rect = {
-    left: number
-    right: number
-    top: number
-    bottom: number
-}
+export type Rect = { left: number; right: number; top: number; bottom: number }
 
 export type Item = {
-    readonly type: 'items'
-    readonly id: string
-    component: SymbolName
-    height: number
-    width: number
-    x: number
-    y: number
-    locked: boolean
-    anchors: {
-        position: readonly Placement[]
-        offsets?: Partial<Record<Placement, Point>>
-    }
+  readonly type: 'items'
+  readonly id: string
+  component: SymbolName
+  height: number
+  width: number
+  x: number
+  y: number
+  locked: boolean
+  anchors: {
+    position: readonly Placement[]
+    offsets?: Partial<Record<Placement, Point>>
+  }
 }
 
 export type ItemPreview = {
-    component: SymbolName
-    label: string
-    width: number
-    height: number
-    x?: number
-    y?: number
-    anchors: {
-        position: readonly Placement[]
-        offsets?: Partial<Record<Placement, Point>>
-    }
+  component: SymbolName
+  label: string
+  width: number
+  height: number
+  x?: number
+  y?: number
+  anchors: {
+    position: readonly Placement[]
+    offsets?: Partial<Record<Placement, Point>>
+  }
 }
 
+export type Attribute = 'bold' | 'italic' | 'underline'
 export type Text = {
-    readonly type: 'texts'
-    readonly id: string
-    content: string
-    position: Point
-    size: number
-    attributes: readonly string[]
-    color: string
-    anchor?: {
-        type: 'item'
-        itemId: string
-        offset: Point
-    }
+  readonly type: 'texts'
+  readonly id: string
+  content: string
+  position: Point
+  size: number
+  attributes: readonly Attribute[]
+  color: string
+  anchor?: { type: 'item'; itemId: string; offset: Point }
 }

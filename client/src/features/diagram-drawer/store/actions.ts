@@ -55,6 +55,8 @@ export const addToStore = (
   const newConnection = { ...property, id: id }
   diagramHistory.value.connections.push(newConnection)
 
+  diagramHistory.saveHistory()
+
   return newConnection
 }
 
@@ -133,6 +135,8 @@ export const removeFromStore = (id: string) => {
       connections.splice(index, 1)
     }
   }
+
+  diagramHistory.saveHistory()
 }
 
 export const clearStore = () => {

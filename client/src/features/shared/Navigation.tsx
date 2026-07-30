@@ -90,6 +90,7 @@ const Tab = ({ to, label, setPosition }: TabProps) => {
     >
       <NavLink
         viewTransition
+
         to={to}
         data-label={label}
         className={navLinkClass}

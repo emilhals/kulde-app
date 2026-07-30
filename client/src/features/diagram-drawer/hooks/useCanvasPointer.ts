@@ -161,6 +161,8 @@ export const useCanvasPointer = ({
     uiState.selectionBox = null
     uiState.interaction = 'pending-select'
 
+    resetItemSnap()
+
     if (canvasSettings.snapToGrid) {
       const activeNode = uiState.activeNode
       if (!activeNode) return
