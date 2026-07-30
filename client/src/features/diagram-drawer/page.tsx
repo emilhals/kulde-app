@@ -6,7 +6,7 @@ import { TextNode } from '@/features/diagram-drawer/canvas/TextNode'
 import { useConnectionPreview } from '@/features/diagram-drawer/hooks/useConnectionPreview'
 import { diagramHistory } from '@/features/diagram-drawer/store/diagram-state'
 import { uiState } from '@/features/diagram-drawer/store/ui-state'
-import { useCustomFont } from '@/shared/hooks/useCustomFont'
+import { useCustomFont } from '@/features/shared/hooks/useCustomFont'
 
 import { canvasSettings } from '@/features/diagram-drawer/store/canvas-settings'
 
@@ -18,11 +18,11 @@ import type {
 } from '@/features/diagram-drawer/types'
 import { ComponentPanel } from '@/features/diagram-drawer/ui/ComponentPanel'
 import ContextMenu from '@/features/diagram-drawer/ui/ContextMenu'
-import { ResolvedTheme, useTheme } from '@/shared/contexts/theme-provider'
-import { useResponsiveStage } from '@/shared/hooks/useResponsiveStage'
+import { useTheme } from '@/features/shared/contexts/theme-provider'
+import { useResponsiveStage } from '@/features/shared/hooks/useResponsiveStage'
 import Konva from 'konva'
 import { KonvaPointerEvent } from 'konva/lib/PointerEvents'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   Group,
   Rect as KonvaRect,
@@ -31,6 +31,7 @@ import {
   Transformer,
 } from 'react-konva'
 import { useSnapshot } from 'valtio'
+import { ResolvedTheme } from '../shared/types'
 import { useCanvasDrop } from './hooks/useCanvasDrop'
 import { useCanvasKeyboard } from './hooks/useCanvasKeyboard'
 import { useCanvasPointer } from './hooks/useCanvasPointer'
@@ -61,6 +62,8 @@ export const DiagramPage = () => {
     null,
   )
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false)
+  const [exportBackground, setExportBackground] =
+    useState<ExportBackground>('transparent')
 
   const colors = CANVAS_COLORS[resolvedTheme]
 
@@ -94,30 +97,55 @@ export const DiagramPage = () => {
     isPanning,
   )
 
-  const updateCanvasPreview = (color: ExportBackground) => {
-    const stage = stageRef.current
-    const background = backgroundRef.current
-    if (!stage || !background) return
+  useEffect(() => {
+    canvasSettings.isExportRendering = true
 
-    gridLayer.current?.hide()
-    connectorLayerRef.current?.hide()
+    let secondFrame = 0
+    const firstFrame = requestAnimationFrame(() => {
+      secondFrame = requestAnimationFrame(() => {
+        stageRef.current?.batchDraw()
+        updateCanvasPreview()
+        canvasSettings.isExportRendering = false
+      })
+    })
 
-    if (color !== 'transparent') {
-      const backgroundColor = CANVAS_COLORS[color as ResolvedTheme].background
-
-      background.fill(backgroundColor)
+    return () => {
+      cancelAnimationFrame(firstFrame)
+      cancelAnimationFrame(secondFrame)
+      canvasSettings.isExportRendering = false
     }
+  }, [exportBackground])
+
+  const updateCanvasPreview = () => {
+    const stage = stageRef.current
+    const backgroundRect = backgroundRef.current
+    if (!stage || !backgroundRect) return
 
     const activeNode = uiState.activeNode
-    uiState.activeNode = null
 
-    const url = stage.toDataURL({ pixelRatio: 2 })
-    setCanvasPreviewUrl(url)
+    try {
+      gridLayer.current?.hide()
+      connectorLayerRef.current?.hide()
+      uiState.activeNode = null
 
-    uiState.activeNode = activeNode
-    background.fill('')
-    gridLayer.current?.show()
-    connectorLayerRef.current?.show()
+      if (exportBackground !== 'transparent') {
+        const backgroundColor =
+          CANVAS_COLORS[exportBackground as ResolvedTheme].background
+
+        backgroundRect.fill(backgroundColor)
+      } else {
+        backgroundRect.fill('')
+      }
+
+      const url = stage.toDataURL({ pixelRatio: 2 })
+      setCanvasPreviewUrl(url)
+    } finally {
+      canvasSettings.isExportRendering = false
+      uiState.activeNode = activeNode
+      backgroundRect.fill('')
+      gridLayer.current?.show()
+      connectorLayerRef.current?.show()
+    }
   }
 
   const handleContextMenu = (e: KonvaPointerEvent) => {
@@ -201,7 +229,8 @@ export const DiagramPage = () => {
         <div className="absolute right-6 top-6 z-50 flex items-center gap-3">
           <ExportDialog
             canvasPreviewURL={canvasPreviewURL}
-            updateCanvasPreview={updateCanvasPreview}
+            background={exportBackground}
+            onBackgroundChange={setExportBackground}
           />
           <CanvasMenu onOpenShortcuts={() => setIsShortcutsOpen(true)} />
         </div>
