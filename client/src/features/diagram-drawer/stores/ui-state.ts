@@ -11,7 +11,7 @@ type Interaction =
   | 'pending-connect'
   | 'connecting'
 
-type InteractedNode = { id: string; type: 'item' | 'text' | 'connection' }
+type InteractedNode = { id: string; type: 'items' | 'texts' | 'connections' }
 
 export const initialUIState = {
   activeNode: null as InteractedNode | null,
@@ -25,6 +25,7 @@ export const initialUIState = {
   selectionBox: null as Box | null,
   dragOffset: { x: 0, y: 0 } as Point,
   dragStartPositions: {} as Record<string, { x: number; y: number }>,
+  gridSnapPreview: null as Point | null,
 }
 
 export const uiState = proxy(deepClone(initialUIState))

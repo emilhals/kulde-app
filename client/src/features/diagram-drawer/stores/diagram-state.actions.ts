@@ -7,13 +7,7 @@ import {
   WithoutId,
 } from '@/features/diagram-drawer/types'
 import { v4 as uuidv4 } from 'uuid'
-import { deepClone } from 'valtio/utils'
-
-import { diagramHistory } from '@/features/diagram-drawer/store/diagram-state'
-import {
-  initialUIState,
-  uiState,
-} from '@/features/diagram-drawer/store/ui-state'
+import { diagramHistory } from './diagram-state'
 
 type StoreMap = { items: Item; texts: Text; connections: ConnectionData }
 
@@ -30,6 +24,7 @@ export const getAnyFromStore = (id: string) => {
   return (
     diagramHistory.value.items.find((object) => object.id === id) ??
     diagramHistory.value.connections.find((object) => object.id === id) ??
+    diagramHistory.value.texts.find((object) => object.id === id) ??
     null
   )
 }
@@ -74,11 +69,13 @@ export const addTextToStore = (
     attributes: attrs,
     size: 16,
     color: 'black',
-    position: position,
+    x: position.x,
+    y: position.y,
   }
 
   const proxyText = diagramHistory.value.texts.push(newText)
 
+  diagramHistory.saveHistory()
   return proxyText
 }
 
@@ -143,6 +140,4 @@ export const clearStore = () => {
   diagramHistory.value.items.length = 0
   diagramHistory.value.connections.length = 0
   diagramHistory.value.texts.length = 0
-
-  Object.assign(uiState, deepClone(initialUIState))
 }
