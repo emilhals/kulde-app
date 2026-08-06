@@ -1,17 +1,11 @@
 import asyncio
 from dataclasses import dataclass, field
-from enum import Enum
 
 from app.api.endpoint import Endpoint
+from app.enums import SimulationState
 from app.models.simulator import ControllerParams
 from app.simulator.core.system import System
 from app.utils.logger import logger
-
-
-class SimulationState(str, Enum):
-    STOPPED = "stopped"
-    RUNNING = "running"
-    RESTART = "restart"
 
 
 @dataclass
@@ -74,8 +68,10 @@ class SimulationService:
 
     async def simulation_loop(self) -> None:
         try:
-            while self._state == SimulationState.RUNNING:
-                await self.system.simulate_system(dt=self.dt, sim_time=self._sim_time)
+            while True:
+                await self.system.simulate_system(
+                    dt=self.dt, sim_time=self._sim_time, sim_state=self._state
+                )
                 self._sim_time += self.dt
 
                 if self.system.controller.parameters["r12"] == 0:
@@ -92,7 +88,7 @@ class SimulationService:
 
     async def broadcast_values(self):
         try:
-            while self._state == SimulationState.RUNNING:
+            while True:
                 values = {}
                 values["Service"] = {"dt": self.dt, "sim_time": self._sim_time}
                 values["Room"] = {"room_temp": self.system.room.room_temp}
@@ -106,6 +102,18 @@ class SimulationService:
             raise
         except Exception as e:
             logger.error(f"Error in get_values: {e}", e)
+            raise
+
+    async def end_system(self):
+        try:
+            self._broadcast_task.cancel()
+            self._sim_task.cancel()
+            self._state = SimulationState.FINISHED
+        except asyncio.CancelledError:
+            logger.error("end_system cancelled")
+            raise
+        except Exception as e:
+            logger.error(f"Error in end_system: {e}", e)
             raise
 
     def get_status(self):

@@ -6,7 +6,9 @@ from typing import TYPE_CHECKING
 from pyfluids import Fluid, FluidsList, Input
 from pyfluids.fluids.fluid import AbstractFluid
 
+from app.enums import SimulationState
 from app.simulator.core.component import Component
+from app.utils.helpers import adjust_fan_speed
 
 if TYPE_CHECKING:
     from app.simulator.core.system import System
@@ -23,6 +25,7 @@ class Evaporator(Component):
     superheat: int = 8
     delta_temp: int = 10
     fan_speed: int = 0
+    _fan_speed_ramp = 5
 
     async def attach(self) -> None:
         await super().attach()
@@ -33,11 +36,18 @@ class Evaporator(Component):
     async def initialize(self) -> None:
         pass
 
-    async def simulate_step(self, dt: float, sim_time: float) -> None:
+    async def simulate_step(
+        self, dt: float, sim_time: float, sim_state: SimulationState
+    ) -> None:
         if not self.system:
             raise RuntimeError(
                 f"{self.component_name} class does not have a controller!"
             )
+
+        target = 100 if sim_state == "running" else 0
+        self.fan_speed = adjust_fan_speed(
+            current=self.fan_speed, target=target, delta=dt * self._fan_speed_ramp
+        )
 
         T_evap = self.system.room.room_temp - self.delta_temp
         self.saturated_state = Fluid(FluidsList.R404A).dew_point_at_temperature(T_evap)

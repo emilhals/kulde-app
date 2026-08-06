@@ -8,6 +8,7 @@ from app.utils.logger import logger
 
 if TYPE_CHECKING:
     from app.simulator.core.system import System
+    from app.services.simulation_service import SimulationState
 
 
 @dataclass
@@ -36,7 +37,9 @@ class Component(ABC):
         pass
 
     @abstractmethod
-    async def simulate_step(self, dt: float, sim_time: float) -> None:
+    async def simulate_step(
+        self, dt: float, sim_time: float, sim_state: SimulationState
+    ) -> None:
         pass
 
     @abstractmethod

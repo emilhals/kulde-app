@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from pyfluids import Fluid, FluidsList, Input
 from pyfluids.fluids.fluid import AbstractFluid
 
+from app.enums import SimulationState
 from app.simulator.core.component import Component
 
 if TYPE_CHECKING:
@@ -31,18 +32,20 @@ class TXV(Component):
     async def initialize(self) -> None:
         pass
 
-    async def simulate_step(self, dt: float, sim_time: float) -> None:
+    async def simulate_step(
+        self, dt: float, sim_time: float, sim_state: SimulationState
+    ) -> None:
         if not self.system:
             raise RuntimeError("TXV does not belong to system.")
 
-        condensator = next(
-            c for c in self.system.components if c.component_name == "Condensator"
+        condensor = next(
+            c for c in self.system.components if c.component_name == "Condensor"
         )
         evaporator = next(
             c for c in self.system.components if c.component_name == "Evaporator"
         )
 
-        self.inlet_state = condensator.outlet_state
+        self.inlet_state = condensor.outlet_state
 
         if self.inlet_state is None:
             self.outlet_state = None

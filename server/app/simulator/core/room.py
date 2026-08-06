@@ -10,6 +10,9 @@ class Room:
     heat_rate: float = 0.005
 
     async def simulate_step(self, dt: float, cooling: bool) -> None:
+        if self.room_temp > 24:
+            return
+
         if cooling:
             self.room_temp -= self.cooling_rate * dt
         else:

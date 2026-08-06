@@ -1,14 +1,18 @@
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
 from app.models.simulator import ControllerParams
 from app.simulator.components.compressor import Compressor, PowerState, RunState
-from app.simulator.components.condensator import Condensator
+from app.simulator.components.condensor import Condensor
 from app.simulator.components.evaporator import Evaporator
 from app.simulator.components.txv import TXV
 from app.simulator.core.component import Component
 from app.simulator.core.controller import Controller
 from app.simulator.core.room import Room
 from app.utils.logger import logger
+
+if TYPE_CHECKING:
+    from app.services.simulation_service import SimulationState
 
 
 @dataclass
@@ -38,12 +42,12 @@ class System:
 
         compressor = Compressor()
         evaporator = Evaporator()
-        condensator = Condensator()
+        condensor = Condensor()
         txv = TXV()
 
         await self.add_component(compressor)
         await self.add_component(evaporator)
-        await self.add_component(condensator)
+        await self.add_component(condensor)
         await self.add_component(txv)
 
     async def initialize_system(self) -> None:
@@ -53,10 +57,12 @@ class System:
             logger.info("Initialized: %s", component.component_name)
             await component.initialize()
 
-    async def simulate_system(self, dt: float, sim_time: float) -> None:
-        for name in ["Evaporator", "Condensator", "Compressor", "TXV"]:
+    async def simulate_system(
+        self, dt: float, sim_time: float, sim_state: SimulationState
+    ) -> None:
+        for name in ["Evaporator", "Condensor", "Compressor", "TXV"]:
             component = next(c for c in self.components if c.component_name == name)
-            await component.simulate_step(dt=dt, sim_time=sim_time)
+            await component.simulate_step(dt=dt, sim_time=sim_time, sim_state=sim_state)
 
         compressor = next((c for c in self.components if isinstance(c, Compressor)))
         should_cool = (
